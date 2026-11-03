@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gdss_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gdss_db}
+      POSTGRES_USER: ${POSTGRES_USER:-gdss_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gdss_user} -d ${POSTGRES_DB:-gdss_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    image: mic-app:latest
+    container_name: gdss_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-gdss_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-gdss_db}?schema=public
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - WORKER_SECRET=${WORKER_SECRET}
+      - BACKGROUND_WORKER_INTERVAL_SEC=${BACKGROUND_WORKER_INTERVAL_SEC:-60}
+      - TRUSTED_PROXY_HOPS=${TRUSTED_PROXY_HOPS:-0}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    image: mic-app:latest
+    container_name: gdss_worker
+    restart: always
+    command: ["node", "scripts/worker.js"]
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-gdss_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-gdss_db}?schema=public
+      - NEXTAUTH_URL=http://app:3000
+      - WORKER_SECRET=${WORKER_SECRET}
+      - BACKGROUND_WORKER_INTERVAL_SEC=${BACKGROUND_WORKER_INTERVAL_SEC:-60}
+    depends_on:
+      app:
+        condition: service_started
+
+volumes:
+  pgdata:

@@ -1,0 +1,117 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+enum AggregationMethod {
+  BORDA
+  SCHULZE
+  KEMENY_YOUNG
+}
+
+enum RoomStatus {
+  DRAFT
+  ROUND_OPEN
+  INSUFFICIENT_VOTES
+  PROCESSING
+  ROUND_FEEDBACK
+  CONCLUDED
+  CANCELLED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique @db.VarChar(100)
+  password_hash String
+  name          String   @db.VarChar(50)
+  created_at    DateTime @default(now())
+  rooms         Room[]
+}
+
+model Room {
+  id            String            @id @default(cuid())
+  pin           String            @unique @db.VarChar(6) // 6 alphanumeric characters
+  title         String            @db.VarChar(100)
+  host_id       String
+  host          User              @relation(fields: [host_id], references: [id], onDelete: Cascade)
+  method        AggregationMethod @default(BORDA)
+  max_members   Int               @default(40)
+  tau_threshold Float             @default(0.80)
+  max_rounds    Int               @default(3)
+  current_round Int               @default(1)
+  status        RoomStatus        @default(DRAFT)
+  deadline      DateTime?
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+
+  options       Option[]
+  participants  Participant[]
+  reports       RoundReport[]
+
+  @@index([status, deadline])
+  @@index([host_id])
+}
+
+model Option {
+  id          String   @id @default(cuid())
+  room_id     String
+  room        Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  title       String   @db.VarChar(80)
+  description String   @db.VarChar(300)
+  order_index Int
+  votes       Vote[]
+
+  @@unique([room_id, order_index])
+}
+
+model Participant {
+  id         String   @id @default(cuid())
+  room_id    String
+  room       Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  nickname   String   @db.VarChar(30)
+  pin_hash   String   // bcrypt cost=10
+  blind_code String   @db.VarChar(30) // e.g. "Participante 01"
+  is_retired Boolean  @default(false)
+  created_at DateTime @default(now())
+  votes      Vote[]
+
+  @@unique([room_id, nickname])
+  @@unique([room_id, blind_code])
+}
+
+model Vote {
+  id             String      @id @default(cuid())
+  participant_id String
+  participant    Participant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+  round          Int
+  option_id      String
+  option         Option      @relation(fields: [option_id], references: [id], onDelete: Cascade)
+  position       Int         // 1..n strict ballot
+  justification  String      @db.VarChar(200) // 25..200 characters
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+
+  @@unique([participant_id, round, option_id])
+  @@unique([participant_id, round, position])
+  @@index([participant_id, round])
+  @@index([option_id, round])
+}
+
+model RoundReport {
+  id                 String   @id @default(cuid())
+  room_id            String
+  room               Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  round              Int
+  effective_voters   Int
+  collective_ranking Json     // Array with positions and mid-ranks
+  obtained_tau       Float    // tau*
+  arguments_json     Json     // Blind qualitative arguments
+  created_at         DateTime @default(now())
+
+  @@unique([room_id, round])
+}

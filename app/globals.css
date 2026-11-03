@@ -1,0 +1,93 @@
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* AGENTS.md Design Tokens */
+    --background: #F6F4EF;
+    --foreground: #14171A;
+    --card: #F6F4EF;
+    --card-foreground: #14171A;
+    --popover: #F6F4EF;
+    --popover-foreground: #14171A;
+    --primary: #E4572E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #EBE7DF;
+    --secondary-foreground: #14171A;
+    --muted: #EBE7DF;
+    --muted-foreground: #6B6860;
+    --accent: #E4572E;
+    --accent-foreground: #FFFFFF;
+    --destructive: #B42318;
+    --destructive-foreground: #FFFFFF;
+    --border: #D9D5CC;
+    --input: #D9D5CC;
+    --ring: #E4572E;
+
+    /* Status Tokens */
+    --status-ok: #2F7D4F;
+    --status-alerta: #B7791F;
+    --status-error: #B42318;
+
+    /* Radius & Spacing */
+    --radius: 6px;
+
+    /* Sidebar Tokens */
+    --sidebar: #F6F4EF;
+    --sidebar-foreground: #14171A;
+    --sidebar-primary: #E4572E;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #EBE7DF;
+    --sidebar-accent-foreground: #14171A;
+    --sidebar-border: #D9D5CC;
+    --sidebar-ring: #E4572E;
+  }
+
+  /* Modo claro únicamente. Prohibido modo oscuro en v1. */
+  .dark {
+    --background: #F6F4EF;
+    --foreground: #14171A;
+    --card: #F6F4EF;
+    --card-foreground: #14171A;
+    --popover: #F6F4EF;
+    --popover-foreground: #14171A;
+    --primary: #E4572E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #EBE7DF;
+    --secondary-foreground: #14171A;
+    --muted: #EBE7DF;
+    --muted-foreground: #6B6860;
+    --accent: #E4572E;
+    --accent-foreground: #FFFFFF;
+    --destructive: #B42318;
+    --destructive-foreground: #FFFFFF;
+    --border: #D9D5CC;
+    --input: #D9D5CC;
+    --ring: #E4572E;
+    --status-ok: #2F7D4F;
+    --status-alerta: #B7791F;
+    --status-error: #B42318;
+    --radius: 6px;
+    --sidebar: #F6F4EF;
+    --sidebar-foreground: #14171A;
+    --sidebar-primary: #E4572E;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #EBE7DF;
+    --sidebar-accent-foreground: #14171A;
+    --sidebar-border: #D9D5CC;
+    --sidebar-ring: #E4572E;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
