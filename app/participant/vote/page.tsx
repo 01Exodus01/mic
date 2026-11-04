@@ -12,6 +12,7 @@ import ReasonListsField, {
 } from '@/components/ReasonListsField';
 import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
+import { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { GripVertical, ArrowUp, ArrowDown, Clock, LogOut, AlertCircle, Edit3, CheckCircle2 } from 'lucide-react';
@@ -232,16 +233,7 @@ export default function ParticipantVotePage() {
       }
 
       setIsExpiredLocally(false);
-      const totalSecs = Math.floor(diff / 1000);
-      const hours = Math.floor(totalSecs / 3600);
-      const mins = Math.floor((totalSecs % 3600) / 60);
-      const secs = totalSecs % 60;
-
-      if (hours > 0) {
-        setTimeLeft(`${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
-      } else {
-        setTimeLeft(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
-      }
+      setTimeLeft(formatCountdown(diff));
     };
 
     updateTimer();
@@ -390,9 +382,7 @@ export default function ParticipantVotePage() {
     isExpiredLocally;
 
   const deadlineDate = roomData?.sala?.deadline ? new Date(roomData.sala.deadline) : null;
-  const deadlineHour = deadlineDate
-    ? deadlineDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
+  const deadlineHour = deadlineDate ? formatDeadlineLabel(deadlineDate) : '';
 
   const hasVoted = Boolean(
     roomData?.myVotes &&

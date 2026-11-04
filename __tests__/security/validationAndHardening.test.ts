@@ -537,13 +537,15 @@ describe('8. Additional Forms: Round Duration & Duplicate Options', () => {
     }
   });
 
-  it('validates round duration between 1 and 10080 minutes (presets and custom)', () => {
+  // PT-28: maximum raised from 10080 minutes (1 week) to 43200 (30 days)
+  it('validates round duration between 1 and 43200 minutes (presets and custom)', () => {
     expect(RoundDurationSchema.safeParse(0).success).toBe(false);
     expect(RoundDurationSchema.safeParse(1).success).toBe(true);
     expect(RoundDurationSchema.safeParse(5).success).toBe(true);
     expect(RoundDurationSchema.safeParse(60).success).toBe(true);
     expect(RoundDurationSchema.safeParse(1440).success).toBe(true);
     expect(RoundDurationSchema.safeParse(10080).success).toBe(true);
-    expect(RoundDurationSchema.safeParse(10081).success).toBe(false);
+    expect(RoundDurationSchema.safeParse(43200).success).toBe(true);
+    expect(RoundDurationSchema.safeParse(43201).success).toBe(false);
   });
 });

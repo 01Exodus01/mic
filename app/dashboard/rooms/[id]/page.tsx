@@ -16,7 +16,7 @@ import {
 import { toast } from 'sonner';
 import { RoomDashboardSkeleton } from '@/components/ui/Skeleton';
 import PasswordInput from '@/components/ui/PasswordInput';
-import DurationPicker from '@/components/DurationPicker';
+import DurationPicker, { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import RoomRosterManager from '@/components/RoomRosterManager';
 import ParticipationTable from '@/components/ParticipationTable';
@@ -36,7 +36,7 @@ import {
   ArrowLeft,
   AlertCircle,
 } from 'lucide-react';
-import { PersonalPinSchema, MIN_PARTICIPANTS } from '@/lib/validations';
+import { PersonalPinSchema, MIN_PARTICIPANTS, MAX_ROUND_MINUTES } from '@/lib/validations';
 import type { RankingEntry, BlindArgumentsMap } from '@/types/report';
 
 interface ProjectItem {
@@ -236,16 +236,7 @@ export default function RoomHostPage() {
         return;
       }
 
-      const totalSecs = Math.floor(diff / 1000);
-      const hours = Math.floor(totalSecs / 3600);
-      const mins = Math.floor((totalSecs % 3600) / 60);
-      const secs = totalSecs % 60;
-
-      if (hours > 0) {
-        setRemainingTime(`${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
-      } else {
-        setRemainingTime(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
-      }
+      setRemainingTime(formatCountdown(diff));
     };
 
     updateCountdown();
@@ -455,9 +446,7 @@ export default function RoomHostPage() {
   const stateClass = STATE_CLASSES[sala.estado] || 'text-[#14171A]';
 
   const deadlineDate = sala.deadline ? new Date(sala.deadline) : null;
-  const deadlineHour = deadlineDate
-    ? deadlineDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
+  const deadlineHour = deadlineDate ? formatDeadlineLabel(deadlineDate) : '';
 
   // Último reporte para nivel de acuerdo y detalle técnico
   const latestReport = sala.reportes?.[sala.reportes.length - 1] || null;
@@ -583,7 +572,7 @@ export default function RoomHostPage() {
               <button
                 type="button"
                 onClick={handleStartRoom}
-                disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > 10080}
+                disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
                 className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 {actionLoading ? 'Iniciando...' : 'Abrir votación Ronda 1'}
@@ -666,7 +655,7 @@ export default function RoomHostPage() {
               <button
                 type="button"
                 onClick={() => handleExtendDeadlineWithMinutes(selectedMinutes)}
-                disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > 10080}
+                disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
                 className="px-3.5 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 Extender hora límite
@@ -710,7 +699,7 @@ export default function RoomHostPage() {
                   <button
                     type="button"
                     onClick={handleOpenNextRound}
-                    disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > 10080}
+                    disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
                     className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                   >
                     {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.ronda_actual + 1}`}
@@ -1249,7 +1238,7 @@ export default function RoomHostPage() {
               </button>
               <button
                 type="button"
-                disabled={actionLoading || extendMinutes < 1 || extendMinutes > 10080}
+                disabled={actionLoading || extendMinutes < 1 || extendMinutes > MAX_ROUND_MINUTES}
                 onClick={() => handleExtendDeadlineWithMinutes(extendMinutes)}
                 className="px-4 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >

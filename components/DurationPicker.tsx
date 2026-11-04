@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useId } from 'react';
-import { RoundDurationSchema } from '@/lib/validations';
+import React, { useState, useEffect, useId } from 'react';
+import { RoundDurationSchema, MAX_ROUND_MINUTES } from '@/lib/validations';
 import { Clock } from 'lucide-react';
 
 interface DurationPickerProps {
@@ -21,7 +21,51 @@ const PRESETS = [
   { label: '30 min', value: 30 },
   { label: '1 h', value: 60 },
   { label: '24 h', value: 1440 },
+  { label: '3 días', value: 4320 },
+  { label: '1 semana', value: 10080 },
+  { label: '2 semanas', value: 20160 },
 ];
+
+const UNITS = [
+  { key: 'min', label: 'minutos', minutes: 1 },
+  { key: 'h', label: 'horas', minutes: 60 },
+  { key: 'd', label: 'días', minutes: 1440 },
+  { key: 'w', label: 'semanas', minutes: 10080 },
+] as const;
+type UnitKey = (typeof UNITS)[number]['key'];
+
+/** Largest unit that divides the minutes exactly, for showing a custom value. */
+function splitMinutes(total: number): { amount: number; unit: UnitKey } {
+  for (const u of [...UNITS].reverse()) {
+    if (total >= u.minutes && total % u.minutes === 0) return { amount: total / u.minutes, unit: u.key };
+  }
+  return { amount: total, unit: 'min' };
+}
+
+/** Deadline label: only the time when it is today, otherwise also the date (PT-28). */
+export function formatDeadlineLabel(deadline: Date, now: Date = new Date()): string {
+  const time = deadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const sameDay = deadline.toDateString() === now.toDateString();
+  if (sameDay) return time;
+  const date = deadline.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+  return `${date} ${time}`;
+}
+
+/**
+ * Countdown text that stays readable for rounds of several days (PT-28):
+ * "2 d 03:15:20", "1:05:09", "04:59".
+ */
+export function formatCountdown(diffMs: number): string {
+  const totalSecs = Math.max(0, Math.floor(diffMs / 1000));
+  const days = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  const mmss = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  if (days > 0) return `${days} d ${String(hours).padStart(2, '0')}:${mmss}`;
+  if (hours > 0) return `${hours}:${mmss}`;
+  return mmss;
+}
 
 export default function DurationPicker({
   value,
@@ -35,7 +79,8 @@ export default function DurationPicker({
 }: DurationPickerProps) {
   const isPreset = PRESETS.some((p) => p.value === value);
   const [isCustom, setIsCustom] = useState(!isPreset);
-  const [customInput, setCustomInput] = useState(isPreset ? '' : String(value));
+  const [customInput, setCustomInput] = useState(isPreset ? '' : String(splitMinutes(value).amount));
+  const [customUnit, setCustomUnit] = useState<UnitKey>(isPreset ? 'min' : splitMinutes(value).unit);
   const [customError, setCustomError] = useState<string | null>(null);
   const inputId = useId();
 
@@ -46,8 +91,17 @@ export default function DurationPicker({
       setIsCustom(false);
     } else {
       setIsCustom(true);
-      setCustomInput(String(value));
+      const unitMinutes = UNITS.find((u) => u.key === customUnit)!.minutes;
+      if (value % unitMinutes === 0) {
+        setCustomInput(String(value / unitMinutes));
+      } else {
+        const split = splitMinutes(value);
+        setCustomInput(String(split.amount));
+        setCustomUnit(split.unit);
+      }
     }
+    // customUnit is read, not a trigger: only external value changes resync
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const handlePresetClick = (mins: number) => {
@@ -60,27 +114,38 @@ export default function DurationPicker({
   const handleCustomToggle = () => {
     if (disabled) return;
     setIsCustom(true);
-    const parsed = parseInt(customInput, 10);
-    if (!isNaN(parsed) && parsed >= 1 && parsed <= 10080) {
+    const parsed = parseInt(customInput, 10) * UNITS.find((u) => u.key === customUnit)!.minutes;
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= MAX_ROUND_MINUTES) {
       onChange(parsed);
     } else {
       const defaultCustom = 45;
       setCustomInput(String(defaultCustom));
+      setCustomUnit('min');
       onChange(defaultCustom);
     }
   };
 
-  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    setCustomInput(raw);
-    const num = parseInt(raw, 10);
-    const validation = RoundDurationSchema.safeParse(num);
+  const applyCustom = (raw: string, unit: UnitKey) => {
+    const num = Number(raw);
+    const minutes = Number.isInteger(num) ? num * UNITS.find((u) => u.key === unit)!.minutes : NaN;
+    const validation = RoundDurationSchema.safeParse(minutes);
     if (!validation.success) {
-      setCustomError('La duración debe estar entre 1 y 10080 minutos.');
+      setCustomError('La duración debe estar entre 1 minuto y 30 días.');
     } else {
       setCustomError(null);
       onChange(validation.data);
     }
+  };
+
+  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomInput(e.target.value);
+    applyCustom(e.target.value, customUnit);
+  };
+
+  const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const unit = e.target.value as UnitKey;
+    setCustomUnit(unit);
+    applyCustom(customInput, unit);
   };
 
   // Calculate live preview of deadline
@@ -161,13 +226,13 @@ export default function DurationPicker({
       {isCustom && (
         <div className="flex items-center gap-2 pt-1">
           <label htmlFor={inputId} className="text-xs text-[#5A554E] shrink-0">
-            Minutos (1 a 10080):
+            Duración (hasta 30 días):
           </label>
           <input
             id={inputId}
             type="number"
             min={1}
-            max={10080}
+            max={MAX_ROUND_MINUTES / UNITS.find((u) => u.key === customUnit)!.minutes}
             step={1}
             disabled={disabled}
             value={customInput}
@@ -178,6 +243,19 @@ export default function DurationPicker({
               customError ? 'border-[#B42318] focus:border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
             }`}
           />
+          <select
+            aria-label="Unidad de la duración"
+            disabled={disabled}
+            value={customUnit}
+            onChange={handleUnitChange}
+            className="h-9 px-2 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] focus:outline-none focus:border-[#E4572E]"
+          >
+            {UNITS.map((u) => (
+              <option key={u.key} value={u.key}>
+                {u.label}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

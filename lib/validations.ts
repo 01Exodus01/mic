@@ -398,14 +398,17 @@ export type RoomSettings = z.infer<typeof RoomSettingsSchema>;
 // 9. Formularios Adicionales (Duración & Restablecer PIN)
 // ─────────────────────────────────────────────
 
+/** Longest round or extension: 30 days (PT-28). */
+export const MAX_ROUND_MINUTES = 43200;
+
 export const RoundDurationSchema = z
   .number({
     required_error: 'Campo obligatorio.',
     invalid_type_error: 'Campo obligatorio.',
   })
   .int('La duración debe ser un número entero.')
-  .min(1, 'La duración debe estar entre 1 y 10080 minutos.')
-  .max(10080, 'La duración debe estar entre 1 y 10080 minutos.');
+  .min(1, 'La duración debe estar entre 1 minuto y 30 días.')
+  .max(MAX_ROUND_MINUTES, 'La duración debe estar entre 1 minuto y 30 días.');
 
 export const ResetPinSchema = z.object({
   newPin: PersonalPinSchema,

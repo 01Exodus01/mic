@@ -10,7 +10,8 @@ import { GET as syncHandler } from '@/app/api/rooms/[id]/sync/route';
 import { NextRequest } from 'next/server';
 
 describe('Grupo 5: Voto enviado, cronómetros, tiempo real y presets', () => {
-  describe('AUD-29: Duración de ronda (presets y rango personalizado 1 a 10080)', () => {
+  // PT-28: el máximo pasó de 10080 minutos (1 semana) a 43200 (30 días)
+  describe('AUD-29: Duración de ronda (presets y rango personalizado 1 a 43200)', () => {
     it('acepta todos los presets requeridos (5, 15, 30, 60, 1440)', () => {
       const presets = [5, 15, 30, 60, 1440];
       for (const p of presets) {
@@ -33,10 +34,12 @@ describe('Grupo 5: Voto enviado, cronómetros, tiempo real y presets', () => {
       expect(midRes.success).toBe(true);
     });
 
-    it('rechaza duraciones inválidas: menores a 1, mayores a 10080 y decimales', () => {
+    it('rechaza duraciones inválidas: menores a 1, mayores a 43200 y decimales', () => {
       expect(RoundDurationSchema.safeParse(0).success).toBe(false);
       expect(RoundDurationSchema.safeParse(-5).success).toBe(false);
-      expect(RoundDurationSchema.safeParse(10081).success).toBe(false);
+      expect(RoundDurationSchema.safeParse(10081).success).toBe(true);
+      expect(RoundDurationSchema.safeParse(43200).success).toBe(true);
+      expect(RoundDurationSchema.safeParse(43201).success).toBe(false);
       expect(RoundDurationSchema.safeParse(50000).success).toBe(false);
       expect(RoundDurationSchema.safeParse(15.5).success).toBe(false);
     });
