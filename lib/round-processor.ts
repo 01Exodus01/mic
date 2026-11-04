@@ -173,8 +173,8 @@ export async function processRoundConsensus(roomId: string): Promise<ProcessRoun
           codigoCiego: code,
           position: v.position,
           posicion: v.position,
-          justification: v.justification,
-          justificacion: v.justification,
+          justification: v.justification ?? '',
+          justificacion: v.justification ?? '',
         });
       }
     }

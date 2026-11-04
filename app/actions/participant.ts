@@ -594,9 +594,10 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     // Map votes to support both field naming styles
     const mappedVotes = myVotes.map((v) => ({
       ...v,
+      justification: v.justification ?? '',
       proyecto_id: v.option_id,
       posicion: v.position,
-      justificacion: v.justification,
+      justificacion: v.justification ?? '',
     }));
 
     // Get latest report for feedback

@@ -14,6 +14,17 @@ enum AggregationMethod {
   KEMENY_YOUNG
 }
 
+enum ReasonSide {
+  FOR
+  AGAINST
+}
+
+enum EventActor {
+  HOST
+  PARTICIPANT
+  SYSTEM
+}
+
 enum RoomStatus {
   DRAFT
   ROUND_OPEN
@@ -52,6 +63,8 @@ model Room {
   options       Option[]
   participants  Participant[]
   reports       RoundReport[]
+  voteRevisions VoteRevision[]
+  events        RoomEvent[]
 
   @@index([status, deadline])
   @@index([host_id])
@@ -79,6 +92,8 @@ model Participant {
   is_retired Boolean  @default(false)
   created_at DateTime @default(now())
   votes      Vote[]
+  voteRevisions VoteRevision[]
+  events     RoomEvent[]
 
   @@unique([room_id, nickname])
   @@unique([room_id, blind_code])
@@ -92,9 +107,10 @@ model Vote {
   option_id      String
   option         Option      @relation(fields: [option_id], references: [id], onDelete: Cascade)
   position       Int         // 1..n strict ballot
-  justification  String      @db.VarChar(200) // 25..200 characters
+  justification  String?     @db.VarChar(200) // legacy single reason; null for votes that use VoteReason
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt
+  reasons        VoteReason[]
 
   @@unique([participant_id, round, option_id])
   @@unique([participant_id, round, position])
@@ -114,4 +130,51 @@ model RoundReport {
   created_at         DateTime @default(now())
 
   @@unique([room_id, round])
+}
+
+// Optional reasons for or against an option, several per side. Stored verbatim.
+model VoteReason {
+  id          String     @id @default(cuid())
+  vote_id     String
+  vote        Vote       @relation(fields: [vote_id], references: [id], onDelete: Cascade)
+  side        ReasonSide
+  text        String     @db.VarChar(200)
+  order_index Int // 0-based order within the side
+  created_at  DateTime   @default(now())
+
+  @@unique([vote_id, side, order_index])
+  @@index([vote_id])
+}
+
+// Append-only history of every distinct ballot a participant submitted in a round.
+model VoteRevision {
+  id             String      @id @default(cuid())
+  room_id        String
+  room           Room        @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  participant_id String
+  participant    Participant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+  round          Int
+  version        Int // 1, 2, 3... per participant and round
+  snapshot       Json // positions and reasons as submitted
+  created_at     DateTime    @default(now())
+
+  @@unique([participant_id, round, version])
+  @@index([room_id, round])
+}
+
+// Room activity log. Never stores ballot content.
+model RoomEvent {
+  id             String       @id @default(cuid())
+  room_id        String
+  room           Room         @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  round          Int?
+  type           String       @db.VarChar(40)
+  actor          EventActor
+  participant_id String?
+  participant    Participant? @relation(fields: [participant_id], references: [id], onDelete: SetNull)
+  data           Json?
+  created_at     DateTime     @default(now())
+
+  @@index([room_id, created_at])
+  @@index([room_id, type, round])
 }
