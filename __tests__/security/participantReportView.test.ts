@@ -172,7 +172,6 @@ describe('PT-02: vista del informe para participantes', () => {
     const report = data.latestReport!;
 
     expect(report.obtained_tau).toBe(0.42);
-    expect(report.tau_obtenido).toBe(0.42);
     expect(report.collective_ranking).toEqual(storedReport.collective_ranking);
     expect(report.ranking_colectivo).toEqual(storedReport.collective_ranking);
     expect(report.arguments_json['opt-1']).toEqual([

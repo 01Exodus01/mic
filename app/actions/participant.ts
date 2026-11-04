@@ -109,7 +109,6 @@ export interface ParticipantReportView {
   round: number;
   effective_voters: number;
   obtained_tau: number;
-  tau_obtenido: number;
   collective_ranking: ParticipantRankingView[];
   ranking_colectivo: ParticipantRankingView[];
   arguments_json: Record<string, ParticipantArgumentView[]>;
@@ -221,7 +220,6 @@ function toParticipantReportView(
     round: report.round,
     effective_voters: report.effective_voters,
     obtained_tau: report.obtained_tau,
-    tau_obtenido: report.obtained_tau,
     collective_ranking: ranking,
     ranking_colectivo: ranking,
     arguments_json: args,

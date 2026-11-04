@@ -37,7 +37,6 @@ interface RoundReportData {
   effective_voters?: number;
   ranking_colectivo?: CollectiveRankingItem[];
   collective_ranking?: CollectiveRankingItem[];
-  tau_obtenido?: number;
   obtained_tau?: number;
   argumentos_json?: Record<string, BlindArgumentItem[]>;
   arguments_json?: Record<string, BlindArgumentItem[]>;
@@ -136,7 +135,7 @@ export default function ParticipantFeedbackPage() {
 
 
   // Métricas de acuerdo en %
-  const tauRaw = latestReport?.obtained_tau ?? latestReport?.tau_obtenido ?? 0;
+  const tauRaw = latestReport?.obtained_tau ?? 0;
   const tauPct = Math.round(tauRaw * 100);
   const requiredPct = Math.round((sala.tauThreshold || 0.8) * 100);
   const agreementMet = tauPct >= requiredPct;
