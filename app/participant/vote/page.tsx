@@ -3,7 +3,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getParticipantRoomView, submitVote, logoutParticipant, VoteEntry } from '@/app/actions/participant';
-import { SingleVoteEntrySchema, getUnicodeLength, sanitizeText } from '@/lib/validations';
+import ReasonListsField, {
+  ReasonListsSummary,
+  EMPTY_REASONS,
+  cleanReasons,
+  reasonError,
+  type OptionReasons,
+} from '@/components/ReasonListsField';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { GripVertical, ArrowUp, ArrowDown, Clock, LogOut, AlertCircle, Edit3, CheckCircle2 } from 'lucide-react';
@@ -46,6 +52,8 @@ interface ParticipantRoomData {
     position?: number;
     justificacion?: string;
     justification?: string;
+    reasonsFor?: string[];
+    reasonsAgainst?: string[];
   }>;
   latestReport: unknown;
   isExpired: boolean;
@@ -58,9 +66,9 @@ export default function ParticipantVotePage() {
   const [submitting, setSubmitting] = useState(false);
   const [roomData, setRoomData] = useState<ParticipantRoomData | null>(null);
   const [orderedOptions, setOrderedOptions] = useState<OptionItem[]>([]);
-  const [justifications, setJustifications] = useState<Record<string, string>>({});
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
+  const [reasonsByOption, setReasonsByOption] = useState<Record<string, OptionReasons>>({});
+  // Single reason written before PT-13, kept so editing does not drop it
+  const [legacyJustifications, setLegacyJustifications] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isExpiredLocally, setIsExpiredLocally] = useState<boolean>(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -70,22 +78,22 @@ export default function ParticipantVotePage() {
   const currentRoundRef = useRef<number | null>(null);
 
   const serverOffsetRef = useRef<number>(0);
-  const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
   // Mobile touch references
   const touchStartY = useRef<number>(0);
   const touchCurrentIndex = useRef<number | null>(null);
 
-  const validateOptionReason = (optionId: string, text: string): string | null => {
-    const res = SingleVoteEntrySchema.safeParse({
-      optionId,
-      position: 1,
-      justification: text,
-    });
-    if (!res.success) {
-      return res.error.errors[0]?.message || 'Mínimo 25 caracteres.';
+  const syncReasonsFromVotes = (myVotes: ParticipantRoomData['myVotes']) => {
+    const reasonMap: Record<string, OptionReasons> = {};
+    const legacyMap: Record<string, string> = {};
+    for (const v of myVotes) {
+      const optId = (v.option_id || v.proyecto_id)!;
+      reasonMap[optId] = { for: [...(v.reasonsFor ?? [])], against: [...(v.reasonsAgainst ?? [])] };
+      const legacy = v.justification || v.justificacion || '';
+      if (legacy) legacyMap[optId] = legacy;
     }
-    return null;
+    setReasonsByOption(reasonMap);
+    setLegacyJustifications(legacyMap);
   };
 
   const loadData = useCallback(async () => {
@@ -132,13 +140,7 @@ export default function ParticipantVotePage() {
             return posA - posB;
           });
           setOrderedOptions(sorted);
-
-          const justMap: Record<string, string> = {};
-          for (const v of myVotes) {
-            const optId = (v.option_id || v.proyecto_id)!;
-            justMap[optId] = v.justification || v.justificacion || '';
-          }
-          setJustifications(justMap);
+          syncReasonsFromVotes(myVotes);
         } else {
           setOrderedOptions(
             [...options].sort((a, b) => {
@@ -160,13 +162,7 @@ export default function ParticipantVotePage() {
             return posA - posB;
           });
           setOrderedOptions(sorted);
-
-          const justMap: Record<string, string> = {};
-          for (const v of myVotes) {
-            const optId = (v.option_id || v.proyecto_id)!;
-            justMap[optId] = v.justification || v.justificacion || '';
-          }
-          setJustifications(justMap);
+          syncReasonsFromVotes(myVotes);
         }
       }
     } catch (err: unknown) {
@@ -311,50 +307,39 @@ export default function ParticipantVotePage() {
     setDraggedIndex(null);
   };
 
-  // Field validation events
-  const handleJustificationBlur = (optionId: string) => {
-    setTouchedFields((prev) => ({ ...prev, [optionId]: true }));
-    const err = validateOptionReason(optionId, justifications[optionId] || '');
-    setFieldErrors((prev) => ({ ...prev, [optionId]: err }));
+  const handleReasonsChange = (optionId: string, next: OptionReasons) => {
+    setReasonsByOption((prev) => ({ ...prev, [optionId]: next }));
   };
 
-  const handleJustificationChange = (optionId: string, text: string) => {
-    setJustifications((prev) => ({ ...prev, [optionId]: text }));
-    if (touchedFields[optionId]) {
-      const err = validateOptionReason(optionId, text);
-      setFieldErrors((prev) => ({ ...prev, [optionId]: err }));
+  // Reasons are optional: the only possible problem is a reason over the limit
+  const firstReasonErrorField = (): string | null => {
+    for (const opt of orderedOptions) {
+      const value = reasonsByOption[opt.id] ?? EMPTY_REASONS;
+      for (const side of ['for', 'against'] as const) {
+        const index = value[side].findIndex((t) => reasonError(t) !== null);
+        if (index >= 0) return `reason-${opt.id}-${side}-${index}`;
+      }
     }
+    return null;
   };
 
   const handleSubmit = async () => {
-    const nextTouched: Record<string, boolean> = {};
-    const nextErrors: Record<string, string | null> = {};
-    let firstInvalidOptId: string | null = null;
-
-    for (let i = 0; i < orderedOptions.length; i++) {
-      const opt = orderedOptions[i];
-      nextTouched[opt.id] = true;
-      const text = justifications[opt.id] || '';
-      const err = validateOptionReason(opt.id, text);
-      nextErrors[opt.id] = err;
-      if (err && !firstInvalidOptId) {
-        firstInvalidOptId = opt.id;
-      }
-    }
-
-    setTouchedFields(nextTouched);
-    setFieldErrors(nextErrors);
-
-    if (firstInvalidOptId) {
-      textareaRefs.current[firstInvalidOptId]?.focus();
+    const invalidField = firstReasonErrorField();
+    if (invalidField) {
+      document.getElementById(invalidField)?.focus();
       return;
     }
 
-    const payload: VoteEntry[] = orderedOptions.map((opt, index) => ({
-      optionId: opt.id,
-      position: index + 1,
-      justification: sanitizeText(justifications[opt.id] || ''),
-    }));
+    const payload: VoteEntry[] = orderedOptions.map((opt, index) => {
+      const value = reasonsByOption[opt.id] ?? EMPTY_REASONS;
+      return {
+        optionId: opt.id,
+        position: index + 1,
+        reasonsFor: cleanReasons(value.for),
+        reasonsAgainst: cleanReasons(value.against),
+        justification: legacyJustifications[opt.id] || undefined,
+      };
+    });
 
     setSubmitting(true);
     try {
@@ -407,11 +392,10 @@ export default function ParticipantVotePage() {
 
   const showReadOnlySummary = hasVoted && (!isEditing || isClosed);
 
-  // Count invalid reasons
+  // Reasons over the length limit (only possible if pasted around maxLength)
   const invalidReasonsCount = orderedOptions.filter((opt) => {
-    const text = justifications[opt.id] || '';
-    const err = validateOptionReason(opt.id, text);
-    return Boolean(err);
+    const value = reasonsByOption[opt.id] ?? EMPTY_REASONS;
+    return [...value.for, ...value.against].some((t) => reasonError(t) !== null);
   }).length;
 
   return (
@@ -481,7 +465,7 @@ export default function ParticipantVotePage() {
           </div>
         ) : (
           <p className="text-xs text-[#5A554E] mt-2 leading-relaxed">
-            Ordena las opciones de mayor a menor preferencia arrastrando o con las flechas. Escribe la razón de cada una (mínimo 25 y máximo 200 caracteres).
+            Ordena las opciones de mayor a menor preferencia arrastrando o con las flechas. Si quieres, escribe razones a favor o en contra de cada una.
           </p>
         )}
       </div>
@@ -494,7 +478,6 @@ export default function ParticipantVotePage() {
               const rank = index + 1;
               const title = option.title || option.titulo;
               const description = option.description || option.descripcion;
-              const reasonText = justifications[option.id] || '';
 
               return (
                 <div
@@ -518,12 +501,10 @@ export default function ParticipantVotePage() {
                   </div>
 
                   <div className="pt-2 border-t border-[#D9D5CC]/60">
-                    <span className="text-[11px] font-medium text-[#5A554E] block mb-1">
-                      Razón indicada:
-                    </span>
-                    <p className="text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80">
-                      {reasonText}
-                    </p>
+                    <ReasonListsSummary
+                      value={reasonsByOption[option.id] ?? EMPTY_REASONS}
+                      legacyText={legacyJustifications[option.id]}
+                    />
                   </div>
                 </div>
               );
@@ -552,10 +533,6 @@ export default function ParticipantVotePage() {
         <div className="space-y-4">
           {orderedOptions.map((option, index) => {
             const rank = index + 1;
-            const text = justifications[option.id] || '';
-            const trimmedLen = getUnicodeLength(sanitizeText(text));
-            const isTouched = Boolean(touchedFields[option.id]);
-            const errorMsg = isTouched ? fieldErrors[option.id] : null;
             const isDragging = draggedIndex === index;
             const title = option.title || option.titulo;
             const description = option.description || option.descripcion;
@@ -625,60 +602,17 @@ export default function ParticipantVotePage() {
                       </p>
                     )}
 
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <label
-                          htmlFor={`reason-${option.id}`}
-                          className="text-[#14171A] font-medium"
-                        >
-                          Razón de la elección
-                        </label>
-                        <span
-                          className={`font-mono text-xs font-medium ${
-                            trimmedLen < 25
-                              ? 'text-[#B7791F]'
-                              : trimmedLen <= 200
-                              ? 'text-[#2F7D4F]'
-                              : 'text-[#B42318]'
-                          }`}
-                        >
-                          {trimmedLen}/200
-                        </span>
-                      </div>
-
-                      <textarea
-                        ref={(el) => {
-                          textareaRefs.current[option.id] = el;
-                        }}
-                        id={`reason-${option.id}`}
-                        rows={2}
-                        maxLength={200}
-                        disabled={isClosed}
-                        placeholder="Escribe la razón de este orden (mínimo 25 y máximo 200 caracteres)..."
-                        value={text}
-                        onChange={(e) => handleJustificationChange(option.id, e.target.value)}
-                        onBlur={() => handleJustificationBlur(option.id)}
-                        aria-invalid={Boolean(errorMsg)}
-                        aria-describedby={errorMsg ? `reason-${option.id}-error` : undefined}
-                        className={`w-full p-2.5 rounded-[6px] border bg-[#F6F4EF] text-sm text-[#14171A] placeholder:text-[#5A554E]/60 focus:outline-none transition-colors ${
-                          errorMsg
-                            ? 'border-[#B42318] focus:border-[#B42318]'
-                            : trimmedLen >= 25 && trimmedLen <= 200
-                            ? 'border-[#2F7D4F] focus:border-[#2F7D4F]'
-                            : 'border-[#D9D5CC] focus:border-[#E4572E]'
-                        }`}
-                      />
-                      {errorMsg && (
-                        <p
-                          id={`reason-${option.id}-error`}
-                          role="alert"
-                          className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
-                        >
-                          <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
-                          <span>{errorMsg}</span>
-                        </p>
-                      )}
-                    </div>
+                    {legacyJustifications[option.id] && (
+                      <p className="mt-3 text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words">
+                        {legacyJustifications[option.id]}
+                      </p>
+                    )}
+                    <ReasonListsField
+                      optionId={option.id}
+                      value={reasonsByOption[option.id] ?? EMPTY_REASONS}
+                      onChange={(next) => handleReasonsChange(option.id, next)}
+                      disabled={isClosed}
+                    />
                   </div>
                 </div>
               </div>
@@ -715,8 +649,8 @@ export default function ParticipantVotePage() {
                   {hasVoted ? 'Guardar cambios' : 'Enviar voto'}
                 </button>
                 <p className="text-xs text-[#5A554E] text-center">
-                  Falta escribir la razón de {invalidReasonsCount}{' '}
-                  {invalidReasonsCount === 1 ? 'opción' : 'opciones'} (mínimo 25 caracteres)
+                  Hay razones de más de 200 caracteres en {invalidReasonsCount}{' '}
+                  {invalidReasonsCount === 1 ? 'opción' : 'opciones'}
                 </p>
               </div>
             ) : (
