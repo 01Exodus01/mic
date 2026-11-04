@@ -68,7 +68,7 @@ interface RoomDetails {
   max_members: number;
   tau_threshold: number;
   max_rounds: number;
-  ronda_actual: number;
+  current_round: number;
   estado: string;
   deadline: string | null;
   proyectos: ProjectItem[];
@@ -358,7 +358,7 @@ export default function RoomHostPage() {
     try {
       const res = await openNextRound(salaId, selectedMinutes);
       if (res.success) {
-        toast.success(`Ronda ${data ? data.sala.ronda_actual + 1 : ''} abierta.`);
+        toast.success(`Ronda ${data ? data.sala.current_round + 1 : ''} abierta.`);
         await fetchStatus();
       } else {
         toast.error(res.error || 'No fue posible abrir la siguiente ronda.');
@@ -511,7 +511,7 @@ export default function RoomHostPage() {
               {sala.title}
             </h1>
             <p className="text-xs text-[#5A554E]">
-              Regla de agregación: {sala.method} · {sala.proyectos.length} opciones · Ronda {sala.ronda_actual} de {sala.max_rounds}
+              Regla de agregación: {sala.method} · {sala.proyectos.length} opciones · Ronda {sala.current_round} de {sala.max_rounds}
               {deadlineHour ? ` · Hora límite: ${deadlineHour}` : ''}
             </p>
             <RoomSettingsSummary room={sala} />
@@ -585,7 +585,7 @@ export default function RoomHostPage() {
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
-                Votación de la Ronda {sala.ronda_actual} en curso
+                Votación de la Ronda {sala.current_round} en curso
               </h2>
               <p className="text-xs text-[#5A554E] mt-0.5">
                 Votos recibidos: {votesCount} de {totalParticipants} participantes. Hora límite fijada: {deadlineHour || 'Sin hora límite'}.
@@ -677,20 +677,20 @@ export default function RoomHostPage() {
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
-                Revisión de argumentos de la Ronda {sala.ronda_actual}
+                Revisión de argumentos de la Ronda {sala.current_round}
               </h2>
               <p className="text-xs text-[#5A554E] mt-0.5">
                 Los participantes están consultando los argumentos de los demás. Puedes habilitar la siguiente ronda de reordenación.
               </p>
             </div>
 
-            {sala.ronda_actual < sala.max_rounds ? (
+            {sala.current_round < sala.max_rounds ? (
               <div className="space-y-4">
                 <DurationPicker
                   value={selectedMinutes}
                   onChange={setSelectedMinutes}
                   serverTime={data?.serverTime}
-                  label={`Plazo para la Ronda ${sala.ronda_actual + 1}`}
+                  label={`Plazo para la Ronda ${sala.current_round + 1}`}
                 />
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -701,7 +701,7 @@ export default function RoomHostPage() {
                     disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
                     className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                   >
-                    {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.ronda_actual + 1}`}
+                    {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.current_round + 1}`}
                   </button>
 
                   {/* Acción secundaria en texto plano */}
@@ -730,7 +730,7 @@ export default function RoomHostPage() {
               Actividad finalizada
             </h2>
             <p className="text-xs text-[#5A554E]">
-              El proceso concluyó tras {sala.ronda_actual} rondas. Los datos y argumentos recopilados se conservan en modo de lectura.
+              El proceso concluyó tras {sala.current_round} rondas. Los datos y argumentos recopilados se conservan en modo de lectura.
             </p>
           </div>
         )}
@@ -918,7 +918,7 @@ export default function RoomHostPage() {
       </section>
 
       <div className="pb-6 border-b border-[#D9D5CC]">
-        <ParticipationTable roomId={sala.id} refreshKey={`${sala.estado}:${sala.ronda_actual}:${votesCount}:${totalParticipants}`} />
+        <ParticipationTable roomId={sala.id} refreshKey={`${sala.estado}:${sala.current_round}:${votesCount}:${totalParticipants}`} />
       </div>
 
       {/* 6. Tabla Densa de Participantes */}
