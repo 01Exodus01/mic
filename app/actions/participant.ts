@@ -49,7 +49,6 @@ export interface ParticipantRoomViewData {
     deadline: Date | null;
     method: AggregationMethod;
     tauThreshold: number;
-    tauUmbral: number;
     closeWhenAllVoted: boolean;
   };
   options: Array<{
@@ -1025,7 +1024,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
           deadline: room.deadline,
           method: room.method,
           tauThreshold: room.tau_threshold,
-          tauUmbral: room.tau_threshold,
           closeWhenAllVoted: room.close_when_all_voted,
         },
         options: mappedOptions,

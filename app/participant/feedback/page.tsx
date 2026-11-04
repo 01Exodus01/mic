@@ -64,7 +64,7 @@ interface FeedbackRoomData {
     maxRounds: number;
     deadline: string | null;
     method: string;
-    tauUmbral: number;
+    tauThreshold: number;
   };
   proyectos: OptionItem[];
   session: {
@@ -146,7 +146,7 @@ export default function ParticipantFeedbackPage() {
   // Métricas de acuerdo en %
   const tauRaw = latestReport?.obtained_tau ?? latestReport?.tau_obtenido ?? 0;
   const tauPct = Math.round(tauRaw * 100);
-  const requiredPct = Math.round((sala.tauUmbral || 0.8) * 100);
+  const requiredPct = Math.round((sala.tauThreshold || 0.8) * 100);
   const agreementMet = tauPct >= requiredPct;
 
 
