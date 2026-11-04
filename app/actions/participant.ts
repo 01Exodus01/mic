@@ -44,7 +44,6 @@ export interface ParticipantRoomViewData {
     id: string;
     title: string;
     status: RoomStatus;
-    estado: RoomStatus;
     currentRound: number;
     rondaActual: number;
     maxRounds: number;
@@ -1024,7 +1023,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
           id: room.id,
           title: room.title,
           status: room.status,
-          estado: room.status,
           currentRound: room.current_round,
           rondaActual: room.current_round,
           maxRounds: room.max_rounds,

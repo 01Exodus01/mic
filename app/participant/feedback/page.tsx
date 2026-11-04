@@ -59,7 +59,7 @@ interface FeedbackRoomData {
   sala: {
     id: string;
     title: string;
-    estado: string;
+    status: string;
     rondaActual: number;
     maxRondas: number;
     deadline: string | null;
@@ -95,7 +95,7 @@ export default function ParticipantFeedbackPage() {
       setRoomData(data);
 
       // Si el anfitrión abre la siguiente ronda, volver a la votación
-      if (data.sala.estado === 'ROUND_OPEN') {
+      if (data.sala.status === 'ROUND_OPEN') {
         router.push('/participant/vote');
         return;
       }
@@ -131,7 +131,7 @@ export default function ParticipantFeedbackPage() {
   }
 
   const { sala, proyectos, latestReport } = roomData;
-  const isConcluded = sala.estado === 'CONCLUDED';
+  const isConcluded = sala.status === 'CONCLUDED';
   const collectiveRanking: CollectiveRankingItem[] =
     latestReport?.collective_ranking || latestReport?.ranking_colectivo || [];
 

@@ -39,7 +39,7 @@ interface ParticipantRoomData {
   sala: {
     id: string;
     title: string;
-    estado: string;
+    status: string;
     rondaActual: number;
     maxRondas: number;
     deadline: string | null;
@@ -123,7 +123,7 @@ export default function ParticipantVotePage() {
         return;
       }
 
-      if (data.sala.estado === 'ROUND_FEEDBACK' || data.sala.estado === 'CONCLUDED') {
+      if (data.sala.status === 'ROUND_FEEDBACK' || data.sala.status === 'CONCLUDED') {
         router.push('/participant/feedback');
         return;
       }
@@ -214,7 +214,7 @@ export default function ParticipantVotePage() {
 
   // Server-time-based countdown timer
   useEffect(() => {
-    if (!roomData?.sala?.deadline || roomData?.sala?.estado !== 'ROUND_OPEN') {
+    if (!roomData?.sala?.deadline || roomData?.sala?.status !== 'ROUND_OPEN') {
       setTimeLeft('');
       setIsExpiredLocally(false);
       return;
@@ -239,7 +239,7 @@ export default function ParticipantVotePage() {
     updateTimer();
     const tInterval = setInterval(updateTimer, 1000);
     return () => clearInterval(tInterval);
-  }, [roomData?.sala?.deadline, roomData?.sala?.estado]);
+  }, [roomData?.sala?.deadline, roomData?.sala?.status]);
 
   // Reordering helpers
   const moveUp = (index: number) => {
@@ -377,7 +377,7 @@ export default function ParticipantVotePage() {
   }
 
   const isClosed =
-    roomData?.sala?.estado !== 'ROUND_OPEN' ||
+    roomData?.sala?.status !== 'ROUND_OPEN' ||
     (roomData?.isExpired ?? false) ||
     isExpiredLocally;
 
