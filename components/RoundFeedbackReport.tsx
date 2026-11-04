@@ -98,6 +98,29 @@ function ReasonList({ title, reasons }: { title: string; reasons: FeedbackReason
   );
 }
 
+/**
+ * Compact line next to an option on the vote screen (PT-20): group position in
+ * the previous round and, on demand, its reasons for and against.
+ */
+export function OptionPreviousRound({ optionId, report }: { optionId: string; report: FeedbackReportData }) {
+  const ranking = report.collective_ranking ?? [];
+  const midRank = ranking.find((r) => r.id === optionId)?.midRank;
+  if (midRank === undefined) return null;
+  const reasons = report.reasonsByOption?.[optionId] ?? { reasonsFor: [], reasonsAgainst: [] };
+  const total = reasons.reasonsFor.length + reasons.reasonsAgainst.length;
+  return (
+    <details className="mt-2 text-xs">
+      <summary className="cursor-pointer select-none min-h-[44px] flex items-center text-[#5A554E]">
+        Ronda anterior: grupo {formatRankPosition(midRank, ranking).label} · {total} {total === 1 ? 'razón' : 'razones'}
+      </summary>
+      <div className="space-y-3 pt-1">
+        <ReasonList title="A favor" reasons={reasons.reasonsFor} />
+        <ReasonList title="En contra" reasons={reasons.reasonsAgainst} />
+      </div>
+    </details>
+  );
+}
+
 export default function RoundFeedbackReport({
   options,
   report,

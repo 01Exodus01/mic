@@ -791,11 +791,14 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
       reasonsAgainst: reasons.filter((r) => r.side === 'AGAINST').map((r) => r.text),
     }));
 
-    // Get latest report for feedback
+    // Get latest report for feedback. PT-20: while round r > 1 is open, the
+    // report of round r - 1 stays available on the vote screen.
     const latestReport =
       room.status === 'ROUND_FEEDBACK' || room.status === 'CONCLUDED'
         ? room.reports[room.reports.length - 1] ?? null
-        : null;
+        : room.status === 'ROUND_OPEN' && room.current_round > 1
+          ? room.reports.find((r) => r.round === room.current_round - 1) ?? null
+          : null;
 
     const reportVotes = latestReport
       ? latestReport.round === room.current_round

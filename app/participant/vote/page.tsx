@@ -10,6 +10,7 @@ import ReasonListsField, {
   reasonError,
   type OptionReasons,
 } from '@/components/ReasonListsField';
+import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { GripVertical, ArrowUp, ArrowDown, Clock, LogOut, AlertCircle, Edit3, CheckCircle2 } from 'lucide-react';
@@ -55,7 +56,7 @@ interface ParticipantRoomData {
     reasonsFor?: string[];
     reasonsAgainst?: string[];
   }>;
-  latestReport: unknown;
+  latestReport: FeedbackReportData | null;
   isExpired: boolean;
   serverTime?: string;
 }
@@ -470,6 +471,18 @@ export default function ParticipantVotePage() {
         )}
       </div>
 
+      {/* PT-20: results of the previous round, collapsible, only from round 2 on */}
+      {roomData?.latestReport && (roomData.sala.rondaActual ?? 1) > 1 && (
+        <details className="mb-6 rounded-[6px] border border-[#D9D5CC] bg-white">
+          <summary className="cursor-pointer select-none p-4 min-h-[44px] text-sm font-semibold text-[#14171A]">
+            Resultados de la ronda anterior
+          </summary>
+          <div className="px-4 pb-4">
+            <RoundFeedbackReport options={roomData.proyectos} report={roomData.latestReport} />
+          </div>
+        </details>
+      )}
+
       {/* READ-ONLY SUMMARY (AUD-06) */}
       {showReadOnlySummary ? (
         <div className="space-y-4">
@@ -606,6 +619,9 @@ export default function ParticipantVotePage() {
                       <p className="mt-3 text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words">
                         {legacyJustifications[option.id]}
                       </p>
+                    )}
+                    {roomData?.latestReport && (roomData.sala.rondaActual ?? 1) > 1 && (
+                      <OptionPreviousRound optionId={option.id} report={roomData.latestReport} />
                     )}
                     <ReasonListsField
                       optionId={option.id}
