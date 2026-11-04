@@ -44,7 +44,6 @@ export interface CreateRoomInput {
   method: AggregationMethod;
   minMembers?: number;
   maxMembers?: number;
-  maxMiembros?: number;
   tauThreshold?: number;
   tauUmbral?: number;
   maxRounds?: number;
@@ -121,7 +120,7 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
     const hostId = await requireHost();
 
     // Explicit rejection of missing numeric fields (no hidden fallbacks)
-    const rawMaxMembers = input.maxMembers !== undefined ? input.maxMembers : input.maxMiembros;
+    const rawMaxMembers = input.maxMembers;
     if (rawMaxMembers === undefined || rawMaxMembers === null) {
       throw Errors.INVALID_BALLOT('El máximo de participantes es obligatorio.');
     }
