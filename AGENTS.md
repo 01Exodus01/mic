@@ -36,6 +36,9 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Las columnas de los CSV son un contrato con R/Python. Cambiarlas exige
   actualizar `docs/data-dictionary.md` y avisar.
 - Las rondas cerradas (informes de ronda) son inmutables.
+- Todo cambio en el cálculo (`lib/algorithms`, qué boletas cuentan, desempate,
+  variante de concordancia) exige subir `PROCEDURE_VERSION` en
+  `lib/round-processor.ts`; cada informe la guarda en `__procedure` (PT-29).
 
 ## Reglas de negocio
 - Mínimo de participantes: constante única MIN_PARTICIPANTS = 3, no editable ni

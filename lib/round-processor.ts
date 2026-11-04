@@ -21,6 +21,16 @@ import type { RankingEntry, BlindArgumentEntry, BlindArgumentsMap, ReportReasons
 
 export type EstadoSala = RoomStatus;
 
+/**
+ * Version of the computation procedure stored in every round report (PT-29).
+ * Raise it whenever the computation changes (lib/algorithms, what counts as a
+ * ballot, tie-break or concordance handling). __tests__/integration/
+ * procedureVersion.test.ts fails if lib/algorithms changes without a new version.
+ *   r-fast-cr-1: reports before PT-29 (no __procedure key)
+ *   r-fast-cr-2: declared tie-break, concordance variant, expelled ballots excluded
+ */
+export const PROCEDURE_VERSION = 'r-fast-cr-2';
+
 export type BlindArgumentItem = BlindArgumentEntry;
 export type BlindArgumentsByOption = BlindArgumentsMap;
 export type BlindArgumentsByProject = BlindArgumentsByOption;
@@ -273,6 +283,16 @@ export async function processRoundConsensus(
       __tieBreak: tieBreak ?? { rule: 'NONE', applied: false, tiedGroups: [] },
       // PT-17: concordance variant used for tau* (cix = (tau + 1) / 2 in both)
       __concordance: { variant: engineOutput.result.concordanceVariant ?? 'WITH_TIES' },
+      // PT-29: configuration and procedure version used to compute this round
+      __procedure: {
+        version: PROCEDURE_VERSION,
+        method: room.method,
+        tauThreshold: room.tau_threshold,
+        maxRounds: room.max_rounds,
+        minParticipants: minRequired,
+        tieBreakRule: room.tie_break_rule,
+        concordanceVariant: room.concordance_variant,
+      },
       __metrics: {
         tauStar,
         stuartTauStar: stuartTauStar ?? tauStar,
