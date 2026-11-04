@@ -32,6 +32,7 @@ import {
   sanitizeText,
 } from '@/lib/validations';
 import type { ActionResult } from '@/types/actions';
+import { buildVoteSnapshot, isSameSnapshot } from '@/lib/vote-revision';
 import type { ParticipantSessionPayload } from '@/lib/participant-session';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -539,6 +540,24 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
             justification: vote.justification,
           })),
         });
+
+        // PT-09: append a revision only when the ballot content changed
+        const snapshot = buildVoteSnapshot(validatedVotes);
+        const lastRevision = await tx.voteRevision.findFirst({
+          where: { participant_id: session.participantId, round: room.current_round },
+          orderBy: { version: 'desc' },
+        });
+        if (!lastRevision || !isSameSnapshot(lastRevision.snapshot, snapshot)) {
+          await tx.voteRevision.create({
+            data: {
+              room_id: room.id,
+              participant_id: session.participantId,
+              round: room.current_round,
+              version: (lastRevision?.version ?? 0) + 1,
+              snapshot: snapshot as unknown as Prisma.InputJsonValue,
+            },
+          });
+        }
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
