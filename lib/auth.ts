@@ -88,7 +88,7 @@ export const authOptions: NextAuthOptions = {
       name: useSecure ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
         secure: useSecure,
       },
