@@ -60,7 +60,7 @@ interface FeedbackRoomData {
     id: string;
     title: string;
     status: string;
-    rondaActual: number;
+    currentRound: number;
     maxRondas: number;
     deadline: string | null;
     metodo: string;
@@ -175,7 +175,7 @@ export default function ParticipantFeedbackPage() {
       <div className="mb-8 border-b border-[#D9D5CC] pb-6">
         <div className="flex items-center justify-between text-xs text-[#5A554E] font-mono mb-2">
           <span>
-            {isConcluded ? 'Finalizada' : `Revisión de argumentos • Ronda ${sala.rondaActual}`}
+            {isConcluded ? 'Finalizada' : `Revisión de argumentos • Ronda ${sala.currentRound}`}
           </span>
           <span className="border border-[#D9D5CC] px-2 py-0.5 rounded-[999px] text-[#14171A]">
             {formatParticipantSignature(roomData.session.blindCode)}

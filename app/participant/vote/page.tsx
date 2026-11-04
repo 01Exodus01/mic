@@ -40,7 +40,7 @@ interface ParticipantRoomData {
     id: string;
     title: string;
     status: string;
-    rondaActual: number;
+    currentRound: number;
     maxRondas: number;
     deadline: string | null;
     metodo: string;
@@ -131,7 +131,7 @@ export default function ParticipantVotePage() {
       const options = data.proyectos || [];
       const myVotes = data.myVotes || [];
       const hasVoted = Boolean(myVotes && myVotes.length === options.length);
-      const currentRound = data.sala?.rondaActual ?? 1;
+      const currentRound = data.sala?.currentRound ?? 1;
 
       if (currentRoundRef.current !== currentRound) {
         currentRoundRef.current = currentRound;
@@ -424,7 +424,7 @@ export default function ParticipantVotePage() {
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs text-[#5A554E] font-mono mb-1.5">
           <span>
-            Ronda {roomData?.sala?.rondaActual} de {roomData?.sala?.maxRondas}
+            Ronda {roomData?.sala?.currentRound} de {roomData?.sala?.maxRondas}
           </span>
           {deadlineHour && (
             <span className="flex items-center gap-1">
@@ -472,7 +472,7 @@ export default function ParticipantVotePage() {
       </div>
 
       {/* PT-20: results of the previous round, collapsible, only from round 2 on */}
-      {roomData?.latestReport && (roomData.sala.rondaActual ?? 1) > 1 && (
+      {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
         <details className="mb-6 rounded-[6px] border border-[#D9D5CC] bg-white">
           <summary className="cursor-pointer select-none p-4 min-h-[44px] text-sm font-semibold text-[#14171A]">
             Resultados de la ronda anterior
@@ -620,7 +620,7 @@ export default function ParticipantVotePage() {
                         {legacyJustifications[option.id]}
                       </p>
                     )}
-                    {roomData?.latestReport && (roomData.sala.rondaActual ?? 1) > 1 && (
+                    {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
                       <OptionPreviousRound optionId={option.id} report={roomData.latestReport} />
                     )}
                     <ReasonListsField
