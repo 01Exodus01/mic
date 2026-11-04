@@ -64,7 +64,7 @@ interface RoomDetails {
   id: string;
   pin: string;
   title: string;
-  metodo: string;
+  method: string;
   min_miembros: number;
   max_miembros: number;
   tau_umbral: number;
@@ -512,7 +512,7 @@ export default function RoomHostPage() {
               {sala.title}
             </h1>
             <p className="text-xs text-[#5A554E]">
-              Regla de agregación: {sala.metodo} · {sala.proyectos.length} opciones · Ronda {sala.ronda_actual} de {sala.max_rondas}
+              Regla de agregación: {sala.method} · {sala.proyectos.length} opciones · Ronda {sala.ronda_actual} de {sala.max_rondas}
               {deadlineHour ? ` · Hora límite: ${deadlineHour}` : ''}
             </p>
             <RoomSettingsSummary room={sala} />
@@ -824,7 +824,7 @@ export default function RoomHostPage() {
             </div>
             <div>
               <span className="text-[#14171A] font-semibold">Regla de agregación:</span>{' '}
-              {sala.metodo}
+              {sala.method}
             </div>
             <p className="font-sans text-[11px] text-[#5A554E] pt-1">
               El nivel de acuerdo mide la concordancia entre los participantes considerando empates y posiciones promedio.
