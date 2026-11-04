@@ -66,7 +66,7 @@ interface FeedbackRoomData {
     method: string;
     tauThreshold: number;
   };
-  proyectos: OptionItem[];
+  options: OptionItem[];
   session: {
     participantId: string;
     roomId?: string;
@@ -130,13 +130,13 @@ export default function ParticipantFeedbackPage() {
     return null;
   }
 
-  const { sala, proyectos, latestReport } = roomData;
+  const { sala, options, latestReport } = roomData;
   const isConcluded = sala.status === 'CONCLUDED';
   const collectiveRanking: CollectiveRankingItem[] =
     latestReport?.collective_ranking || latestReport?.ranking_colectivo || [];
 
   // Ordenar opciones según el midRank del orden colectivo
-  const sortedOptions = [...(proyectos || [])].sort((a, b) => {
+  const sortedOptions = [...(options || [])].sort((a, b) => {
     const rA = collectiveRanking.find((r) => r.id === a.id)?.midRank ?? 99;
     const rB = collectiveRanking.find((r) => r.id === b.id)?.midRank ?? 99;
     return rA - rB;
@@ -312,7 +312,7 @@ export default function ParticipantFeedbackPage() {
           </p>
         </div>
         {latestReport ? (
-          <RoundFeedbackReport options={proyectos || []} report={latestReport} />
+          <RoundFeedbackReport options={options || []} report={latestReport} />
         ) : (
           <p className="text-xs text-[#5A554E]">Todavía no hay resultados de esta ronda.</p>
         )}

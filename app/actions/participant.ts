@@ -61,16 +61,6 @@ export interface ParticipantRoomViewData {
     descripcion: string;
     orden_idx: number;
   }>;
-  proyectos: Array<{
-    id: string;
-    room_id: string;
-    title: string;
-    description: string;
-    order_index: number;
-    titulo: string;
-    descripcion: string;
-    orden_idx: number;
-  }>;
   session: ParticipantSessionPayload;
   myVotes: Array<{
     id: string;
@@ -1027,7 +1017,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
           closeWhenAllVoted: room.close_when_all_voted,
         },
         options: mappedOptions,
-        proyectos: mappedOptions,
         session,
         myVotes: mappedVotes,
         latestReport: mappedReport,

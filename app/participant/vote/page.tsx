@@ -46,7 +46,7 @@ interface ParticipantRoomData {
     method: string;
     closeWhenAllVoted?: boolean;
   };
-  proyectos: OptionItem[];
+  options: OptionItem[];
   session: ParticipantSessionInfo;
   myVotes: Array<{
     id: string;
@@ -128,7 +128,7 @@ export default function ParticipantVotePage() {
         return;
       }
 
-      const options = data.proyectos || [];
+      const options = data.options || [];
       const myVotes = data.myVotes || [];
       const hasVoted = Boolean(myVotes && myVotes.length === options.length);
       const currentRound = data.sala?.currentRound ?? 1;
@@ -386,7 +386,7 @@ export default function ParticipantVotePage() {
 
   const hasVoted = Boolean(
     roomData?.myVotes &&
-    roomData.myVotes.length === (roomData?.proyectos?.length || 0) &&
+    roomData.myVotes.length === (roomData?.options?.length || 0) &&
     roomData.myVotes.length > 0
   );
 
@@ -478,7 +478,7 @@ export default function ParticipantVotePage() {
             Resultados de la ronda anterior
           </summary>
           <div className="px-4 pb-4">
-            <RoundFeedbackReport options={roomData.proyectos} report={roomData.latestReport} />
+            <RoundFeedbackReport options={roomData.options} report={roomData.latestReport} />
           </div>
         </details>
       )}
