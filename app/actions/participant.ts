@@ -998,6 +998,15 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
         )
       : null;
 
+    // PT-30: own cix from RoundVoterMetric when the report has rows there
+    if (mappedReport && latestReport) {
+      const ownMetric = await prisma.roundVoterMetric.findUnique({
+        where: { report_id_participant_id: { report_id: latestReport.id, participant_id: session.participantId } },
+        select: { cix: true },
+      });
+      if (ownMetric) mappedReport.myConcordance = { voted: true, cix: ownMetric.cix };
+    }
+
     if (latestReport) {
       await recordReportViewedOnce(room.id, session.participantId, latestReport.round);
     }

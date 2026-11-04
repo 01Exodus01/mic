@@ -313,7 +313,7 @@ export async function processRoundConsensus(
     // 5. Persist immutable RoundReport inside a transaction
     await prisma.$transaction(async (tx) => {
       // Upsert round report
-      await tx.roundReport.upsert({
+      const savedReport = await tx.roundReport.upsert({
         where: {
           room_id_round: {
             room_id: roomId,
@@ -335,6 +335,28 @@ export async function processRoundConsensus(
           arguments_json: argumentsJson,
         },
       });
+
+      // PT-30: per-voter metrics in their own table (double write with __metrics)
+      await tx.roundVoterMetric.deleteMany({ where: { report_id: savedReport.id } });
+      if ((voterCIX || []).length > 0) {
+        await tx.roundVoterMetric.createMany({
+          data: voterCIX.map((v) => ({
+            report_id: savedReport.id,
+            room_id: roomId,
+            round: currentRound,
+            participant_id: v.participantId,
+            tau_b: v.tauB ?? 0,
+            cix: v.cix,
+            stuart_tau_c: v.stuartTauC ?? 0,
+            stuart_cix: v.stuartCix ?? 0.5,
+            gamma: v.gamma ?? 0,
+            gamma_cix: v.gammaCix ?? 0.5,
+            concordant: v.concordant,
+            discordant: v.discordant,
+            tied: v.tied ?? 0,
+          })),
+        });
+      }
 
       // 6. Determine final state transition
       const nextState = engineOutput.shouldConclude ? RoomStatus.CONCLUDED : RoomStatus.ROUND_FEEDBACK;

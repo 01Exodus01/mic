@@ -125,6 +125,7 @@ model Participant {
   events     RoomEvent[]
   member     RoomMember?
   consents   ConsentRecord[]
+  voterMetrics RoundVoterMetric[]
 
   @@unique([room_id, nickname])
   @@unique([room_id, blind_code])
@@ -159,6 +160,7 @@ model RoundReport {
   obtained_tau       Float    // tau*
   arguments_json     Json     // Blind qualitative arguments
   created_at         DateTime @default(now())
+  voterMetrics       RoundVoterMetric[]
 
   @@unique([room_id, round])
 }
@@ -241,3 +243,28 @@ model ConsentRecord {
   @@unique([participant_id, text_version])
   @@index([room_id])
 }
+
+// Per-voter concordance metrics of a round report (PT-30). Written with the
+// report; arguments_json.__metrics is still written during the transition.
+model RoundVoterMetric {
+  id             String      @id @default(cuid())
+  report_id      String
+  report         RoundReport @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  room_id        String
+  round          Int
+  participant_id String
+  participant    Participant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+  tau_b          Float
+  cix            Float
+  stuart_tau_c   Float
+  stuart_cix     Float
+  gamma          Float
+  gamma_cix      Float
+  concordant     Int
+  discordant     Int
+  tied           Int
+
+  @@unique([report_id, participant_id])
+  @@index([room_id, round])
+}
+

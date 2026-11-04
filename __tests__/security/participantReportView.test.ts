@@ -99,6 +99,10 @@ vi.mock('@/lib/prisma', () => ({
         reports: [storedReport],
       }),
     },
+    roundVoterMetric: {
+      // PT-30: no stored row, so the view falls back to __metrics
+      findUnique: async () => null,
+    },
     roomEvent: {
       // PT-12: report already logged as viewed, so no write is attempted here
       findFirst: async () => ({ id: 'event-1' }),

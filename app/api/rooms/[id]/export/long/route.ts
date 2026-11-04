@@ -104,9 +104,26 @@ export async function GET(
       votesByRoundPart.set(key, list);
     }
 
-    // Compute voter metrics cache
+    // PT-30: stored per-voter metrics first; recompute only what is not stored
+    // (reports before PT-30, and ballots that did not count in their round)
     const voterMetricsCache = new Map<string, VoterCIX>();
+    const storedMetrics = await prisma.roundVoterMetric.findMany({ where: { room_id: roomId } });
+    for (const m of storedMetrics) {
+      voterMetricsCache.set(`${m.round}:${m.participant_id}`, {
+        participantId: m.participant_id,
+        cix: m.cix,
+        concordant: m.concordant,
+        discordant: m.discordant,
+        tied: m.tied,
+        tauB: m.tau_b,
+        stuartTauC: m.stuart_tau_c,
+        stuartCix: m.stuart_cix,
+        gamma: m.gamma,
+        gammaCix: m.gamma_cix,
+      });
+    }
     for (const [key, pVotes] of votesByRoundPart.entries()) {
+      if (voterMetricsCache.has(key)) continue;
       const [roundStr, partId] = key.split(':');
       const roundNum = parseInt(roundStr, 10);
       const rep = reportMap.get(roundNum);
