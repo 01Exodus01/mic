@@ -43,6 +43,7 @@ interface ParticipantRoomData {
     maxRondas: number;
     deadline: string | null;
     metodo: string;
+    closeWhenAllVoted?: boolean;
   };
   proyectos: OptionItem[];
   session: ParticipantSessionInfo;
@@ -650,6 +651,11 @@ export default function ParticipantVotePage() {
       {!isClosed && !showReadOnlySummary && (
         <div className="fixed bottom-0 left-0 right-0 bg-[#F6F4EF] border-t border-[#D9D5CC] p-4 z-40">
           <div className="max-w-[540px] mx-auto w-full space-y-2">
+            {roomData?.sala?.closeWhenAllVoted && (
+              <p className="text-xs text-[#5A554E] text-center">
+                Si eres la última persona en votar, la ronda se cierra al enviar y ya no podrás editar tu voto.
+              </p>
+            )}
             {hasVoted && (
               <button
                 type="button"

@@ -416,3 +416,70 @@ export async function checkAndProcessExpiredDeadline(roomId: string): Promise<bo
 
   return false;
 }
+
+/**
+ * PT-27: in rooms with close_when_all_voted, processes the round as soon as
+ * every eligible person has a complete ballot. Eligible:
+ *  - roster rooms: listed members not removed, whose participant (if any) is
+ *    not retired; members who have not joined yet count as not voted;
+ *  - open rooms: participants not retired;
+ *  - with the closed cohort, from round 2 on only those who voted in round 1.
+ * Requires at least MIN_PARTICIPANTS complete ballots, so an early close never
+ * ends in insufficient votes. processRoundConsensus is atomic (CAS), so two
+ * simultaneous last ballots process the round once.
+ */
+export async function closeRoundIfAllVoted(roomId: string): Promise<boolean> {
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    include: { options: { select: { id: true } } },
+  });
+  if (!room || !room.close_when_all_voted || room.status !== RoomStatus.ROUND_OPEN) return false;
+  if (room.deadline && new Date() > room.deadline) return false; // the deadline path handles it
+
+  const round = room.current_round;
+  const optionCount = room.options.length;
+
+  const counts = await prisma.vote.groupBy({
+    by: ['participant_id'],
+    where: { round, option: { room_id: roomId }, participant: { is_retired: false } },
+    _count: { _all: true },
+  });
+  const completeVoters = new Set(counts.filter((c) => c._count._all === optionCount).map((c) => c.participant_id));
+  if (completeVoters.size < MIN_PARTICIPANTS) return false;
+
+  let round1Voters: Set<string> | null = null;
+  if (round > 1 && !room.allow_late_join) {
+    const r1 = await prisma.vote.findMany({
+      where: { round: 1, option: { room_id: roomId } },
+      select: { participant_id: true },
+      distinct: ['participant_id'],
+    });
+    round1Voters = new Set(r1.map((v) => v.participant_id));
+  }
+  const canVote = (participantId: string) => !round1Voters || round1Voters.has(participantId);
+
+  let eligible: Array<string | null>;
+  if (room.access_mode === 'ROSTER') {
+    const members = await prisma.roomMember.findMany({
+      where: { room_id: roomId, is_removed: false },
+      select: { participant: { select: { id: true, is_retired: true } } },
+    });
+    eligible = members
+      .filter((m) => !m.participant?.is_retired)
+      .map((m) => m.participant?.id ?? null)
+      .filter((id) => id === null ? round === 1 || room.allow_late_join : canVote(id));
+  } else {
+    const participants = await prisma.participant.findMany({
+      where: { room_id: roomId, is_retired: false },
+      select: { id: true },
+    });
+    eligible = participants.map((p) => p.id).filter(canVote);
+  }
+
+  const allVoted = eligible.length > 0 && eligible.every((id) => id !== null && completeVoters.has(id));
+  if (!allVoted) return false;
+
+  const result = await processRoundConsensus(roomId, { actor: 'SYSTEM' });
+  return result.success;
+}
+

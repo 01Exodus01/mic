@@ -55,6 +55,7 @@ export interface ParticipantRoomViewData {
     metodo: AggregationMethod;
     tauThreshold: number;
     tauUmbral: number;
+    closeWhenAllVoted: boolean;
   };
   options: Array<{
     id: string;
@@ -908,6 +909,10 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
       }
     ));
 
+    // PT-27: after the ballot is committed, close the round if everybody voted
+    const { closeRoundIfAllVoted } = await import('@/lib/round-processor');
+    await closeRoundIfAllVoted(targetRoomId);
+
     return { success: true };
   } catch (err) {
     const e = toApiError(err);
@@ -1022,6 +1027,7 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
           metodo: room.method,
           tauThreshold: room.tau_threshold,
           tauUmbral: room.tau_threshold,
+          closeWhenAllVoted: room.close_when_all_voted,
         },
         options: mappedOptions,
         proyectos: mappedOptions,
