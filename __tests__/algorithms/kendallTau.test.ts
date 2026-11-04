@@ -238,9 +238,10 @@ describe('Grupo 4: Métrica y algoritmos (D1, AUD-10, AUD-24)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PT-17: variante "sin empates" (Kendall estándar). La página de referencia
-// citada en el plan (Statistics How To) no se pudo descargar desde el entorno de
-// trabajo; los casos a mano siguientes se cuentan par por par en los comentarios.
+// PT-17: variante "sin empates" (Kendall estándar). Incluye el ejemplo resuelto
+// a mano de Statistics How To, "Kendall's Tau (Kendall Rank Correlation
+// Coefficient)": la página usa (C - D) / (C + D), que sin empates coincide con
+// (C - D) / (n(n-1)/2) y con tau-b. Los otros casos se cuentan par por par.
 // ─────────────────────────────────────────────────────────────────────────────
 import {
   computeVoterCIX as cixOf,
@@ -269,6 +270,24 @@ function bruteForceKendall(ballotRanks: number[], groupRanks: number[]) {
 }
 
 describe('PT-17: Kendall estándar sobre un orden del grupo estricto', () => {
+  it('Statistics How To: 12 candidatos, C = 61, D = 5, tau = 56/66 ≈ 0.85', () => {
+    // Entrevistador 1: A B C D E F G H I J K L (1..12)
+    // Entrevistador 2: A B D C F E H G J I L K
+    const ids = 'ABCDEFGHIJKL'.split('');
+    const interviewer2 = 'ABDCFEHGJILK'.split('');
+    const ballot = new Map(interviewer2.map((id, i) => [id, i + 1]));
+    const r = cixOf(ballot, strictOrder(ids), 'v');
+    expect(r.concordant).toBe(61);
+    expect(r.discordant).toBe(5);
+    expect(r.tauB).toBeCloseTo(56 / 66, 12);
+    expect(Number(r.tauB!.toFixed(2))).toBe(0.85);
+    // Same value as the page's (C - D) / (C + D) because there are no ties
+    expect(r.tauB).toBeCloseTo((r.concordant - r.discordant) / (r.concordant + r.discordant), 12);
+    expect(r.gamma).toBeCloseTo(r.tauB!, 12);
+    // Perfect agreement: (66 - 0) / (66 + 0) = 1
+    expect(cixOf(new Map(ids.map((id, i) => [id, i + 1])), strictOrder(ids), 'v').tauB).toBe(1);
+  });
+
   it('caso a mano, 4 opciones: C = 5, D = 1, tau = 4/6', () => {
     // Boleta A B C D; grupo A C B D. Pares: AB C, AC C, AD C, BC D, BD C, CD C.
     const ballot = new Map([['A', 1], ['B', 2], ['C', 3], ['D', 4]]);
