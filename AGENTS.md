@@ -15,7 +15,10 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Roles en código: host y participant. Nunca teacher, student, docente, alumno.
 - Secretos solo en `.env`; `.env.example` sin valores reales. Los secretos deben
   tener al menos 32 caracteres y el arranque falla si faltan. Nunca hardcodear
-  ni usar valores de reserva.
+  ni usar valores de reserva. Secretos obligatorios: `NEXTAUTH_SECRET`,
+  `PARTICIPANT_SESSION_SECRET` (distinto del anterior) y `WORKER_SECRET`.
+  `HOST_INVITE_CODE` habilita el registro de anfitriones; sin él, el registro
+  queda cerrado.
 - Tras cada cambio: `prisma validate`, `npx tsc --noEmit`, lint, `npx vitest run`
   y `build`.
 - Un commit por grupo de cambios, con tests nuevos por cada corrección de lógica
@@ -97,7 +100,8 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
   salas (filtro por host_id en la consulta); el participante solo a su sala y sus
   votos.
 - Sesiones separadas por rol: sesión de anfitrión (NextAuth) y de participante
-  (cookie HttpOnly, SameSite=Strict, Secure en producción). Cada rol tiene su
+  (cookie HttpOnly, SameSite=Strict, Secure en producción), firmadas con secretos
+  distintos. Cada rol tiene su
   propio "Salir", y la interfaz muestra siempre "Conectado como anfitrión" o
   "Conectado como participante". Una sesión nunca da acceso al otro rol.
 - Rate limiting en ingreso de participante, PIN personal, consulta de PIN de sala
@@ -124,7 +128,8 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Cronómetro visible de cuenta regresiva para anfitrión y participantes. Al llegar
   a cero se bloquea el envío y se muestra "Votación cerrada".
 - Duración al abrir ronda y al extender: presets (5, 15, 30 minutos, 1 hora,
-  24 horas) más valor personalizado en minutos con rango validado (1 a 10080).
+  24 horas, 3 días, 1 semana, 2 semanas) más valor personalizado en minutos,
+  horas, días o semanas, con rango validado (1 minuto a 30 días, 43200 minutos).
   Se muestra la nueva hora límite antes de confirmar.
 - Extender la hora límite NO es una transición de estado: con la sala en
   ROUND_OPEN solo se actualiza el plazo.
@@ -205,11 +210,16 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
   actividad", sin modal decorativo.
 - Participantes: tabla con nombre y si votó. Acciones por fila: "Restablecer PIN"
   y "Expulsar de la sala", ambas con diálogo accesible de confirmación.
+- Participación por ronda: tabla de personas contra rondas con solo estados
+  (no había ingresado, ingresó, votó, no votó, retirado, quitada). Nunca votos,
+  razones ni códigos ciegos.
+- Salas con lista: gestión de la lista (agregar, pegar, subir CSV, quitar,
+  regenerar código); los códigos se muestran una sola vez.
 - Diálogos con Radix/shadcn (role="dialog", foco atrapado, cierre con Escape).
 - Resultados: tabla densa + barra simple de nivel de acuerdo contra el requerido.
   Rangos con un decimal. Gráficos de una sola serie, sin 3D ni donut.
-- Exportaciones: botones planos (matrix_long.csv, matrix_wide_metrics.csv y los
-  que agregue PT-26). Las columnas nuevas van al final, sin renombrar ni
+- Exportaciones: botones planos (matrix_long.csv, matrix_wide_metrics.csv,
+  razones.csv, eventos.csv). Las columnas nuevas van al final, sin renombrar ni
   reordenar las existentes.
 
 ### Navegación y estados
@@ -287,3 +297,15 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-5 | 2026-11-04 | Aprobación explícita para cambiar `lib/algorithms` en PT-16, PT-17 y PT-33 | Necesaria para E-1 y E-2 |
 | E-6 | 2026-11-04 | Razones opcionales, a favor y en contra, 0 a 5 por lado, 1 a 200 caracteres, textuales | La metodología pide razones a favor y en contra sin mínimo |
 | E-7 | 2026-11-04 | Acceso con lista del curso y código personal, además del modo abierto con PIN | Evitar que cualquiera con el PIN de sala ingrese |
+| E-8 | 2026-11-04 | Plazo máximo de ronda: 30 días | Actividades de curso de varias semanas (PT-28) |
+| E-9 | 2026-11-04 | Expulsar conserva los votos y los excluye del cálculo | No perder datos (PT-11) |
+| E-10 | 2026-11-04 | Cierre anticipado opcional cuando votan todos | Configurable por sala (PT-27) |
+
+### Especificación en PDF superada
+
+Además de las enmiendas, la especificación queda superada en: razones (ahora a
+favor y en contra, opcionales), desempate y variante de concordancia, acceso con
+lista y código, participantes tardíos, consentimiento, cierre anticipado,
+plazos de hasta 30 días, expulsión sin borrado, bitácora de sala, historial de
+votos y los CSV adicionales (`docs/data-dictionary.md`). Ante una diferencia,
+mandan este archivo y el diccionario de datos.

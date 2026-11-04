@@ -160,3 +160,33 @@ Se ejecutó la suite de captura automatizada con Playwright en resoluciones de 3
 ## 8. Conclusión
 
 La Fase B del proyecto **GDSS r-FAST-CR** ha concluido con éxito rotundo. El sistema satisface todas las directrices matemáticas, metodológicas, de seguridad y de experiencia de usuario establecidas en [AGENTS.md](file:///home/jatoapan/mic/AGENTS.md), encontrándose plenamente preparado para su utilización en recolección de datos experimentales y publicaciones científicas reproducibles.
+
+---
+
+## Adendo: alineación r-FAST-CR (noviembre 2026)
+
+Este informe describe el estado al cierre de la Fase B. El plan de alineación
+r-FAST-CR (tareas PT-00 a PT-36) cambió lo siguiente; ante diferencias manda
+`AGENTS.md` y `docs/data-dictionary.md`.
+
+- **Cookies (AUD-28):** la cookie del anfitrión era `lax`; ahora es `SameSite=Strict`
+  como decía este informe (PT-05). Las sesiones de anfitrión y participante se
+  firman con secretos distintos (`PARTICIPANT_SESSION_SECRET`, PT-06).
+- **Expulsión (escenario 3 de la sección 6):** los votos de la ronda activa ya no se
+  purgan: se conservan y quedan fuera del cálculo (`excluded_from_round` en
+  `matrix_long.csv`, PT-11).
+- **Seguridad:** el participante ya no recibe métricas de otros votantes (PT-02) y
+  el anfitrión ya no recibe `arguments_json` (PT-25). El registro de anfitriones
+  exige `HOST_INVITE_CODE` (PT-04). El seed no corre en producción (PT-03). La CSP
+  de producción ya no permite `'unsafe-eval'` (PT-35).
+- **Concurrencia:** votos simultáneos rechazados como "sala cerrada" por conflictos
+  de serialización; ahora se reintentan y el bloqueo de la sala es compartido.
+- **Datos:** razones a favor y en contra (`VoteReason`), historial de votos
+  (`VoteRevision`), bitácora (`RoomEvent`), lista del curso (`RoomMember`),
+  consentimiento (`ConsentRecord`), métricas por votante (`RoundVoterMetric`) y
+  versión del procedimiento en cada informe (`__procedure`).
+- **Límites de intentos:** siguen en memoria; la limitación está documentada en
+  `lib/rate-limit.ts` (PT-31).
+- **Pruebas:** 361 pruebas. Las de integración usan PostgreSQL real cuando existe
+  `TEST_DATABASE_URL`; sin esa variable se omiten.
+
