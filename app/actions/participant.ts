@@ -238,7 +238,7 @@ function isSerializationConflict(err: unknown): boolean {
   return err.code === 'P2010' && (meta?.code === '40001' || /could not serialize/i.test(err.message));
 }
 
-const SERIALIZABLE_MAX_ATTEMPTS = 10;
+const SERIALIZABLE_MAX_ATTEMPTS = 20;
 
 /**
  * Runs a Serializable transaction, retrying on write conflicts (P2034) with a
@@ -251,7 +251,7 @@ async function runSerializableWithRetry<T>(run: () => Promise<T>): Promise<T> {
     } catch (err) {
       if (!isSerializationConflict(err)) throw err;
       if (attempt >= SERIALIZABLE_MAX_ATTEMPTS) throw Errors.BUSY();
-      const pauseMs = Math.floor(Math.random() * 40 * attempt) + 10;
+      const pauseMs = Math.floor(Math.random() * 40 * Math.min(attempt, 8)) + 10;
       await new Promise((resolve) => setTimeout(resolve, pauseMs));
     }
   }
