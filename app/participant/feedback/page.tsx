@@ -408,7 +408,7 @@ export default function ParticipantFeedbackPage() {
                         <span>Posición asignada: {pos}.º</span>
                       </div>
                       <p className="text-[#14171A] leading-relaxed italic">
-                        "{just}"
+                        &quot;{just}&quot;
                       </p>
                     </div>
                   );
