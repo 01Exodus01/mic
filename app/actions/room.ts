@@ -220,6 +220,9 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
         access_mode: settings.accessMode,
         allow_late_join: settings.allowLateJoin,
         close_when_all_voted: settings.closeWhenAllVoted,
+        consent_required: settings.consentRequired,
+        consent_text: settings.consentRequired ? settings.consentText : null,
+        consent_version: 1,
         options: {
           create: valid.options.map((p, i) => ({
             title: p.title,

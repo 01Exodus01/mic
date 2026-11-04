@@ -11,6 +11,7 @@ import ReasonListsField, {
   type OptionReasons,
 } from '@/components/ReasonListsField';
 import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
+import ConsentDialog from '@/components/ConsentDialog';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { GripVertical, ArrowUp, ArrowDown, Clock, LogOut, AlertCircle, Edit3, CheckCircle2 } from 'lucide-react';
@@ -57,6 +58,7 @@ interface ParticipantRoomData {
     reasonsAgainst?: string[];
   }>;
   latestReport: FeedbackReportData | null;
+  consent?: { required: boolean; accepted: boolean; text: string | null };
   isExpired: boolean;
   serverTime?: string;
 }
@@ -111,6 +113,12 @@ export default function ParticipantVotePage() {
 
       if (data.serverTime) {
         serverOffsetRef.current = new Date(data.serverTime).getTime() - Date.now();
+      }
+
+      // PT-24: consent first, when the room asks for it
+      if (data.consent?.required && !data.consent.accepted) {
+        router.push('/participant/consent');
+        return;
       }
 
       if (data.sala.estado === 'ROUND_FEEDBACK' || data.sala.estado === 'CONCLUDED') {
@@ -410,6 +418,7 @@ export default function ParticipantVotePage() {
           <span className="text-[#D9D5CC]">·</span>
           <span className="text-[#5A554E]">Conectado como participante</span>
         </div>
+        {roomData?.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
         <button
           type="button"
           onClick={handleLogout}

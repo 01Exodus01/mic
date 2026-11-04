@@ -17,6 +17,8 @@ export const DEFAULT_ROOM_SETTINGS: RoomSettingsValue = {
   accessMode: 'OPEN_PIN',
   allowLateJoin: false,
   closeWhenAllVoted: false,
+  consentRequired: false,
+  consentText: '',
 };
 
 export const TIE_BREAK_LABELS: Record<RoomSettingsValue['tieBreakRule'], { name: string; help: string }> = {
@@ -197,6 +199,7 @@ export function RoomSettingsSummary({
     access_mode?: RoomSettingsValue['accessMode'];
     allow_late_join?: boolean;
     close_when_all_voted?: boolean;
+    consent_required?: boolean;
   };
 }) {
   const rows: Array<[string, string]> = [
@@ -205,6 +208,7 @@ export function RoomSettingsSummary({
     ['Ingreso', ACCESS_LABELS[room.access_mode ?? 'OPEN_PIN'].name],
     ['Personas en rondas posteriores', room.allow_late_join ? 'Se pueden sumar' : 'Solo quienes votaron en la primera'],
     ['Cierre de ronda', room.close_when_all_voted ? 'Cuando votan todos o a la hora límite' : 'A la hora límite o a mano'],
+    ['Consentimiento', room.consent_required ? 'Se pide aceptar antes de votar' : 'No se pide'],
   ];
   return (
     <details className="rounded-[6px] border border-[#D9D5CC] bg-white text-xs">

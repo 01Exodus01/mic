@@ -92,6 +92,8 @@ export interface ParticipantRoomViewData {
     reasonsAgainst: string[];
   }>;
   latestReport: ParticipantReportView | null;
+  /** PT-24: informed consent of the room; text only when it is required */
+  consent: { required: boolean; accepted: boolean; version: number; text: string | null };
   isExpired: boolean;
   serverTime: string;
 }
@@ -260,6 +262,54 @@ function toParticipantReportView(
     myConcordance: toOwnConcordance(report.arguments_json, participantId),
     myPositions,
   };
+}
+
+async function hasAcceptedConsent(participantId: string, version: number): Promise<boolean> {
+  const record = await prisma.consentRecord.findUnique({
+    where: { participant_id_text_version: { participant_id: participantId, text_version: version } },
+    select: { id: true },
+  });
+  return record !== null;
+}
+
+/**
+ * PT-24: records that the participant accepted the room's consent text
+ * (current version), with time. Idempotent.
+ */
+export async function acceptConsent(): Promise<ActionResult> {
+  try {
+    const session = await getParticipantSession();
+    if (!session) throw Errors.UNAUTHORIZED();
+    const roomId = session.roomId || session.salaId!;
+    const participant = await prisma.participant.findFirst({ where: { id: session.participantId, room_id: roomId } });
+    if (!participant || participant.is_retired) throw Errors.UNAUTHORIZED();
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+    if (!room.consent_required) return { success: true };
+
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.consentRecord.findUnique({
+        where: { participant_id_text_version: { participant_id: participant.id, text_version: room.consent_version } },
+      });
+      if (existing) return;
+      await tx.consentRecord.create({
+        data: { participant_id: participant.id, room_id: room.id, text_version: room.consent_version },
+      });
+      await recordRoomEvent(tx, {
+        roomId: room.id,
+        type: 'consent_accepted',
+        actor: 'PARTICIPANT',
+        round: room.current_round,
+        participantId: participant.id,
+        data: { version: room.consent_version },
+      });
+    });
+    return { success: true };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') return { success: true };
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
 }
 
 /**
@@ -766,6 +816,15 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           throw Errors.INVALID_BALLOT(`Las posiciones deben estar en el rango [1, ${n}].`);
         }
 
+        // PT-24: the server, not only the screen, requires the consent when the room asks for it
+        if (room.consent_required) {
+          const accepted = await tx.consentRecord.findUnique({
+            where: { participant_id_text_version: { participant_id: session.participantId, text_version: room.consent_version } },
+            select: { id: true },
+          });
+          if (!accepted) throw Errors.CONSENT_REQUIRED();
+        }
+
         // Cohorte cerrada check for rounds > 1 (skipped when late participants are allowed, PT-23)
         if (room.current_round > 1 && !room.allow_late_join) {
           const round1Vote = await tx.vote.findFirst({
@@ -969,6 +1028,12 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
         session,
         myVotes: mappedVotes,
         latestReport: mappedReport,
+        consent: {
+          required: room.consent_required,
+          accepted: !room.consent_required || (await hasAcceptedConsent(session.participantId, room.consent_version)),
+          version: room.consent_version,
+          text: room.consent_required ? room.consent_text : null,
+        },
         isExpired: room.deadline ? new Date() > room.deadline : false,
         serverTime: new Date().toISOString(),
       },

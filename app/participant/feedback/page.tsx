@@ -11,6 +11,7 @@ import RoundFeedbackReport, {
   formatRankPosition,
   type FeedbackReportData,
 } from '@/components/RoundFeedbackReport';
+import ConsentDialog from '@/components/ConsentDialog';
 
 interface OptionItem {
   id: string;
@@ -74,6 +75,7 @@ interface FeedbackRoomData {
     blindCode: string;
   };
   latestReport: RoundReportData | null;
+  consent?: { required: boolean; accepted: boolean; text: string | null };
 }
 
 export default function ParticipantFeedbackPage() {
@@ -159,6 +161,7 @@ export default function ParticipantFeedbackPage() {
           <span className="text-[#D9D5CC]">·</span>
           <span className="text-[#6B6860]">Conectado como participante</span>
         </div>
+        {roomData.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
         <button
           type="button"
           onClick={handleLogout}

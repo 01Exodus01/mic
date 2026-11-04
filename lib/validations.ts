@@ -335,6 +335,9 @@ export const RoomAnalysisSchema = z
 
 export type RoomAnalysisInput = z.infer<typeof RoomAnalysisSchema>;
 
+export const CONSENT_TEXT_MIN = 20;
+export const CONSENT_TEXT_MAX = 4000;
+
 /**
  * Per-room settings chosen at creation (PT-18). Defaults reproduce the
  * behaviour before these options existed. They cannot change once the room
@@ -353,10 +356,24 @@ export const RoomSettingsSchema = z
     }).default('OPEN_PIN'),
     allowLateJoin: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
     closeWhenAllVoted: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
+    // PT-24: informed consent written by the host; no default legal text
+    consentRequired: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
+    consentText: z
+      .string({ invalid_type_error: 'El texto del consentimiento no es válido.' })
+      .optional()
+      .transform((v) => (v ? sanitizeText(v) : '')),
   })
   .refine((v) => !(v.concordanceVariant === 'WITHOUT_TIES' && v.tieBreakRule === 'NONE'), {
     message: 'Para medir el acuerdo sin empates, elige una regla de desempate.',
     path: ['concordanceVariant'],
+  })
+  .refine((v) => !v.consentRequired || getUnicodeLength(v.consentText) >= CONSENT_TEXT_MIN, {
+    message: `Escribe el texto del consentimiento (mínimo ${CONSENT_TEXT_MIN} caracteres).`,
+    path: ['consentText'],
+  })
+  .refine((v) => getUnicodeLength(v.consentText) <= CONSENT_TEXT_MAX, {
+    message: `El texto del consentimiento admite hasta ${CONSENT_TEXT_MAX} caracteres.`,
+    path: ['consentText'],
   });
 
 export type RoomSettingsInput = z.input<typeof RoomSettingsSchema>;

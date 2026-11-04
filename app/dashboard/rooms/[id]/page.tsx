@@ -79,6 +79,7 @@ interface RoomDetails {
   access_mode?: 'OPEN_PIN' | 'ROSTER';
   allow_late_join?: boolean;
   close_when_all_voted?: boolean;
+  consent_required?: boolean;
 }
 
 interface RoomDashboardData {

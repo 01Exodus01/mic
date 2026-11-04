@@ -13,6 +13,7 @@ import {
 } from '@/lib/validations';
 import { Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import RoomAdvancedSettings, { DEFAULT_ROOM_SETTINGS, type RoomSettingsValue } from '@/components/RoomAdvancedSettings';
+import RoomConsentSettings from '@/components/RoomConsentSettings';
 import { AggregationMethod } from '@prisma/client';
 
 export default function NewRoomPage() {
@@ -345,8 +346,11 @@ export default function NewRoomPage() {
   if (activeTauError) totalActiveErrors++;
   if (activeMaxRoundsError) totalActiveErrors++;
   const settingsValidation = RoomSettingsSchema.safeParse(settings);
-  const settingsError = settingsValidation.success ? null : settingsValidation.error.errors[0]?.message ?? null;
+  const settingsIssues = settingsValidation.success ? [] : settingsValidation.error.errors;
+  const settingsError = settingsIssues.find((i) => i.path[0] !== 'consentText')?.message ?? null;
+  const consentError = settingsIssues.find((i) => i.path[0] === 'consentText')?.message ?? null;
   if (settingsError) totalActiveErrors++;
+  if (consentError) totalActiveErrors++;
   for (const optErr of optionsErrors) {
     if (optErr.title) totalActiveErrors++;
     if (optErr.description) totalActiveErrors++;
@@ -875,6 +879,13 @@ export default function NewRoomPage() {
             </p>
           )}
         </section>
+
+        <RoomConsentSettings
+          required={settings.consentRequired}
+          text={settings.consentText}
+          error={consentError}
+          onChange={(next) => setSettings((prev) => ({ ...prev, ...next }))}
+        />
 
         <RoomAdvancedSettings value={settings} onChange={setSettings} error={settingsError} />
 

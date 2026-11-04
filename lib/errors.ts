@@ -38,6 +38,8 @@ export const Errors = {
   RATE_LIMITED:         (resetIn: number) =>
     new AppError('RATE_LIMITED', `Demasiadas solicitudes. Reintenta en ${resetIn}s.`, 429),
   UNAUTHORIZED:         () => new AppError('UNAUTHORIZED', 'No autorizado.', 401),
+  CONSENT_REQUIRED:     () =>
+    new AppError('CONSENT_REQUIRED', 'Para votar primero tienes que aceptar el consentimiento de la sala.', 403),
   BUSY:                 () =>
     new AppError('BUSY', 'Llegaron muchos votos a la vez y no se pudo guardar el tuyo. Envíalo de nuevo.', 503),
   CANNOT_JOIN:          () => new AppError('CANNOT_JOIN', 'No se puede ingresar a esa sala. Revisa tus datos.', 400),
