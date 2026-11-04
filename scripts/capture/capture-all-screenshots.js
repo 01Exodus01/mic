@@ -1,5 +1,5 @@
 /**
- * scripts/screenshots/capture-all-screenshots.js
+ * scripts/capture/capture-all-screenshots.js
  * Captures comprehensive screenshots of GDSS r-FAST-CR at 375px and 1280px viewports.
  */
 

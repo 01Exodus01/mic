@@ -1,5 +1,5 @@
 /**
- * scripts/screenshots/capture-screenshots.js
+ * scripts/capture/capture-screenshots.js
  * Captures Playwright screenshots of key views at 375px and 1280px viewports.
  */
 
