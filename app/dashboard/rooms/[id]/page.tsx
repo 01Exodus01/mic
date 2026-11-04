@@ -67,7 +67,7 @@ interface RoomDetails {
   method: string;
   max_members: number;
   tau_threshold: number;
-  max_rondas: number;
+  max_rounds: number;
   ronda_actual: number;
   estado: string;
   deadline: string | null;
@@ -511,7 +511,7 @@ export default function RoomHostPage() {
               {sala.title}
             </h1>
             <p className="text-xs text-[#5A554E]">
-              Regla de agregación: {sala.method} · {sala.proyectos.length} opciones · Ronda {sala.ronda_actual} de {sala.max_rondas}
+              Regla de agregación: {sala.method} · {sala.proyectos.length} opciones · Ronda {sala.ronda_actual} de {sala.max_rounds}
               {deadlineHour ? ` · Hora límite: ${deadlineHour}` : ''}
             </p>
             <RoomSettingsSummary room={sala} />
@@ -684,7 +684,7 @@ export default function RoomHostPage() {
               </p>
             </div>
 
-            {sala.ronda_actual < sala.max_rondas ? (
+            {sala.ronda_actual < sala.max_rounds ? (
               <div className="space-y-4">
                 <DurationPicker
                   value={selectedMinutes}
@@ -717,7 +717,7 @@ export default function RoomHostPage() {
               </div>
             ) : (
               <p className="text-xs text-[#5A554E]">
-                Se ha completado el máximo de rondas programadas ({sala.max_rondas}).
+                Se ha completado el máximo de rondas programadas ({sala.max_rounds}).
               </p>
             )}
           </div>

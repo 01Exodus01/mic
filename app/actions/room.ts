@@ -107,7 +107,6 @@ export interface MappedRoomDetails {
   deadline: Date | null;
   created_at: Date;
   updated_at: Date;
-  max_rondas: number;
   ronda_actual: number;
   estado: RoomStatus;
   options: Array<{ id: string; room_id: string; title: string; description: string; order_index: number }>;
@@ -523,7 +522,6 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
       ...room,
       // PT-25: same filtering as reportes (no per-voter metrics or signed reasons)
       reports: room.reports.map((r) => ({ ...r, arguments_json: {} })),
-      max_rondas: room.max_rounds,
       ronda_actual: room.current_round,
       estado: room.status,
       proyectos: room.options.map((o) => ({
