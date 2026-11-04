@@ -49,7 +49,6 @@ interface ProjectItem {
 interface ParticipantItem {
   id: string;
   nickname: string;
-  codigo_ciego?: string;
 }
 
 interface ReportItem {
@@ -72,7 +71,7 @@ interface RoomDetails {
   status: string;
   deadline: string | null;
   options: ProjectItem[];
-  participantes: ParticipantItem[];
+  participants: ParticipantItem[];
   reportes: ReportItem[];
   tie_break_rule?: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
   concordance_variant?: 'WITH_TIES' | 'WITHOUT_TIES';
@@ -439,7 +438,7 @@ export default function RoomHostPage() {
   }
 
   const { sala, votesThisRound: votesCount, voterIds = [] } = data;
-  const totalParticipants = sala.participantes?.length || 0;
+  const totalParticipants = sala.participants?.length || 0;
   const minRequired = MIN_PARTICIPANTS;
   const stateLabel = STATE_LABELS[sala.status] || sala.status;
   const stateClass = STATE_CLASSES[sala.status] || 'text-[#14171A]';
@@ -949,7 +948,7 @@ export default function RoomHostPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D9D5CC]">
-                {sala.participantes.map((p) => {
+                {sala.participants.map((p) => {
                   const didVote = voterIds.includes(p.id);
 
                   return (

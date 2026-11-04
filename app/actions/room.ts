@@ -62,7 +62,6 @@ export interface MappedParticipantItem {
   id: string;
   nickname: string;
   blind_code?: string;
-  codigo_ciego?: string;
   is_retired?: boolean;
 }
 
@@ -97,7 +96,7 @@ export interface MappedRoomDetails {
   created_at: Date;
   updated_at: Date;
   options: Array<{ id: string; room_id: string; title: string; description: string; order_index: number }>;
-  participantes: MappedParticipantItem[];
+  participants: MappedParticipantItem[];
   reports: Array<unknown>;
   reportes: MappedReportItem[];
 }
@@ -508,11 +507,6 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
       ...room,
       // PT-25: same filtering as reportes (no per-voter metrics or signed reasons)
       reports: room.reports.map((r) => ({ ...r, arguments_json: {} })),
-      participantes: room.participants.map((p) => ({
-        id: p.id,
-        nickname: p.nickname,
-        is_retired: p.is_retired,
-      })),
       // PT-25: the host gets group results only. arguments_json carries per-voter
       // metrics (participant id + cix) and blind-signed reasons; the panel does not
       // use it and it must not let the host link a named person to a cix.
