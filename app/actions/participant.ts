@@ -85,7 +85,6 @@ export interface ParticipantRankingView {
 
 export interface ParticipantArgumentView {
   blindCode: string;
-  codigoCiego: string;
   position: number;
   justification: string;
 }
@@ -163,7 +162,6 @@ function toArgumentsView(
       const text = typeof justification === 'string' ? justification : '';
       result[optionId].push({
         blindCode,
-        codigoCiego: blindCode,
         position,
         justification: text,
       });

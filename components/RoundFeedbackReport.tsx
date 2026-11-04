@@ -27,7 +27,6 @@ export interface FeedbackReason {
 
 export interface FeedbackLegacyArgument {
   blindCode?: string;
-  codigoCiego?: string;
   position?: number;
   justification?: string;
 }
@@ -178,7 +177,7 @@ export default function RoundFeedbackReport({
                   <ReasonList
                     title="Razones"
                     reasons={legacy.map((a) => ({
-                      blindCode: a.blindCode || a.codigoCiego || '',
+                      blindCode: a.blindCode || '',
                       position: a.position ?? 0,
                       text: a.justification || '',
                     }))}
