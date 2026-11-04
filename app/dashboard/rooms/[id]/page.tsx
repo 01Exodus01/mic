@@ -1265,7 +1265,7 @@ export default function RoomHostPage() {
               Expulsar a {expelModal.nickname}
             </DialogTitle>
             <DialogDescription>
-              El participante quedará excluido de la sala y no podrá volver a ingresar. Sus votos de rondas cerradas se conservarán, pero los votos de la ronda activa se eliminarán.
+              El participante quedará excluido de la sala y no podrá volver a ingresar. Sus votos se conservan, pero los de la ronda activa no cuentan para el resultado.
             </DialogDescription>
 
             {/* D3: Advertencia crítica si quedan menos de 3 participantes */}
