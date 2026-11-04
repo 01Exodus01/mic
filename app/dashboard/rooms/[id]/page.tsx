@@ -18,6 +18,7 @@ import { RoomDashboardSkeleton } from '@/components/ui/Skeleton';
 import PasswordInput from '@/components/ui/PasswordInput';
 import DurationPicker from '@/components/DurationPicker';
 import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
+import RoomRosterManager from '@/components/RoomRosterManager';
 import {
   Dialog,
   DialogContent,
@@ -548,6 +549,12 @@ export default function RoomHostPage() {
           </div>
         </div>
       </div>
+
+      {sala.access_mode === 'ROSTER' && (
+        <div className="py-6 border-b border-[#D9D5CC]">
+          <RoomRosterManager roomId={sala.id} roomPin={sala.pin} readOnly={sala.estado === 'CONCLUDED' || sala.estado === 'CANCELLED'} />
+        </div>
+      )}
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
       <div className="pb-6 border-b border-[#D9D5CC]">

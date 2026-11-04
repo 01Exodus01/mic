@@ -360,6 +360,21 @@ export const RoomSettingsSchema = z
   });
 
 export type RoomSettingsInput = z.input<typeof RoomSettingsSchema>;
+
+/**
+ * Course roster label (PT-21): how the host identifies a person, for example a
+ * student number or the local part of an e-mail. Personal data: it lives only
+ * in RoomMember and never reaches votes, CSV exports or logs.
+ */
+export const RoomMemberLabelSchema = z
+  .string({ required_error: 'La etiqueta es obligatoria.' })
+  .transform((v) => collapseWhitespace(sanitizeText(v)))
+  .pipe(
+    z
+      .string()
+      .min(1, 'La etiqueta es obligatoria.')
+      .max(100, 'Máximo 100 caracteres.')
+  );
 export type RoomSettings = z.infer<typeof RoomSettingsSchema>;
 
 // ─────────────────────────────────────────────

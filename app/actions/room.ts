@@ -18,6 +18,7 @@ import { Errors, toApiError } from '@/lib/errors';
 import { AggregationMethod, RoomStatus } from '@prisma/client';
 import { processRoundConsensus, checkAndProcessExpiredDeadline } from '@/lib/round-processor';
 import { recordRoomEvent } from '@/lib/room-events';
+import { generateMemberCode, hashMemberCode, parseRosterText } from '@/lib/member-codes';
 
 import {
   CreateRoomSchema,
@@ -25,6 +26,7 @@ import {
   ResetPinSchema,
   MIN_PARTICIPANTS,
   RoomSettingsSchema,
+  RoomMemberLabelSchema,
   type RoomSettingsInput,
 } from '@/lib/validations';
 import type { ActionResult } from '@/types/actions';
@@ -672,3 +674,202 @@ export async function expelParticipant(
     return { success: false, error: e.error, code: e.code };
   }
 }
+
+// ─────────────────────────────────────────────
+// Course roster (PT-21): members with personal access codes
+// ─────────────────────────────────────────────
+
+export interface RoomMemberItem {
+  id: string;
+  label: string;
+  joined: boolean;
+  isRemoved: boolean;
+  addedRound: number;
+}
+
+export interface IssuedMemberCode {
+  memberId: string;
+  label: string;
+  /** Shown once; only its hash is stored */
+  code: string;
+}
+
+async function requireRosterRoom(roomId: string) {
+  const hostId = await requireHost();
+  const room = await prisma.room.findFirst({ where: { id: roomId, host_id: hostId } });
+  if (!room) throw Errors.ROOM_NOT_FOUND();
+  if (room.access_mode !== 'ROSTER') {
+    throw Errors.INVALID_BALLOT('Esta sala no usa una lista de participantes.');
+  }
+  if (isTerminalState(room.status)) {
+    throw Errors.INVALID_BALLOT('La sala ya terminó; no se puede cambiar la lista.');
+  }
+  return room;
+}
+
+async function addMembers(roomId: string, rawLabels: string[]): Promise<IssuedMemberCode[]> {
+  const room = await requireRosterRoom(roomId);
+
+  const labels: string[] = [];
+  for (const raw of rawLabels) {
+    const parsed = RoomMemberLabelSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw Errors.INVALID_BALLOT(parsed.error.errors[0]?.message || 'Etiqueta no válida.');
+    }
+    labels.push(parsed.data);
+  }
+  if (labels.length === 0) throw Errors.INVALID_BALLOT('No hay etiquetas para agregar.');
+
+  const seen = new Set<string>();
+  const repeatedInBatch = labels.filter((l) => {
+    const key = l.toLowerCase();
+    if (seen.has(key)) return true;
+    seen.add(key);
+    return false;
+  });
+  if (repeatedInBatch.length > 0) {
+    throw Errors.INVALID_BALLOT(`Etiquetas repetidas: ${[...new Set(repeatedInBatch)].join(', ')}.`);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.roomMember.findMany({ where: { room_id: roomId }, select: { label: true, is_removed: true } });
+    const existingKeys = new Set(existing.map((m) => m.label.toLowerCase()));
+    const alreadyListed = labels.filter((l) => existingKeys.has(l.toLowerCase()));
+    if (alreadyListed.length > 0) {
+      throw Errors.INVALID_BALLOT(`Ya están en la lista: ${alreadyListed.join(', ')}.`);
+    }
+    const active = existing.filter((m) => !m.is_removed).length;
+    if (active + labels.length > room.max_members) {
+      throw Errors.ROOM_FULL(room.max_members);
+    }
+
+    const issued = labels.map((label) => ({ label, code: generateMemberCode() }));
+    const created = await tx.roomMember.createManyAndReturn({
+      data: issued.map(({ label, code }) => ({
+        room_id: roomId,
+        label,
+        access_code_hash: hashMemberCode(code),
+        added_round: room.current_round,
+      })),
+      select: { id: true, label: true },
+    });
+    await recordRoomEvent(tx, {
+      roomId,
+      type: 'member_added',
+      actor: 'HOST',
+      round: room.current_round,
+      data: { count: created.length },
+    });
+    const idByLabel = new Map(created.map((c) => [c.label, c.id]));
+    return issued.map(({ label, code }) => ({ memberId: idByLabel.get(label)!, label, code }));
+  });
+}
+
+export async function addRoomMember(roomId: string, label: string): Promise<ActionResult<{ issued: IssuedMemberCode[] }>> {
+  try {
+    const issued = await addMembers(roomId, [label]);
+    return { success: true, data: { issued } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+/** Pasted lines or the text of a CSV file: first field of each line is the label. */
+export async function importRoomMembers(roomId: string, text: string): Promise<ActionResult<{ issued: IssuedMemberCode[] }>> {
+  try {
+    if (typeof text !== 'string' || text.length > 200_000) {
+      throw Errors.INVALID_BALLOT('El texto de la lista no es válido.');
+    }
+    const issued = await addMembers(roomId, parseRosterText(text));
+    return { success: true, data: { issued } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+export async function getRoomMembers(roomId: string): Promise<ActionResult<{ members: RoomMemberItem[] }>> {
+  try {
+    const hostId = await requireHost();
+    const room = await prisma.room.findFirst({ where: { id: roomId, host_id: hostId }, select: { id: true } });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+    const members = await prisma.roomMember.findMany({
+      where: { room_id: roomId },
+      select: { id: true, label: true, participant_id: true, is_removed: true, added_round: true },
+      orderBy: { label: 'asc' },
+    });
+    return {
+      success: true,
+      data: {
+        members: members.map((m) => ({
+          id: m.id,
+          label: m.label,
+          joined: m.participant_id !== null,
+          isRemoved: m.is_removed,
+          addedRound: m.added_round,
+        })),
+      },
+    };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+/**
+ * Removes a member from the roster: the code stops working and, if they had
+ * already joined, they are retired like an expelled participant (their votes
+ * are kept and excluded from later computations).
+ */
+export async function removeRoomMember(roomId: string, memberId: string): Promise<ActionResult> {
+  try {
+    const room = await requireRosterRoom(roomId);
+    const member = await prisma.roomMember.findFirst({ where: { id: memberId, room_id: roomId } });
+    if (!member) throw Errors.PARTICIPANT_NOT_FOUND();
+    if (!member.is_removed) {
+      await prisma.$transaction(async (tx) => {
+        await tx.roomMember.update({ where: { id: memberId }, data: { is_removed: true } });
+        if (member.participant_id) {
+          await tx.participant.update({ where: { id: member.participant_id }, data: { is_retired: true } });
+        }
+        await recordRoomEvent(tx, {
+          roomId,
+          type: 'member_removed',
+          actor: 'HOST',
+          round: room.current_round,
+          participantId: member.participant_id,
+          data: { hadJoined: member.participant_id !== null },
+        });
+      });
+    }
+    return { success: true };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+export async function regenerateMemberCode(roomId: string, memberId: string): Promise<ActionResult<{ issued: IssuedMemberCode }>> {
+  try {
+    const room = await requireRosterRoom(roomId);
+    const member = await prisma.roomMember.findFirst({ where: { id: memberId, room_id: roomId, is_removed: false } });
+    if (!member) throw Errors.PARTICIPANT_NOT_FOUND();
+    const code = generateMemberCode();
+    await prisma.$transaction(async (tx) => {
+      await tx.roomMember.update({ where: { id: memberId }, data: { access_code_hash: hashMemberCode(code) } });
+      await recordRoomEvent(tx, {
+        roomId,
+        type: 'member_code_regenerated',
+        actor: 'HOST',
+        round: room.current_round,
+        participantId: member.participant_id,
+      });
+    });
+    return { success: true, data: { issued: { memberId, label: member.label, code } } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
