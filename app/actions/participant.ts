@@ -57,7 +57,6 @@ export interface ParticipantRoomViewData {
     title: string;
     description: string;
     order_index: number;
-    titulo: string;
     descripcion: string;
     orden_idx: number;
   }>;
@@ -997,7 +996,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
 
     const mappedOptions = room.options.map((o) => ({
       ...o,
-      titulo: o.title,
       descripcion: o.description,
       orden_idx: o.order_index,
     }));

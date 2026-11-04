@@ -15,7 +15,6 @@ import ConsentDialog from '@/components/ConsentDialog';
 
 interface OptionItem {
   id: string;
-  titulo?: string;
   title?: string;
   descripcion?: string;
   description?: string;
@@ -272,7 +271,7 @@ export default function ParticipantFeedbackPage() {
                   midRankNum,
                   collectiveRanking
                 );
-                const optTitle = option.title || option.titulo;
+                const optTitle = option.title;
                 const optDesc = option.description || option.descripcion;
 
                 return (

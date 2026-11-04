@@ -16,7 +16,6 @@ import React from 'react';
 export interface FeedbackOption {
   id: string;
   title?: string;
-  titulo?: string;
   description?: string;
   descripcion?: string;
 }
@@ -155,7 +154,7 @@ export default function RoundFeedbackReport({
 
       <div className="space-y-2">
         {sorted.map((option) => {
-          const title = option.title || option.titulo;
+          const title = option.title;
           const description = option.description || option.descripcion;
           const midRank = ranking.find((r) => r.id === option.id)?.midRank;
           const group = midRank !== undefined ? formatRankPosition(midRank, ranking).label : 'Sin posición';
