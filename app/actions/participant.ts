@@ -57,7 +57,6 @@ export interface ParticipantRoomViewData {
     title: string;
     description: string;
     order_index: number;
-    descripcion: string;
     orden_idx: number;
   }>;
   session: ParticipantSessionPayload;
@@ -996,7 +995,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
 
     const mappedOptions = room.options.map((o) => ({
       ...o,
-      descripcion: o.description,
       orden_idx: o.order_index,
     }));
 

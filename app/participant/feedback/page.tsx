@@ -16,7 +16,6 @@ import ConsentDialog from '@/components/ConsentDialog';
 interface OptionItem {
   id: string;
   title?: string;
-  descripcion?: string;
   description?: string;
   orden_idx?: number;
   order_index?: number;
@@ -272,7 +271,7 @@ export default function ParticipantFeedbackPage() {
                   collectiveRanking
                 );
                 const optTitle = option.title;
-                const optDesc = option.description || option.descripcion;
+                const optDesc = option.description;
 
                 return (
                   <tr key={option.id} className="hover:bg-[#F6F4EF]/50 transition-colors">

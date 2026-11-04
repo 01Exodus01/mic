@@ -20,7 +20,6 @@ import { GripVertical, ArrowUp, ArrowDown, Clock, LogOut, AlertCircle, Edit3, Ch
 interface OptionItem {
   id: string;
   title?: string;
-  descripcion?: string;
   description?: string;
   orden_idx?: number;
   order_index?: number;
@@ -489,7 +488,7 @@ export default function ParticipantVotePage() {
             {orderedOptions.map((option, index) => {
               const rank = index + 1;
               const title = option.title;
-              const description = option.description || option.descripcion;
+              const description = option.description;
 
               return (
                 <div
@@ -547,7 +546,7 @@ export default function ParticipantVotePage() {
             const rank = index + 1;
             const isDragging = draggedIndex === index;
             const title = option.title;
-            const description = option.description || option.descripcion;
+            const description = option.description;
 
             return (
               <div
