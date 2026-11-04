@@ -200,7 +200,11 @@ function toParticipantReportView(
 }
 
 function isSerializationConflict(err: unknown): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034';
+  if (!(err instanceof Prisma.PrismaClientKnownRequestError)) return false;
+  if (err.code === 'P2034') return true;
+  // Raw queries report PostgreSQL serialization_failure (40001) as P2010
+  const meta = err.meta as { code?: string } | undefined;
+  return err.code === 'P2010' && (meta?.code === '40001' || /could not serialize/i.test(err.message));
 }
 
 const SERIALIZABLE_MAX_ATTEMPTS = 10;
@@ -530,16 +534,13 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           throw Errors.ROOM_CLOSED();
         }
 
-        // Bloqueo de fila para evitar colisión con el cierre de ronda concurrente
-        try {
-          await tx.room.update({
-            where: { id: targetRoomId, status: 'ROUND_OPEN' },
-            data: { updated_at: new Date() },
-          });
-        } catch (lockErr) {
-          if (isSerializationConflict(lockErr)) throw lockErr;
-          throw Errors.ROOM_CLOSED();
-        }
+        // Bloqueo compartido de la fila de la sala: los votantes no chocan entre sí,
+        // y el cierre de ronda (CAS con UPDATE) espera a que terminen los votos en curso.
+        // Si el cierre ya ocurrió, Serializable aborta y el reintento ve la sala cerrada.
+        const locked = await tx.$queryRaw<Array<{ status: string }>>`
+          SELECT "status" FROM "Room" WHERE "id" = ${targetRoomId} FOR SHARE
+        `;
+        if (locked[0]?.status !== 'ROUND_OPEN') throw Errors.ROOM_CLOSED();
 
         const n = room.options.length;
         const optionIds = new Set(room.options.map((p) => p.id));
