@@ -203,3 +203,103 @@ describe('Idempotency & Concurrent Vote Mutation Simulation', () => {
     expect(participantIds).not.toContain('v4');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PT-23: participantes tardíos configurables por sala (PostgreSQL).
+// Con la opción apagada (por defecto) el comportamiento es el de arriba.
+// ─────────────────────────────────────────────────────────────────────────────
+import { vi, beforeAll as beforeAllDb, afterAll as afterAllDb } from 'vitest';
+import { PrismaClient } from '@prisma/client';
+import { generateMemberCode, hashMemberCode } from '@/lib/member-codes';
+import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
+
+vi.hoisted(() => {
+  if (process.env.TEST_DATABASE_URL) process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+});
+
+const lateState = vi.hoisted(() => ({
+  session: null as null | { participantId: string; roomId: string; nickname: string; blindCode: string },
+}));
+
+vi.mock('next/headers', () => ({ headers: () => new Headers(), cookies: () => ({ get: () => undefined }) }));
+vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
+vi.mock('@/lib/participant-session', () => ({
+  getParticipantSession: async () => lateState.session,
+  createParticipantSession: async (p: typeof lateState.session) => {
+    lateState.session = p;
+  },
+  clearParticipantSession: async () => undefined,
+}));
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
+  checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
+  recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
+  resetFailedAttempts: () => undefined,
+  getClientIp: () => '127.0.0.1',
+}));
+
+describe.skipIf(!hasTestDb)('PT-23: participantes tardíos (PostgreSQL)', () => {
+  let prisma: PrismaClient;
+  const fixtures: RoomFixture[] = [];
+
+  beforeAllDb(() => {
+    prisma = new PrismaClient({ datasources: { db: { url: TEST_DB_URL } } });
+  });
+
+  afterAllDb(async () => {
+    for (const fx of fixtures) await cleanupFixture(prisma, fx);
+    await prisma.$disconnect();
+  });
+
+  const ballot = (fx: RoomFixture) => fx.optionIds.map((optionId, i) => ({ optionId, position: i + 1 }));
+
+  it('apagada: no se puede ingresar ni votar por primera vez en la ronda 2', async () => {
+    const fx = await createRoomFixture(prisma, { participants: 1, status: 'ROUND_OPEN', currentRound: 2 });
+    fixtures.push(fx);
+    const { joinRoom, submitVote } = await import('@/app/actions/participant');
+    expect((await joinRoom(fx.pin, 'Persona Tardía', '1234')).success).toBe(false);
+    lateState.session = { participantId: fx.participantIds[0], roomId: fx.roomId, nickname: 'Persona 1', blindCode: fx.blindCodes[0] };
+    expect(await submitVote(ballot(fx))).toMatchObject({ success: false, code: 'NOT_ROUND1_VOTER' });
+  });
+
+  it('encendida: quien no votó en la ronda 1 entra y vota en la 2, marcado con su ronda de ingreso', async () => {
+    const fx = await createRoomFixture(prisma, { participants: 0, status: 'ROUND_OPEN', currentRound: 2, room: { allow_late_join: true } });
+    fixtures.push(fx);
+    const { joinRoom, submitVote } = await import('@/app/actions/participant');
+    const joined = await joinRoom(fx.pin, 'Persona Tardía', '1234');
+    expect(joined.success).toBe(true);
+    const participant = await prisma.participant.findFirstOrThrow({ where: { room_id: fx.roomId } });
+    expect(participant.joined_round).toBe(2);
+    expect(await submitVote(ballot(fx))).toEqual({ success: true });
+    expect(await prisma.vote.count({ where: { participant_id: participant.id, round: 2 } })).toBe(3);
+  });
+
+  it('encendida: un participante de la ronda 1 que no votó puede votar en la 2', async () => {
+    const fx = await createRoomFixture(prisma, { participants: 1, status: 'ROUND_OPEN', currentRound: 2, room: { allow_late_join: true } });
+    fixtures.push(fx);
+    const { submitVote } = await import('@/app/actions/participant');
+    lateState.session = { participantId: fx.participantIds[0], roomId: fx.roomId, nickname: 'Persona 1', blindCode: fx.blindCodes[0] };
+    expect(await submitVote(ballot(fx))).toEqual({ success: true });
+  });
+
+  it('sala con lista: un miembro agregado en la ronda 2 entra solo si la sala lo permite', async () => {
+    const { joinRoomWithCode } = await import('@/app/actions/participant');
+    for (const allow of [false, true]) {
+      const fx = await createRoomFixture(prisma, {
+        participants: 0,
+        status: 'ROUND_OPEN',
+        currentRound: 2,
+        room: { access_mode: 'ROSTER', allow_late_join: allow },
+      });
+      fixtures.push(fx);
+      const code = generateMemberCode();
+      await prisma.roomMember.create({ data: { room_id: fx.roomId, label: 'Tarde', access_code_hash: hashMemberCode(code), added_round: 2 } });
+      const res = await joinRoomWithCode(fx.pin, code);
+      expect(res.success).toBe(allow);
+      if (allow) {
+        const p = await prisma.participant.findFirstOrThrow({ where: { room_id: fx.roomId } });
+        expect(p.joined_round).toBe(2);
+      }
+    }
+  });
+});

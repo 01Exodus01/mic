@@ -496,8 +496,9 @@ export async function joinRoom(
       };
     }
 
-    // 5. New registration
-    if (room.current_round > 1) {
+    // 5. New registration. Closed cohort by default: only in round 1, unless
+    // the room allows late participants (PT-23)
+    if (room.current_round > 1 && !room.allow_late_join) {
       throw Errors.CANNOT_JOIN();
     }
 
@@ -523,6 +524,7 @@ export async function joinRoom(
           nickname: cleanNick,
           pin_hash: pinHash,
           blind_code: blindCode,
+          joined_round: room.current_round,
         },
       });
 
@@ -617,8 +619,8 @@ export async function joinRoomWithCode(
         return existing;
       }
 
-      // Closed cohort: new identities only in round 1 (PT-23 widens this)
-      if (room!.current_round > 1) return null;
+      // Closed cohort: new identities only in round 1, unless late participants are allowed (PT-23)
+      if (room!.current_round > 1 && !room!.allow_late_join) return null;
 
       const taken = await tx.participant.findMany({ where: { room_id: room!.id }, select: { blind_code: true } });
       const { generateRandomBlindCode } = await import('@/lib/pin');
@@ -764,8 +766,8 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           throw Errors.INVALID_BALLOT(`Las posiciones deben estar en el rango [1, ${n}].`);
         }
 
-        // Cohorte cerrada check for rounds > 1
-        if (room.current_round > 1) {
+        // Cohorte cerrada check for rounds > 1 (skipped when late participants are allowed, PT-23)
+        if (room.current_round > 1 && !room.allow_late_join) {
           const round1Vote = await tx.vote.findFirst({
             where: { participant_id: session.participantId, round: 1 },
           });
