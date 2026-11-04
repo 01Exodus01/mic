@@ -22,7 +22,7 @@ export const Errors = {
   WRONG_PIN:            () => new AppError('WRONG_PIN', 'PIN incorrecto.', 401),
   LOCKED_OUT:           (sec: number) =>
     new AppError('LOCKED_OUT', `Demasiados intentos fallidos. Acceso bloqueado temporalmente por ${sec} segundos.`, 429),
-  ROOM_CLOSED:          () => new AppError('ROOM_CLOSED', 'La sala no está abierta para votar.', 403),
+  ROOM_CLOSED:          () => new AppError('ROOM_CLOSED', 'La votación ya se cerró. Tu voto no se guardó.', 403),
   INVALID_BALLOT:       (msg: string) => new AppError('INVALID_BALLOT', msg, 422),
   JUSTIFICATION_SHORT:  () =>
     new AppError('JUSTIFICATION_SHORT', 'La razón debe tener al menos 25 caracteres.', 422),
@@ -38,6 +38,8 @@ export const Errors = {
   RATE_LIMITED:         (resetIn: number) =>
     new AppError('RATE_LIMITED', `Demasiadas solicitudes. Reintenta en ${resetIn}s.`, 429),
   UNAUTHORIZED:         () => new AppError('UNAUTHORIZED', 'No autorizado.', 401),
+  RETIRED:              () =>
+    new AppError('RETIRED', 'Fuiste retirado de la sala. Tus votos anteriores se conservan.', 403),
   CONSENT_REQUIRED:     () =>
     new AppError('CONSENT_REQUIRED', 'Para votar primero tienes que aceptar el consentimiento de la sala.', 403),
   BUSY:                 () =>

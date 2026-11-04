@@ -12,6 +12,7 @@ import RoundFeedbackReport, {
   type FeedbackReportData,
 } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
+import RetiredNotice from '@/components/RetiredNotice';
 
 interface OptionItem {
   id: string;
@@ -70,10 +71,15 @@ export default function ParticipantFeedbackPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [roomData, setRoomData] = useState<FeedbackRoomData | null>(null);
+  const [retired, setRetired] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const res = await getParticipantRoomView();
+      if (!res.success && res.code === 'RETIRED') {
+        setRetired(true);
+        return;
+      }
       if (!res.success || !res.data) {
         router.push('/join');
         return;
@@ -109,6 +115,10 @@ export default function ParticipantFeedbackPage() {
       router.push('/join');
     }
   };
+
+  if (retired) {
+    return <RetiredNotice />;
+  }
 
   if (loading) {
     return <ParticipantFeedbackSkeleton />;

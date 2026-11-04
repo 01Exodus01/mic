@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { acceptConsent, getParticipantRoomView, logoutParticipant } from '@/app/actions/participant';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
+import RetiredNotice from '@/components/RetiredNotice';
 
 interface ConsentView {
   sala: { title: string };
@@ -23,9 +24,14 @@ export default function ParticipantConsentPage() {
   const [data, setData] = useState<ConsentView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [retired, setRetired] = useState(false);
 
   const load = useCallback(async () => {
     const res = await getParticipantRoomView();
+    if (!res.success && res.code === 'RETIRED') {
+      setRetired(true);
+      return;
+    }
     if (!res.success || !res.data) {
       router.push('/join');
       return;
@@ -62,6 +68,7 @@ export default function ParticipantConsentPage() {
     router.push('/join');
   };
 
+  if (retired) return <RetiredNotice />;
   if (!data) return <ParticipantVoteSkeleton />;
 
   return (

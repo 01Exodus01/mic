@@ -12,6 +12,7 @@ import ReasonListsField, {
 } from '@/components/ReasonListsField';
 import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
+import RetiredNotice from '@/components/RetiredNotice';
 import { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
@@ -71,6 +72,7 @@ export default function ParticipantVotePage() {
   const [isExpiredLocally, setIsExpiredLocally] = useState<boolean>(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [retired, setRetired] = useState<boolean>(false);
   const isEditingRef = useRef<boolean>(false);
   const initialLoadDoneRef = useRef<boolean>(false);
   const currentRoundRef = useRef<number | null>(null);
@@ -97,6 +99,10 @@ export default function ParticipantVotePage() {
   const loadData = useCallback(async () => {
     try {
       const res = await getParticipantRoomView();
+      if (!res.success && res.code === 'RETIRED') {
+        setRetired(true);
+        return;
+      }
       if (!res.success || !res.data) {
         toast.error('No se puede ingresar a esa sala. Revisa tus datos.');
         router.push('/join');
@@ -344,6 +350,13 @@ export default function ParticipantVotePage() {
         setIsEditing(false);
         isEditingRef.current = false;
         await loadData();
+      } else if (res.code === 'RETIRED') {
+        setRetired(true);
+      } else if (res.code === 'ROOM_CLOSED') {
+        // The round closed while this screen still showed time: block and refresh now
+        setIsExpiredLocally(true);
+        toast.error(res.error || 'La votación ya se cerró.');
+        await loadData();
       } else {
         toast.error(res.error || 'No fue posible guardar el voto.');
       }
@@ -364,6 +377,10 @@ export default function ParticipantVotePage() {
       router.push('/join');
     }
   };
+
+  if (retired) {
+    return <RetiredNotice />;
+  }
 
   if (loading) {
     return <ParticipantVoteSkeleton />;

@@ -258,7 +258,8 @@ export async function acceptConsent(): Promise<ActionResult> {
     if (!session) throw Errors.UNAUTHORIZED();
     const roomId = session.roomId;
     const participant = await prisma.participant.findFirst({ where: { id: session.participantId, room_id: roomId } });
-    if (!participant || participant.is_retired) throw Errors.UNAUTHORIZED();
+    if (!participant) throw Errors.UNAUTHORIZED();
+    if (participant.is_retired) throw Errors.RETIRED();
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw Errors.ROOM_NOT_FOUND();
     if (!room.consent_required) return { success: true };
@@ -713,7 +714,8 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
     const participant = await prisma.participant.findFirst({
       where: { id: session.participantId, room_id: targetRoomId },
     });
-    if (!participant || participant.is_retired) throw Errors.UNAUTHORIZED();
+    if (!participant) throw Errors.UNAUTHORIZED();
+    if (participant.is_retired) throw Errors.RETIRED();
 
     const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
     await checkAndProcessExpiredDeadline(targetRoomId);
@@ -910,7 +912,8 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     const participant = await prisma.participant.findFirst({
       where: { id: session.participantId, room_id: targetRoomId },
     });
-    if (!participant || participant.is_retired) throw Errors.UNAUTHORIZED();
+    if (!participant) throw Errors.UNAUTHORIZED();
+    if (participant.is_retired) throw Errors.RETIRED();
 
     const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
     await checkAndProcessExpiredDeadline(targetRoomId);

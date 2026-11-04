@@ -86,9 +86,9 @@ export async function GET(
     if (participantId) {
       const part = await prisma.participant.findUnique({
         where: { id: participantId },
-        select: { id: true },
+        select: { id: true, is_retired: true },
       });
-      if (!part) {
+      if (!part || part.is_retired) {
         isRetired = true;
       }
     }
