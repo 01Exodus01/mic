@@ -107,7 +107,6 @@ export interface MappedRoomDetails {
   deadline: Date | null;
   created_at: Date;
   updated_at: Date;
-  min_miembros: number;
   max_miembros: number;
   tau_umbral: number;
   max_rondas: number;
@@ -526,7 +525,6 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
       ...room,
       // PT-25: same filtering as reportes (no per-voter metrics or signed reasons)
       reports: room.reports.map((r) => ({ ...r, arguments_json: {} })),
-      min_miembros: MIN_PARTICIPANTS,
       max_miembros: room.max_members,
       tau_umbral: room.tau_threshold,
       max_rondas: room.max_rounds,
