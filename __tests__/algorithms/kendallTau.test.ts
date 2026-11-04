@@ -365,3 +365,27 @@ describe('PT-17: Kendall estándar sobre un orden del grupo estricto', () => {
     expect(RoomAnalysisSchema.parse({})).toEqual({ tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' });
   });
 });
+
+describe('Tau-c de Statistics How To: (C - D) / (T - t)', () => {
+  // t = pares empatados. Con la boleta estricta, los únicos empates son del orden
+  // del grupo, así que T - t = C + D: la fórmula de la página es la gamma de pares
+  // decididos ya calculada (gamma_decided_pairs). No es la tau-c de Stuart.
+  it('coincide con gamma en los 500 casos de SciPy, con y sin empates', () => {
+    const cases = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../fixtures/scipy_500_cases.json'), 'utf8')) as Array<{
+      n: number; ballot: number[]; collective: number[];
+    }>;
+    let withTies = 0;
+    for (const c of cases) {
+      const ids = c.ballot.map((_, i) => `o${i}`);
+      const ballot = new Map(ids.map((id, i) => [id, c.ballot[i]]));
+      const group = ids.map((id, i) => ({ id, midRank: c.collective[i], score: 0 }));
+      const r = cixOf(ballot, group, 'v');
+      const T = (c.n * (c.n - 1)) / 2;
+      const t = r.tied ?? 0;
+      if (t > 0) withTies++;
+      const pageTauC = T - t === 0 ? 0 : (r.concordant - r.discordant) / (T - t);
+      expect(Math.abs(pageTauC - (r.gamma ?? NaN))).toBeLessThan(1e-12);
+    }
+    expect(withTies).toBeGreaterThan(50);
+  });
+});
