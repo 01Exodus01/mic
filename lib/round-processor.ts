@@ -114,6 +114,18 @@ export function buildReasonsByOption(
   return result;
 }
 
+/**
+ * Reason balance per option for the REASON_BALANCE tie-break: reasons for minus
+ * reasons against, every non-empty reason of the round with weight 1.
+ */
+export function reasonBalanceOf(reasons: ReportReasonsMap): Record<string, number> {
+  const balance: Record<string, number> = {};
+  for (const [optionId, r] of Object.entries(reasons)) {
+    balance[optionId] = r.reasonsFor.length - r.reasonsAgainst.length;
+  }
+  return balance;
+}
+
 export interface ProcessRoundTrigger {
   /** HOST for a manual close; SYSTEM for deadline (lazy check or worker). */
   actor: EventActor;
@@ -192,7 +204,13 @@ export async function processRoundConsensus(
       };
     }
 
-    // 3. Run the algorithmic engine
+    // Blind codes and verbatim reasons of the countable ballots (PT-15)
+    const participantCodeMap = new Map<string, string>(
+      room.participants.map((p) => [p.id, p.blind_code])
+    );
+    const reasonsByOption = buildReasonsByOption(rawVotes, optionIds, completeBallots, participantCodeMap);
+
+    // 3. Run the algorithmic engine with the room's declared tie-break rule (PT-16)
     const engineOutput = runAggregationEngine({
       optionIds,
       ballots: completeBallots,
@@ -201,6 +219,11 @@ export async function processRoundConsensus(
       tauThreshold: room.tau_threshold,
       currentRound,
       maxRounds: room.max_rounds,
+      tieBreak: {
+        rule: room.tie_break_rule,
+        optionOrder: optionIds,
+        reasonBalance: room.tie_break_rule === 'REASON_BALANCE' ? reasonBalanceOf(reasonsByOption) : undefined,
+      },
     });
 
     if (!engineOutput.result) {
@@ -215,13 +238,9 @@ export async function processRoundConsensus(
       };
     }
 
-    const { ranking, tauStar, stuartTauStar, gammaTauStar, voterCIX } = engineOutput.result;
+    const { ranking, tauStar, stuartTauStar, gammaTauStar, voterCIX, tieBreak } = engineOutput.result;
 
     // 4. Structure blind qualitative justifications by option
-    const participantCodeMap = new Map<string, string>(
-      room.participants.map((p) => [p.id, p.blind_code])
-    );
-
     const argumentsByOption: BlindArgumentsByOption = {};
 
     for (const p of room.options) {
@@ -244,14 +263,13 @@ export async function processRoundConsensus(
       }
     }
 
-    // PT-15: every non-empty reason of the countable ballots, verbatim
-    const reasonsByOption = buildReasonsByOption(rawVotes, optionIds, completeBallots, participantCodeMap);
-
     const rankingJson: Prisma.InputJsonValue = ranking as unknown as Prisma.InputJsonValue;
     // AUD-16 & D1: Persistir métricas de concordancia y análisis de sensibilidad sin alterar argumentos
     const argumentsPayload = {
       ...argumentsByOption,
       __reasons: reasonsByOption,
+      // PT-16: which groups were tied and whether the declared rule resolved them
+      __tieBreak: tieBreak ?? { rule: 'NONE', applied: false, tiedGroups: [] },
       __metrics: {
         tauStar,
         stuartTauStar: stuartTauStar ?? tauStar,

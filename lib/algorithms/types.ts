@@ -45,4 +45,10 @@ export interface RoundResult {
   stuartTauStar?: number;       // Sensitivity: Group consensus based on Stuart tau-c
   gammaTauStar?: number;        // Sensitivity: Group consensus based on Gamma
   quorumMet: boolean;           // effectiveVoters >= minMembers
+  /** Present only when the caller declared a tie-break rule (PT-16) */
+  tieBreak?: {
+    rule: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
+    applied: boolean;
+    tiedGroups: string[][];
+  };
 }

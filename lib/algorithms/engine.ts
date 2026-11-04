@@ -17,6 +17,7 @@ import { bordaCount } from './borda';
 import { schulzeMethod } from './schulze';
 import { kemenyYoung } from './kemenyYoung';
 import { computeGroupConsensus } from './kendallTau';
+import { applyTieBreak, type TieBreakInput } from './tieBreak';
 
 export type AggregationMethod = 'BORDA' | 'SCHULZE' | 'KEMENY_YOUNG';
 
@@ -36,6 +37,11 @@ export interface EngineInput {
   currentRound: number;
   /** Maximum rounds */
   maxRounds: number;
+  /**
+   * Declared tie-break rule (PT-16). Omitted or rule NONE: the weak order with
+   * mid-ranks is kept exactly as before.
+   */
+  tieBreak?: TieBreakInput;
 }
 
 export interface EngineOutput {
@@ -84,6 +90,18 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
       throw new Error(`Unknown aggregation method: ${method}`);
   }
 
+  // Declared tie-break (PT-16). Skipped entirely for NONE so the output is unchanged.
+  let tieBreakReport: RoundResult['tieBreak'];
+  if (input.tieBreak) {
+    if (input.tieBreak.rule !== 'NONE') {
+      const broken = applyTieBreak(ranking, input.tieBreak);
+      ranking = broken.ranking;
+      tieBreakReport = broken.report;
+    } else {
+      tieBreakReport = applyTieBreak(ranking, input.tieBreak).report;
+    }
+  }
+
   // Compute CIX and group consensus τ* (primary Kendall tau-b and sensitivity metrics)
   const { voterCIX, tauStar, stuartTauStar, gammaTauStar } = computeGroupConsensus(ballots, ranking);
 
@@ -98,6 +116,7 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
     gammaTauStar,
     quorumMet: true,
   };
+  if (tieBreakReport) result.tieBreak = tieBreakReport;
 
   // Stop criterion: τ* ≥ τ_threshold OR currentRound === maxRounds
   const shouldConclude = tauStar >= tauThreshold || currentRound >= maxRounds;
