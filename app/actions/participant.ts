@@ -67,7 +67,6 @@ export interface ParticipantRoomViewData {
     position: number;
     justification: string;
     created_at: Date;
-    proyecto_id: string;
     posicion: number;
     justificacion: string;
     reasonsFor: string[];
@@ -701,7 +700,6 @@ export async function joinRoomWithCode(
 // ─────────────────────────────────────────────
 
 export interface VoteEntry {
-  projectId?: string;
   optionId?: string;
   posicion?: number;
   position?: number;
@@ -734,7 +732,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
 
     // Validate each vote entry with Zod and collect parsed items
     const validatedVotes = votes.map((v) => {
-      const optId = v.optionId || v.projectId;
+      const optId = v.optionId;
       const pos = v.position !== undefined ? v.position : v.posicion;
       const just = v.justification !== undefined ? v.justification : v.justificacion;
 
@@ -945,7 +943,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     const mappedVotes = myVotes.map(({ reasons, ...v }) => ({
       ...v,
       justification: v.justification ?? '',
-      proyecto_id: v.option_id,
       posicion: v.position,
       justificacion: v.justification ?? '',
       reasonsFor: reasons.filter((r) => r.side === 'FOR').map((r) => r.text),

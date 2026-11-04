@@ -47,7 +47,6 @@ interface ParticipantRoomData {
   session: ParticipantSessionInfo;
   myVotes: Array<{
     id: string;
-    proyecto_id?: string;
     option_id?: string;
     posicion?: number;
     position?: number;
@@ -89,7 +88,7 @@ export default function ParticipantVotePage() {
     const reasonMap: Record<string, OptionReasons> = {};
     const legacyMap: Record<string, string> = {};
     for (const v of myVotes) {
-      const optId = (v.option_id || v.proyecto_id)!;
+      const optId = v.option_id!;
       reasonMap[optId] = { for: [...(v.reasonsFor ?? [])], against: [...(v.reasonsAgainst ?? [])] };
       const legacy = v.justification || v.justificacion || '';
       if (legacy) legacyMap[optId] = legacy;
@@ -141,9 +140,9 @@ export default function ParticipantVotePage() {
         initialLoadDoneRef.current = true;
         if (hasVoted) {
           const sorted = [...options].sort((a, b) => {
-            const vA = myVotes.find((v) => (v.option_id || v.proyecto_id) === a.id);
+            const vA = myVotes.find((v) => v.option_id === a.id);
             const posA = vA?.position ?? vA?.posicion ?? 0;
-            const vB = myVotes.find((v) => (v.option_id || v.proyecto_id) === b.id);
+            const vB = myVotes.find((v) => v.option_id === b.id);
             const posB = vB?.position ?? vB?.posicion ?? 0;
             return posA - posB;
           });
@@ -163,9 +162,9 @@ export default function ParticipantVotePage() {
         // if user has already voted AND is not actively editing their ballot
         if (hasVoted && !isEditingRef.current) {
           const sorted = [...options].sort((a, b) => {
-            const vA = myVotes.find((v) => (v.option_id || v.proyecto_id) === a.id);
+            const vA = myVotes.find((v) => v.option_id === a.id);
             const posA = vA?.position ?? vA?.posicion ?? 0;
-            const vB = myVotes.find((v) => (v.option_id || v.proyecto_id) === b.id);
+            const vB = myVotes.find((v) => v.option_id === b.id);
             const posB = vB?.position ?? vB?.posicion ?? 0;
             return posA - posB;
           });
