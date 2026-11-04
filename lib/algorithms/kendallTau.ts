@@ -156,6 +156,32 @@ export function computeVoterCIX(
   };
 }
 
+export type ConcordanceVariant = 'WITH_TIES' | 'WITHOUT_TIES';
+
+/** True when every option has a distinct integer rank 1..n (no ties). */
+export function isStrictRanking(collectiveRanking: WeakOrder[]): boolean {
+  const ranks = collectiveRanking.map((r) => r.midRank).sort((a, b) => a - b);
+  return ranks.every((r, i) => r === i + 1);
+}
+
+/**
+ * Group consensus for a declared concordance variant (PT-17, AGENTS.md E-2).
+ * WITH_TIES: Kendall tau-b, exactly computeGroupConsensus.
+ * WITHOUT_TIES: standard Kendall tau, (C - D) / (n(n-1)/2). It is only defined
+ * on a strict collective order, where tau-b's tie term t_grupo is 0 and tau-b
+ * reduces to that same expression, so the existing function is reused as is.
+ */
+export function computeGroupConsensusForVariant(
+  ballots: Map<string, Ballot>,
+  collectiveRanking: WeakOrder[],
+  variant: ConcordanceVariant
+): ReturnType<typeof computeGroupConsensus> {
+  if (variant === 'WITHOUT_TIES' && !isStrictRanking(collectiveRanking)) {
+    throw new Error('WITHOUT_TIES concordance requires a strict collective ranking (declare a tie-break rule).');
+  }
+  return computeGroupConsensus(ballots, collectiveRanking);
+}
+
 /**
  * Computes group consensus for all voters in a round.
  * Primary consensus metric is the average of Kendall tau-b CIX.

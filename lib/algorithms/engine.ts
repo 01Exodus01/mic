@@ -16,7 +16,7 @@ import type { Ballot, RoundResult, WeakOrder } from './types';
 import { bordaCount } from './borda';
 import { schulzeMethod } from './schulze';
 import { kemenyYoung } from './kemenyYoung';
-import { computeGroupConsensus } from './kendallTau';
+import { computeGroupConsensus, computeGroupConsensusForVariant, type ConcordanceVariant } from './kendallTau';
 import { applyTieBreak, type TieBreakInput } from './tieBreak';
 
 export type AggregationMethod = 'BORDA' | 'SCHULZE' | 'KEMENY_YOUNG';
@@ -42,6 +42,11 @@ export interface EngineInput {
    * mid-ranks is kept exactly as before.
    */
   tieBreak?: TieBreakInput;
+  /**
+   * Concordance variant (PT-17). WITHOUT_TIES requires a tie-break rule other
+   * than NONE. Omitted: tau-b as before.
+   */
+  concordanceVariant?: ConcordanceVariant;
 }
 
 export interface EngineOutput {
@@ -58,6 +63,10 @@ export interface EngineOutput {
  */
 export function runAggregationEngine(input: EngineInput): EngineOutput {
   const { ballots, method, minMembers, tauThreshold, currentRound, maxRounds } = input;
+
+  if (input.concordanceVariant === 'WITHOUT_TIES' && (!input.tieBreak || input.tieBreak.rule === 'NONE')) {
+    throw new Error('WITHOUT_TIES concordance requires a tie-break rule other than NONE.');
+  }
   const optionIds = (input.optionIds || input.projectIds || []);
 
   const effectiveVoters = ballots.size;
@@ -103,7 +112,9 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
   }
 
   // Compute CIX and group consensus τ* (primary Kendall tau-b and sensitivity metrics)
-  const { voterCIX, tauStar, stuartTauStar, gammaTauStar } = computeGroupConsensus(ballots, ranking);
+  const { voterCIX, tauStar, stuartTauStar, gammaTauStar } = input.concordanceVariant
+    ? computeGroupConsensusForVariant(ballots, ranking, input.concordanceVariant)
+    : computeGroupConsensus(ballots, ranking);
 
   const result: RoundResult = {
     method,
@@ -117,6 +128,7 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
     quorumMet: true,
   };
   if (tieBreakReport) result.tieBreak = tieBreakReport;
+  if (input.concordanceVariant) result.concordanceVariant = input.concordanceVariant;
 
   // Stop criterion: τ* ≥ τ_threshold OR currentRound === maxRounds
   const shouldConclude = tauStar >= tauThreshold || currentRound >= maxRounds;

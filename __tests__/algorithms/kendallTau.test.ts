@@ -236,3 +236,113 @@ describe('Grupo 4: Métrica y algoritmos (D1, AUD-10, AUD-24)', () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PT-17: variante "sin empates" (Kendall estándar). La página de referencia
+// citada en el plan (Statistics How To) no se pudo descargar desde el entorno de
+// trabajo; los casos a mano siguientes se cuentan par por par en los comentarios.
+// ─────────────────────────────────────────────────────────────────────────────
+import {
+  computeVoterCIX as cixOf,
+  computeGroupConsensusForVariant,
+  isStrictRanking,
+} from '../../lib/algorithms/kendallTau';
+import { runAggregationEngine as engineRun } from '../../lib/algorithms/engine';
+import { RoomAnalysisSchema } from '../../lib/validations';
+
+function strictOrder(ids: string[]) {
+  return ids.map((id, i) => ({ id, midRank: i + 1, score: 0 }));
+}
+
+function bruteForceKendall(ballotRanks: number[], groupRanks: number[]) {
+  let C = 0;
+  let D = 0;
+  for (let i = 0; i < ballotRanks.length; i++) {
+    for (let j = i + 1; j < ballotRanks.length; j++) {
+      const s = Math.sign(ballotRanks[i] - ballotRanks[j]) * Math.sign(groupRanks[i] - groupRanks[j]);
+      if (s > 0) C++;
+      else if (s < 0) D++;
+    }
+  }
+  const n = ballotRanks.length;
+  return (C - D) / ((n * (n - 1)) / 2);
+}
+
+describe('PT-17: Kendall estándar sobre un orden del grupo estricto', () => {
+  it('caso a mano, 4 opciones: C = 5, D = 1, tau = 4/6', () => {
+    // Boleta A B C D; grupo A C B D. Pares: AB C, AC C, AD C, BC D, BD C, CD C.
+    const ballot = new Map([['A', 1], ['B', 2], ['C', 3], ['D', 4]]);
+    const r = cixOf(ballot, strictOrder(['A', 'C', 'B', 'D']), 'v');
+    expect(r.concordant).toBe(5);
+    expect(r.discordant).toBe(1);
+    expect(r.tauB).toBeCloseTo(4 / 6, 12);
+    expect(r.cix).toBeCloseTo((4 / 6 + 1) / 2, 12);
+  });
+
+  it('caso a mano, 5 opciones: C = 8, D = 2, tau = 0.6', () => {
+    // Boleta A B C D E; grupo B A C E D. Discordantes: AB y DE; los otros 8 pares concuerdan.
+    const ballot = new Map([['A', 1], ['B', 2], ['C', 3], ['D', 4], ['E', 5]]);
+    const r = cixOf(ballot, strictOrder(['B', 'A', 'C', 'E', 'D']), 'v');
+    expect([r.concordant, r.discordant]).toEqual([8, 2]);
+    expect(r.tauB).toBeCloseTo(0.6, 12);
+  });
+
+  it('casos extremos: idéntico = 1, invertido = -1', () => {
+    const ballot = new Map([['A', 1], ['B', 2], ['C', 3]]);
+    expect(cixOf(ballot, strictOrder(['A', 'B', 'C']), 'v').tauB).toBe(1);
+    expect(cixOf(ballot, strictOrder(['C', 'B', 'A']), 'v').tauB).toBe(-1);
+  });
+
+  it('en los casos estrictos de SciPy, tau-b coincide con (C - D) / (n(n-1)/2) y con SciPy', () => {
+    const cases = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../fixtures/scipy_500_cases.json'), 'utf8')) as Array<{
+      n: number; ballot: number[]; collective: number[]; tau_b: number;
+    }>;
+    const strict = cases.filter((c) => new Set(c.collective).size === c.n && c.collective.every(Number.isInteger));
+    expect(strict.length).toBeGreaterThan(50);
+    for (const c of strict) {
+      const ids = c.ballot.map((_, i) => `o${i}`);
+      const ballot = new Map(ids.map((id, i) => [id, c.ballot[i]]));
+      const group = ids.map((id, i) => ({ id, midRank: c.collective[i], score: 0 }));
+      const ours = cixOf(ballot, group, 'v').tauB!;
+      expect(Math.abs(ours - bruteForceKendall(c.ballot, c.collective))).toBeLessThan(1e-12);
+      expect(Math.abs(ours - c.tau_b)).toBeLessThan(1e-9);
+    }
+  });
+
+  it('la variante sin empates rechaza un orden del grupo con empates', () => {
+    const ballots = new Map([['v', new Map([['A', 1], ['B', 2], ['C', 3]])]]);
+    const tied = [{ id: 'A', midRank: 1.5, score: 1 }, { id: 'B', midRank: 1.5, score: 1 }, { id: 'C', midRank: 3, score: 0 }];
+    expect(isStrictRanking(tied)).toBe(false);
+    expect(() => computeGroupConsensusForVariant(ballots, tied, 'WITHOUT_TIES')).toThrow();
+    expect(computeGroupConsensusForVariant(ballots, tied, 'WITH_TIES').tauStar).toBeGreaterThan(0);
+  });
+
+  it('el motor rechaza "sin empates" con la regla "ninguna" y la registra con una regla', () => {
+    const input = {
+      optionIds: ['A', 'B', 'C'],
+      ballots: new Map([
+        ['v1', new Map([['A', 1], ['B', 2], ['C', 3]])],
+        ['v2', new Map([['B', 1], ['C', 2], ['A', 3]])],
+        ['v3', new Map([['C', 1], ['A', 2], ['B', 3]])],
+      ]),
+      method: 'BORDA' as const,
+      minMembers: 3,
+      tauThreshold: 0.8,
+      currentRound: 1,
+      maxRounds: 3,
+    };
+    expect(() => engineRun({ ...input, concordanceVariant: 'WITHOUT_TIES', tieBreak: { rule: 'NONE', optionOrder: ['A', 'B', 'C'] } })).toThrow();
+    expect(() => engineRun({ ...input, concordanceVariant: 'WITHOUT_TIES' })).toThrow();
+    const ok = engineRun({ ...input, concordanceVariant: 'WITHOUT_TIES', tieBreak: { rule: 'LEXICOGRAPHIC', optionOrder: ['A', 'B', 'C'] } });
+    expect(ok.result!.concordanceVariant).toBe('WITHOUT_TIES');
+    // Same numbers as tau-b on the same strict order
+    const tauB = engineRun({ ...input, concordanceVariant: 'WITH_TIES', tieBreak: { rule: 'LEXICOGRAPHIC', optionOrder: ['A', 'B', 'C'] } });
+    expect(ok.result!.tauStar).toBe(tauB.result!.tauStar);
+  });
+
+  it('crear una sala "sin empates" con la regla "ninguna" se rechaza', () => {
+    expect(RoomAnalysisSchema.safeParse({ tieBreakRule: 'NONE', concordanceVariant: 'WITHOUT_TIES' }).success).toBe(false);
+    expect(RoomAnalysisSchema.safeParse({ tieBreakRule: 'LEXICOGRAPHIC', concordanceVariant: 'WITHOUT_TIES' }).success).toBe(true);
+    expect(RoomAnalysisSchema.parse({})).toEqual({ tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' });
+  });
+});

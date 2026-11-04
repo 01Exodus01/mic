@@ -224,6 +224,7 @@ export async function processRoundConsensus(
         optionOrder: optionIds,
         reasonBalance: room.tie_break_rule === 'REASON_BALANCE' ? reasonBalanceOf(reasonsByOption) : undefined,
       },
+      concordanceVariant: room.concordance_variant,
     });
 
     if (!engineOutput.result) {
@@ -270,6 +271,8 @@ export async function processRoundConsensus(
       __reasons: reasonsByOption,
       // PT-16: which groups were tied and whether the declared rule resolved them
       __tieBreak: tieBreak ?? { rule: 'NONE', applied: false, tiedGroups: [] },
+      // PT-17: concordance variant used for tau* (cix = (tau + 1) / 2 in both)
+      __concordance: { variant: engineOutput.result.concordanceVariant ?? 'WITH_TIES' },
       __metrics: {
         tauStar,
         stuartTauStar: stuartTauStar ?? tauStar,

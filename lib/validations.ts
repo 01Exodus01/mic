@@ -315,6 +315,26 @@ export const CreateRoomSchema = z
 
 export type CreateRoomParsedInput = z.infer<typeof CreateRoomSchema>;
 
+/**
+ * Tie-break rule and concordance variant (PT-16, PT-17). "Sin empates" is only
+ * valid when a tie-break rule makes the group order strict.
+ */
+export const RoomAnalysisSchema = z
+  .object({
+    tieBreakRule: z.enum(['NONE', 'LEXICOGRAPHIC', 'REASON_BALANCE'], {
+      invalid_type_error: 'Elige una regla de desempate válida.',
+    }).default('NONE'),
+    concordanceVariant: z.enum(['WITH_TIES', 'WITHOUT_TIES'], {
+      invalid_type_error: 'Elige una forma válida de medir el acuerdo.',
+    }).default('WITH_TIES'),
+  })
+  .refine((v) => !(v.concordanceVariant === 'WITHOUT_TIES' && v.tieBreakRule === 'NONE'), {
+    message: 'Para medir el acuerdo sin empates, elige una regla de desempate.',
+    path: ['concordanceVariant'],
+  });
+
+export type RoomAnalysisInput = z.infer<typeof RoomAnalysisSchema>;
+
 // ─────────────────────────────────────────────
 // 9. Formularios Adicionales (Duración & Restablecer PIN)
 // ─────────────────────────────────────────────
