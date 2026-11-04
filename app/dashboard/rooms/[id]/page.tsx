@@ -65,7 +65,7 @@ interface RoomDetails {
   pin: string;
   title: string;
   method: string;
-  max_miembros: number;
+  max_members: number;
   tau_umbral: number;
   max_rondas: number;
   ronda_actual: number;
