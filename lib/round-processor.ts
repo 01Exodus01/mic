@@ -17,7 +17,7 @@ import { RoomStatus, Prisma } from '@prisma/client';
 import type { EventActor } from '@prisma/client';
 import { recordRoomEvent } from './room-events';
 import { MIN_PARTICIPANTS } from './validations';
-import type { RankingEntry, BlindArgumentEntry, BlindArgumentsMap } from '@/types/report';
+import type { RankingEntry, BlindArgumentEntry, BlindArgumentsMap, ReportReasonsMap, ReportReasonEntry } from '@/types/report';
 
 export type EstadoSala = RoomStatus;
 
@@ -73,6 +73,47 @@ export function buildCountableBallots(votes: CountableVote[], optionCount: numbe
   return completeBallots;
 }
 
+export interface ReasonSourceVote {
+  participant_id: string;
+  option_id: string;
+  position: number;
+  reasons: Array<{ side: 'FOR' | 'AGAINST'; text: string; order_index: number }>;
+}
+
+/**
+ * Collects all reasons of the countable ballots per option and side, verbatim.
+ * Sorted by blind code and then by the participant's own order; nothing is
+ * summarized, deduplicated or reordered by content.
+ */
+export function buildReasonsByOption(
+  votes: ReasonSourceVote[],
+  optionIds: string[],
+  countable: Map<string, unknown>,
+  blindCodeByParticipant: Map<string, string>
+): ReportReasonsMap {
+  const result: ReportReasonsMap = {};
+  for (const id of optionIds) result[id] = { reasonsFor: [], reasonsAgainst: [] };
+
+  for (const v of votes) {
+    if (!countable.has(v.participant_id)) continue;
+    const bucket = result[v.option_id];
+    if (!bucket) continue;
+    const blindCode = blindCodeByParticipant.get(v.participant_id) ?? 'Participante Anónimo';
+    for (const r of v.reasons) {
+      const entry: ReportReasonEntry = { blindCode, position: v.position, order: r.order_index, text: r.text };
+      (r.side === 'FOR' ? bucket.reasonsFor : bucket.reasonsAgainst).push(entry);
+    }
+  }
+
+  const byCodeThenOrder = (a: ReportReasonEntry, b: ReportReasonEntry) =>
+    a.blindCode < b.blindCode ? -1 : a.blindCode > b.blindCode ? 1 : a.order - b.order;
+  for (const id of optionIds) {
+    result[id].reasonsFor.sort(byCodeThenOrder);
+    result[id].reasonsAgainst.sort(byCodeThenOrder);
+  }
+  return result;
+}
+
 export interface ProcessRoundTrigger {
   /** HOST for a manual close; SYSTEM for deadline (lazy check or worker). */
   actor: EventActor;
@@ -126,6 +167,7 @@ export async function processRoundConsensus(
       include: {
         participant: true,
         option: true,
+        reasons: true,
       },
     });
 
@@ -187,23 +229,29 @@ export async function processRoundConsensus(
     }
 
     for (const v of rawVotes) {
-      if (completeBallots.has(v.participant_id)) {
+      // Legacy single-reason list, kept for readers of older reports. Ballots that
+      // use the new for/against reasons (PT-13) leave justification null.
+      if (completeBallots.has(v.participant_id) && v.justification) {
         const code = participantCodeMap.get(v.participant_id) ?? 'Participante Anónimo';
         argumentsByOption[v.option_id]?.push({
           blindCode: code,
           codigoCiego: code,
           position: v.position,
           posicion: v.position,
-          justification: v.justification ?? '',
-          justificacion: v.justification ?? '',
+          justification: v.justification,
+          justificacion: v.justification,
         });
       }
     }
+
+    // PT-15: every non-empty reason of the countable ballots, verbatim
+    const reasonsByOption = buildReasonsByOption(rawVotes, optionIds, completeBallots, participantCodeMap);
 
     const rankingJson: Prisma.InputJsonValue = ranking as unknown as Prisma.InputJsonValue;
     // AUD-16 & D1: Persistir métricas de concordancia y análisis de sensibilidad sin alterar argumentos
     const argumentsPayload = {
       ...argumentsByOption,
+      __reasons: reasonsByOption,
       __metrics: {
         tauStar,
         stuartTauStar: stuartTauStar ?? tauStar,
