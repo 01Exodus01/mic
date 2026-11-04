@@ -41,7 +41,7 @@ interface ParticipantRoomData {
     title: string;
     status: string;
     currentRound: number;
-    maxRondas: number;
+    maxRounds: number;
     deadline: string | null;
     metodo: string;
     closeWhenAllVoted?: boolean;
@@ -424,7 +424,7 @@ export default function ParticipantVotePage() {
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs text-[#5A554E] font-mono mb-1.5">
           <span>
-            Ronda {roomData?.sala?.currentRound} de {roomData?.sala?.maxRondas}
+            Ronda {roomData?.sala?.currentRound} de {roomData?.sala?.maxRounds}
           </span>
           {deadlineHour && (
             <span className="flex items-center gap-1">

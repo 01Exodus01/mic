@@ -46,7 +46,6 @@ export interface ParticipantRoomViewData {
     status: RoomStatus;
     currentRound: number;
     maxRounds: number;
-    maxRondas: number;
     deadline: Date | null;
     method: AggregationMethod;
     metodo: AggregationMethod;
@@ -1024,7 +1023,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
           status: room.status,
           currentRound: room.current_round,
           maxRounds: room.max_rounds,
-          maxRondas: room.max_rounds,
           deadline: room.deadline,
           method: room.method,
           metodo: room.method,

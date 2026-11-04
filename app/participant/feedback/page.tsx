@@ -61,7 +61,7 @@ interface FeedbackRoomData {
     title: string;
     status: string;
     currentRound: number;
-    maxRondas: number;
+    maxRounds: number;
     deadline: string | null;
     metodo: string;
     tauUmbral: number;
