@@ -1040,6 +1040,21 @@ export default function RoomHostPage() {
             <Download className="w-3.5 h-3.5 stroke-[1.5]" />
             <span>matriz_wide_metricas.csv</span>
           </a>
+
+          {[
+            { path: 'reasons', name: 'razones.csv' },
+            { path: 'events', name: 'eventos.csv' },
+          ].map((f) => (
+            <a
+              key={f.path}
+              href={`/api/rooms/${salaId}/export/${f.path}`}
+              download={f.name}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-[6px] border border-[#D9D5CC] bg-white hover:bg-[#EBE7DF] text-[#14171A] text-xs font-mono transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 stroke-[1.5]" />
+              <span>{f.name}</span>
+            </a>
+          ))}
         </div>
       </section>
 

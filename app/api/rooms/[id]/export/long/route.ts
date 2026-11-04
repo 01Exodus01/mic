@@ -4,7 +4,9 @@
  *
  * Headers:
  *   room_id, round, method, blind_code, option_id, position, justification_text,
- *   voter_tau_b, voter_cix, stuart_tau_c, stuart_cix, gamma_decided_pairs, gamma_cix, room_status
+ *   voter_tau_b, voter_cix, stuart_tau_c, stuart_cix, gamma_decided_pairs, gamma_cix, room_status,
+ *   then (PT-26, appended): reasons_for_count, reasons_against_count, vote_version, submitted_at,
+ *   joined_round, excluded_from_round, tie_break_rule, tie_break_applied, concordance_variant, round_status
  *
  * Strict Zero-PII: uses blind_code, never nickname or real identity.
  * Formula injection protected (CWE-1236) and UTF-8 BOM.
@@ -17,6 +19,24 @@ import prisma from '@/lib/prisma';
 import { escapeCsvField } from '@/lib/csv';
 import { computeVoterCIX } from '@/lib/algorithms/kendallTau';
 import type { Ballot, WeakOrder, VoterCIX } from '@/lib/algorithms/types';
+
+/** Report fields written by round-processor (PT-11, PT-16, PT-17). */
+function reportExtras(argumentsJson: unknown): {
+  countedVoters: Set<string>;
+  tieBreakApplied: boolean;
+  variant: string | null;
+} {
+  const obj = (argumentsJson ?? {}) as {
+    __metrics?: { voters?: Array<{ participantId?: string }> };
+    __tieBreak?: { applied?: boolean };
+    __concordance?: { variant?: string };
+  };
+  return {
+    countedVoters: new Set((obj.__metrics?.voters ?? []).map((v) => v.participantId ?? '')),
+    tieBreakApplied: obj.__tieBreak?.applied === true,
+    variant: obj.__concordance?.variant ?? null,
+  };
+}
 
 export async function GET(
   req: NextRequest,
@@ -50,7 +70,8 @@ export async function GET(
         option: { room_id: roomId },
       },
       include: {
-        participant: { select: { id: true, blind_code: true } },
+        participant: { select: { id: true, blind_code: true, joined_round: true } },
+        reasons: { select: { side: true } },
       },
       orderBy: [
         { round: 'asc' },
@@ -58,6 +79,14 @@ export async function GET(
         { position: 'asc' },
       ],
     });
+
+    // PT-26: latest ballot version per (round, participant)
+    const revisionMax = await prisma.voteRevision.groupBy({
+      by: ['participant_id', 'round'],
+      where: { room_id: roomId },
+      _max: { version: true },
+    });
+    const versionOf = new Map(revisionMax.map((r) => [`${r.round}:${r.participant_id}`, r._max.version ?? null]));
 
     // Map reports by round
     const reportMap = new Map<number, typeof room.reports[0]>();
@@ -108,6 +137,17 @@ export async function GET(
       'gamma_decided_pairs',
       'gamma_cix',
       'room_status',
+      // PT-26: appended, existing columns keep their names and order
+      'reasons_for_count',
+      'reasons_against_count',
+      'vote_version',
+      'submitted_at',
+      'joined_round',
+      'excluded_from_round',
+      'tie_break_rule',
+      'tie_break_applied',
+      'concordance_variant',
+      'round_status',
     ];
 
     const lines = [headers.join(',')];
@@ -115,6 +155,10 @@ export async function GET(
     for (const v of votes) {
       const metricsKey = `${v.round}:${v.participant_id}`;
       const m = voterMetricsCache.get(metricsKey);
+      const rep = reportMap.get(v.round);
+      const extra = reportExtras(rep?.arguments_json);
+      const counted = rep ? extra.countedVoters.has(v.participant_id) : null;
+      const roundStatus = rep ? 'REPORTED' : v.round === room.current_round ? room.status : 'UNREPORTED';
 
       const row = [
         escapeCsvField(roomId),
@@ -131,6 +175,16 @@ export async function GET(
         escapeCsvField(m != null && m.gamma != null ? Number(m.gamma.toFixed(4)) : ''),
         escapeCsvField(m != null && m.gammaCix != null ? Number(m.gammaCix.toFixed(4)) : ''),
         escapeCsvField(room.status),
+        escapeCsvField(v.reasons.filter((r) => r.side === 'FOR').length),
+        escapeCsvField(v.reasons.filter((r) => r.side === 'AGAINST').length),
+        escapeCsvField(versionOf.get(metricsKey) ?? ''),
+        escapeCsvField(v.created_at.toISOString()),
+        escapeCsvField(v.participant.joined_round),
+        escapeCsvField(counted === null ? '' : counted ? 'false' : 'true'),
+        escapeCsvField(room.tie_break_rule),
+        escapeCsvField(rep ? String(extra.tieBreakApplied) : ''),
+        escapeCsvField(extra.variant ?? room.concordance_variant),
+        escapeCsvField(roundStatus),
       ];
       lines.push(row.join(','));
     }

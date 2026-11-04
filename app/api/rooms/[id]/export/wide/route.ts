@@ -4,7 +4,8 @@
  *
  * Headers:
  *   room_id, round, method, effective_voters, collective_tau, delta_tau,
- *   stuart_tau_c, stuart_cix, gamma_decided_pairs, gamma_cix, collective_ranking, room_status
+ *   stuart_tau_c, stuart_cix, gamma_decided_pairs, gamma_cix, collective_ranking, room_status,
+ *   then (PT-26, appended): tie_break_rule, concordance_variant, procedure_version
  *
  * Formula injection protected (CWE-1236) and UTF-8 BOM.
  */
@@ -71,6 +72,10 @@ export async function GET(
       'gamma_cix',
       'collective_ranking',
       'room_status',
+      // PT-26: appended
+      'tie_break_rule',
+      'concordance_variant',
+      'procedure_version',
     ];
     const lines = [headers.join(',')];
 
@@ -122,6 +127,14 @@ export async function GET(
         }
       }
 
+      // PT-26 / PT-29: configuration recorded in the report when available
+      const extras = argsJson as {
+        __concordance?: { variant?: string };
+        __procedure?: { version?: string; tieBreakRule?: string; concordanceVariant?: string };
+      } | null;
+      const concordanceVariant = extras?.__concordance?.variant;
+      const procedure = extras?.__procedure;
+
       const stuartTauC = 2 * stuartCix - 1;
       const gammaVal = 2 * gammaCix - 1;
 
@@ -145,6 +158,9 @@ export async function GET(
         escapeCsvField(Number(gammaCix.toFixed(4))),
         escapeCsvField(rankingStr),
         escapeCsvField(room.status),
+        escapeCsvField(procedure?.tieBreakRule ?? room.tie_break_rule),
+        escapeCsvField(concordanceVariant ?? procedure?.concordanceVariant ?? room.concordance_variant),
+        escapeCsvField(procedure?.version ?? ''),
       ];
       lines.push(row.join(','));
     }

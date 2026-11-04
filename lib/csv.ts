@@ -25,3 +25,20 @@ export function escapeCsvField(val: string | number | null | undefined): string 
   }
   return str;
 }
+
+/**
+ * Builds a full CSV document: UTF-8 BOM, CRLF line ends, every field escaped
+ * with escapeCsvField (RFC 4180 + formula-injection defense).
+ */
+export function buildCsv(headers: string[], rows: Array<Array<string | number | null | undefined>>): string {
+  const lines = [headers.join(','), ...rows.map((r) => r.map((v) => escapeCsvField(v)).join(','))];
+  return '﻿' + lines.join('\r\n');
+}
+
+export function csvResponseHeaders(filename: string): Record<string, string> {
+  return {
+    'Content-Type': 'text/csv; charset=utf-8',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+    'Cache-Control': 'no-store, private',
+  };
+}

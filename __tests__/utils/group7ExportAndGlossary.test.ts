@@ -125,3 +125,46 @@ describe('Grupo 7: Exportación CSV, ciencia y glosario', () => {
     });
   });
 });
+
+// PT-26: las columnas nuevas se agregan al final; las del contrato no cambian.
+import fsPt26 from 'fs';
+import pathPt26 from 'path';
+
+function headersInRoute(file: string): string[] {
+  const src = fsPt26.readFileSync(pathPt26.resolve(__dirname, '../../app/api/rooms/[id]/export', file, 'route.ts'), 'utf8');
+  const block = src.match(/(?:const headers = |_CSV_HEADERS = )\[([\s\S]*?)\];/);
+  return [...(block?.[1] ?? '').matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+}
+
+describe('PT-26: contrato de columnas ampliado', () => {
+  const dictionary = fsPt26.readFileSync(pathPt26.resolve(__dirname, '../../docs/data-dictionary.md'), 'utf8');
+
+  it('matrix_long.csv conserva las 14 columnas en el mismo orden y agrega 10 al final', () => {
+    const headers = headersInRoute('long');
+    expect(headers.slice(0, 14)).toEqual([
+      'room_id', 'round', 'method', 'blind_code', 'option_id', 'position', 'justification_text',
+      'voter_tau_b', 'voter_cix', 'stuart_tau_c', 'stuart_cix', 'gamma_decided_pairs', 'gamma_cix', 'room_status',
+    ]);
+    expect(headers.slice(14)).toEqual([
+      'reasons_for_count', 'reasons_against_count', 'vote_version', 'submitted_at', 'joined_round',
+      'excluded_from_round', 'tie_break_rule', 'tie_break_applied', 'concordance_variant', 'round_status',
+    ]);
+  });
+
+  it('matrix_wide_metrics.csv conserva las 12 columnas y agrega 3 al final', () => {
+    const headers = headersInRoute('wide');
+    expect(headers.slice(0, 12)).toEqual([
+      'room_id', 'round', 'method', 'effective_voters', 'collective_tau', 'delta_tau',
+      'stuart_tau_c', 'stuart_cix', 'gamma_decided_pairs', 'gamma_cix', 'collective_ranking', 'room_status',
+    ]);
+    expect(headers.slice(12)).toEqual(['tie_break_rule', 'concordance_variant', 'procedure_version']);
+  });
+
+  it('todas las columnas de los cuatro CSV están en el diccionario de datos', () => {
+    for (const file of ['long', 'wide', 'reasons', 'events']) {
+      for (const h of headersInRoute(file)) {
+        expect(dictionary, `${file}:${h}`).toContain(`\`${h}\``);
+      }
+    }
+  });
+});

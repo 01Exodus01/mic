@@ -74,7 +74,22 @@ Formato longitudinal (*long format* o *tidy data*), donde cada fila representa l
 | `stuart_cix` | `Float` | `0.8750`, `0.4063` | Índice de concordancia normalizado basado en Stuart $\tau_c$. |
 | `gamma_decided_pairs` | `Float` | `1.0000`, `-0.3333` | Coeficiente de sensibilidad Gamma de Goodman-Kruskal sobre pares decididos. |
 | `gamma_cix` | `Float` | `1.0000`, `0.3333` | Índice de concordancia normalizado basado en Gamma. |
-| `room_status` | `String` | `CONCLUDED`, `CANCELLED` | Estado final de la actividad. Permite distinguir actividades completadas con éxito de aquellas canceladas por el anfitrión. |
+| `room_status` | `String` | `CONCLUDED`, `CANCELLED` | Estado de la sala **en el momento de exportar**. Permite distinguir actividades completadas con éxito de aquellas canceladas por el anfitrión. Para el estado de cada ronda usar `round_status`. |
+
+#### Columnas agregadas (PT-26, al final; las 14 anteriores no cambian de nombre ni de orden)
+
+| Columna | Tipo de dato | Formato / Ejemplo | Descripción semántica |
+|---|---|---|---|
+| `reasons_for_count` | `Integer` | `0`, `2` | Cantidad de razones a favor que el participante escribió para esta opción en esta ronda (0 a 5). |
+| `reasons_against_count` | `Integer` | `0`, `1` | Cantidad de razones en contra (0 a 5). El texto está en `reasons.csv`. |
+| `vote_version` | `Integer` o vacío | `1`, `3` | Número de la última versión distinta de la boleta en la ronda (`VoteRevision`). Vacío para votos anteriores al historial. |
+| `submitted_at` | `ISO 8601` (UTC) | `2026-11-04T15:02:11.123Z` | Hora en que se guardó la versión efectiva de la boleta. |
+| `joined_round` | `Integer` | `1`, `2` | Ronda en que el participante ingresó por primera vez. Mayor que 1 solo en salas con participantes tardíos: no tiene ronda previa con la que comparar cambios. |
+| `excluded_from_round` | `true` / `false` / vacío | `false` | `true` si la boleta no entró al cálculo de su ronda (participante retirado o boleta incompleta). Vacío si la ronda no tiene informe. |
+| `tie_break_rule` | `String` | `NONE`, `LEXICOGRAPHIC`, `REASON_BALANCE` | Regla de desempate declarada por la sala. |
+| `tie_break_applied` | `true` / `false` / vacío | `false` | `true` si en esta ronda había empates y la regla los resolvió. Vacío si la ronda no tiene informe. |
+| `concordance_variant` | `String` | `WITH_TIES`, `WITHOUT_TIES` | Variante de concordancia usada: tau-b con empates o Kendall estándar sin empates (solo con regla de desempate). |
+| `round_status` | `String` | `REPORTED`, `ROUND_OPEN`, `UNREPORTED` | `REPORTED`: la ronda tiene informe inmutable. Para la ronda actual sin informe, el estado de la sala al exportar. `UNREPORTED`: ronda anterior que quedó sin informe (por ejemplo, votos insuficientes y cancelación). |
 
 ---
 
@@ -97,13 +112,52 @@ Formato transversal por ronda (*round-level aggregated metrics*), diseñado para
 | `gamma_decided_pairs` | `Float` | `0.6200` | Promedio del coeficiente Gamma de pares decididos del grupo ($\in [-1, 1]$). |
 | `gamma_cix` | `Float` | `0.8100` | Nivel de acuerdo grupal promedio según la métrica Gamma normalizada ($[0, 1]$). |
 | `collective_ranking` | `String` | `opt_A:1.0 > opt_B:2.5 > opt_C:2.5` | Orden colectivo resultante del motor de agregación. Cada elemento sigue el formato `option_id:midRank`, encadenados por el operador de preferencia `>`. Opciones con igual `midRank` representan empates en rangos medios, serializadas por ID de forma determinística. |
-| `room_status` | `String` | `CONCLUDED`, `CANCELLED` | Estado final de la actividad. Permite aislar analíticamente salas concluidas de canceladas. |
+| `room_status` | `String` | `CONCLUDED`, `CANCELLED` | Estado de la sala al exportar. Permite aislar analíticamente salas concluidas de canceladas. |
+
+#### Columnas agregadas (PT-26, al final)
+
+| Columna | Tipo de dato | Formato / Ejemplo | Descripción semántica |
+|---|---|---|---|
+| `tie_break_rule` | `String` | `NONE`, `LEXICOGRAPHIC`, `REASON_BALANCE` | Regla de desempate con que se calculó la ronda. |
+| `concordance_variant` | `String` | `WITH_TIES`, `WITHOUT_TIES` | Variante de concordancia de la ronda. |
+| `procedure_version` | `String` o vacío | `r-fast-cr-2` | Versión del procedimiento de cálculo guardada en el informe (PT-29). Vacía en informes anteriores a ese registro. |
+
+---
+
+## 3b. `reasons.csv` (Razones textuales, PT-26)
+
+Una fila por razón, con el texto tal como lo escribió el participante (solo se recortan espacios en los extremos).
+
+| Columna | Tipo de dato | Descripción |
+|---|---|---|
+| `room_id` | `CUID` | Sala. |
+| `round` | `Integer` | Ronda. |
+| `blind_code` | `String` | Código ciego del participante (nunca nombre ni etiqueta de la lista). |
+| `option_id` | `CUID` | Opción a la que se refiere la razón. |
+| `side` | `String` | `FOR` (a favor), `AGAINST` (en contra) o `LEGACY` (razón única escrita antes de las razones a favor y en contra). |
+| `order` | `Integer` | Orden de la razón dentro de su lado, desde 0. |
+| `text` | `String` | Texto de la razón (1 a 200 caracteres). |
+
+## 3c. `events.csv` (Bitácora de la sala, PT-26)
+
+Una fila por evento. Nunca contiene el contenido de un voto.
+
+| Columna | Tipo de dato | Descripción |
+|---|---|---|
+| `room_id` | `CUID` | Sala. |
+| `created_at` | `ISO 8601` (UTC) | Hora del evento. |
+| `round` | `Integer` o vacío | Ronda en que ocurrió. |
+| `type` | `String` | `room_started`, `round_closed`, `round_processed`, `insufficient_votes`, `round_opened`, `deadline_extended`, `room_cancelled`, `pin_reset`, `participant_expelled`, `participant_joined`, `vote_submitted`, `report_viewed`, `member_added`, `member_removed`, `member_code_regenerated`, `consent_accepted`. |
+| `actor` | `String` | `HOST`, `PARTICIPANT` o `SYSTEM`. |
+| `blind_code` | `String` o vacío | Participante involucrado, por código ciego. |
+| `data` | `JSON` o vacío | Metadatos planos del evento (por ejemplo `{"version":2,"changed":true}` en `vote_submitted`). |
 
 ---
 
 ## 4. Tratamiento de Participantes Retirados y Cancelaciones
 
-- **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Sus votos en rondas cerradas ($r < \text{ronda actual}$) permanecen inmutables en la base de datos y se exportan íntegramente en `matrix_long.csv` para garantizar la reproducibilidad científica. Los votos en la ronda activa se purgan inmediatamente al ejecutar la expulsión.
+- **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Desde PT-11 **ningún voto se borra**: los de rondas cerradas siguen tal como entraron al informe, y los de la ronda activa se conservan pero quedan fuera del cálculo (`excluded_from_round = true`).
+- **Lista del curso:** la etiqueta de cada persona (matrícula o usuario) vive solo en la base de datos y nunca aparece en ningún CSV.
 - **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus votos emitidos se conservan. El estado `CANCELLED` se refleja explícitamente en la columna `room_status` de ambos archivos CSV.
 
 ---
