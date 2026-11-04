@@ -48,7 +48,6 @@ interface ParticipantRoomData {
   myVotes: Array<{
     id: string;
     option_id?: string;
-    posicion?: number;
     position?: number;
     justificacion?: string;
     justification?: string;
@@ -141,9 +140,9 @@ export default function ParticipantVotePage() {
         if (hasVoted) {
           const sorted = [...options].sort((a, b) => {
             const vA = myVotes.find((v) => v.option_id === a.id);
-            const posA = vA?.position ?? vA?.posicion ?? 0;
+            const posA = vA?.position ?? 0;
             const vB = myVotes.find((v) => v.option_id === b.id);
-            const posB = vB?.position ?? vB?.posicion ?? 0;
+            const posB = vB?.position ?? 0;
             return posA - posB;
           });
           setOrderedOptions(sorted);
@@ -163,9 +162,9 @@ export default function ParticipantVotePage() {
         if (hasVoted && !isEditingRef.current) {
           const sorted = [...options].sort((a, b) => {
             const vA = myVotes.find((v) => v.option_id === a.id);
-            const posA = vA?.position ?? vA?.posicion ?? 0;
+            const posA = vA?.position ?? 0;
             const vB = myVotes.find((v) => v.option_id === b.id);
-            const posB = vB?.position ?? vB?.posicion ?? 0;
+            const posB = vB?.position ?? 0;
             return posA - posB;
           });
           setOrderedOptions(sorted);

@@ -23,7 +23,6 @@ interface OptionItem {
 interface BlindArgumentItem {
   codigoCiego?: string;
   blindCode?: string;
-  posicion?: number;
   position?: number;
   justificacion?: string;
   justification?: string;
