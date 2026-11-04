@@ -21,7 +21,6 @@ interface OptionItem {
   id: string;
   title?: string;
   description?: string;
-  orden_idx?: number;
   order_index?: number;
 }
 
@@ -153,8 +152,8 @@ export default function ParticipantVotePage() {
         } else {
           setOrderedOptions(
             [...options].sort((a, b) => {
-              const idxA = a.order_index ?? a.orden_idx ?? 0;
-              const idxB = b.order_index ?? b.orden_idx ?? 0;
+              const idxA = a.order_index ?? 0;
+              const idxB = b.order_index ?? 0;
               return idxA - idxB;
             })
           );

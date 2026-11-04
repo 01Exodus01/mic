@@ -17,7 +17,6 @@ interface OptionItem {
   id: string;
   title?: string;
   description?: string;
-  orden_idx?: number;
   order_index?: number;
 }
 

@@ -57,7 +57,6 @@ export interface ParticipantRoomViewData {
     title: string;
     description: string;
     order_index: number;
-    orden_idx: number;
   }>;
   session: ParticipantSessionPayload;
   myVotes: Array<{
@@ -995,7 +994,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
 
     const mappedOptions = room.options.map((o) => ({
       ...o,
-      orden_idx: o.order_index,
     }));
 
     return {
