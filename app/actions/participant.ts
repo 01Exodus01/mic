@@ -33,6 +33,7 @@ import {
 } from '@/lib/validations';
 import type { ActionResult } from '@/types/actions';
 import { buildVoteSnapshot, isSameSnapshot } from '@/lib/vote-revision';
+import { recordRoomEvent } from '@/lib/room-events';
 import type { ParticipantSessionPayload } from '@/lib/participant-session';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -372,6 +373,15 @@ export async function joinRoom(
       // Successful PIN authentication: clear failed attempt tracking
       resetFailedAttempts(lockoutKey);
 
+      await recordRoomEvent(prisma, {
+        roomId: room.id,
+        type: 'participant_joined',
+        actor: 'PARTICIPANT',
+        round: room.current_round,
+        participantId: existingParticipant.id,
+        data: { returning: true },
+      });
+
       await createParticipantSession({
         participantId: existingParticipant.id,
         roomId: room.id,
@@ -407,7 +417,7 @@ export async function joinRoom(
       const existingCodes = existing.map((p) => p.blind_code);
       const blindCode = generateRandomBlindCode(existingCodes, room.max_members);
 
-      return tx.participant.create({
+      const created = await tx.participant.create({
         data: {
           room_id: room.id,
           nickname: cleanNick,
@@ -415,6 +425,17 @@ export async function joinRoom(
           blind_code: blindCode,
         },
       });
+
+      await recordRoomEvent(tx, {
+        roomId: room.id,
+        type: 'participant_joined',
+        actor: 'PARTICIPANT',
+        round: room.current_round,
+        participantId: created.id,
+        data: { returning: false },
+      });
+
+      return created;
     });
 
     await createParticipantSession({
@@ -572,17 +593,29 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           where: { participant_id: session.participantId, round: room.current_round },
           orderBy: { version: 'desc' },
         });
-        if (!lastRevision || !isSameSnapshot(lastRevision.snapshot, snapshot)) {
+        const changed = !lastRevision || !isSameSnapshot(lastRevision.snapshot, snapshot);
+        const version = changed ? (lastRevision?.version ?? 0) + 1 : lastRevision.version;
+        if (changed) {
           await tx.voteRevision.create({
             data: {
               room_id: room.id,
               participant_id: session.participantId,
               round: room.current_round,
-              version: (lastRevision?.version ?? 0) + 1,
+              version,
               snapshot: snapshot as unknown as Prisma.InputJsonValue,
             },
           });
         }
+
+        // PT-10: log the submission without any ballot content
+        await recordRoomEvent(tx, {
+          roomId: room.id,
+          type: 'vote_submitted',
+          actor: 'PARTICIPANT',
+          round: room.current_round,
+          participantId: session.participantId,
+          data: { version, changed },
+        });
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,

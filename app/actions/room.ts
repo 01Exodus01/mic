@@ -17,6 +17,7 @@ import { isValidTransition, isTerminalState } from '@/lib/state-machine';
 import { Errors, toApiError } from '@/lib/errors';
 import { AggregationMethod, RoomStatus } from '@prisma/client';
 import { processRoundConsensus, checkAndProcessExpiredDeadline } from '@/lib/round-processor';
+import { recordRoomEvent } from '@/lib/room-events';
 
 import { CreateRoomSchema, RoundDurationSchema, ResetPinSchema, MIN_PARTICIPANTS } from '@/lib/validations';
 import type { ActionResult } from '@/types/actions';
@@ -235,9 +236,18 @@ export async function startRoom(
     }
 
     const deadline = new Date(Date.now() + durVal.data * 60 * 1000);
-    await prisma.room.update({
-      where: { id: salaId },
-      data: { status: 'ROUND_OPEN', deadline, current_round: 1 },
+    await prisma.$transaction(async (tx) => {
+      await tx.room.update({
+        where: { id: salaId },
+        data: { status: 'ROUND_OPEN', deadline, current_round: 1 },
+      });
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'room_started',
+        actor: 'HOST',
+        round: 1,
+        data: { minutes: durVal.data },
+      });
     });
 
     revalidatePath(`/dashboard/rooms/${salaId}`);
@@ -264,7 +274,7 @@ export async function closeRoundManually(salaId: string): Promise<ActionResult<{
       throw Errors.INVALID_STATE(room.status, 'PROCESSING');
     }
 
-    const result = await processRoundConsensus(salaId);
+    const result = await processRoundConsensus(salaId, { actor: 'HOST' });
 
     if (!result.success) {
       return { success: false, error: result.error ?? 'Error procesando consenso.' };
@@ -306,18 +316,36 @@ export async function extendDeadline(
     if (room.status === 'ROUND_OPEN') {
       const baseTime = room.deadline && room.deadline.getTime() > Date.now() ? room.deadline.getTime() : Date.now();
       const deadline = new Date(baseTime + durVal.data * 60 * 1000);
-      await prisma.room.update({
-        where: { id: salaId },
-        data: { deadline },
+      await prisma.$transaction(async (tx) => {
+        await tx.room.update({
+          where: { id: salaId },
+          data: { deadline },
+        });
+        await recordRoomEvent(tx, {
+          roomId: salaId,
+          type: 'deadline_extended',
+          actor: 'HOST',
+          round: room.current_round,
+          data: { minutes: durVal.data, reopened: false },
+        });
       });
     } else if (room.status === 'INSUFFICIENT_VOTES') {
       if (!isValidTransition(room.status, 'ROUND_OPEN')) {
         throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
       }
       const deadline = new Date(Date.now() + durVal.data * 60 * 1000);
-      await prisma.room.update({
-        where: { id: salaId },
-        data: { status: 'ROUND_OPEN', deadline },
+      await prisma.$transaction(async (tx) => {
+        await tx.room.update({
+          where: { id: salaId },
+          data: { status: 'ROUND_OPEN', deadline },
+        });
+        await recordRoomEvent(tx, {
+          roomId: salaId,
+          type: 'deadline_extended',
+          actor: 'HOST',
+          round: room.current_round,
+          data: { minutes: durVal.data, reopened: true },
+        });
       });
     } else {
       throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
@@ -347,9 +375,18 @@ export async function cancelRoom(salaId: string): Promise<ActionResult> {
       throw Errors.INVALID_STATE(room.status, 'CANCELLED');
     }
 
-    await prisma.room.update({
-      where: { id: salaId },
-      data: { status: 'CANCELLED', deadline: null },
+    await prisma.$transaction(async (tx) => {
+      await tx.room.update({
+        where: { id: salaId },
+        data: { status: 'CANCELLED', deadline: null },
+      });
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'room_cancelled',
+        actor: 'HOST',
+        round: room.current_round,
+        data: { fromStatus: room.status },
+      });
     });
 
     revalidatePath(`/dashboard/rooms/${salaId}`);
@@ -385,13 +422,22 @@ export async function openNextRound(
     }
 
     const deadline = new Date(Date.now() + durVal.data * 60 * 1000);
-    await prisma.room.update({
-      where: { id: salaId },
-      data: {
-        status: 'ROUND_OPEN',
-        deadline,
-        current_round: room.current_round + 1,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.room.update({
+        where: { id: salaId },
+        data: {
+          status: 'ROUND_OPEN',
+          deadline,
+          current_round: room.current_round + 1,
+        },
+      });
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'round_opened',
+        actor: 'HOST',
+        round: room.current_round + 1,
+        data: { minutes: durVal.data },
+      });
     });
 
     revalidatePath(`/dashboard/rooms/${salaId}`);
@@ -526,9 +572,18 @@ export async function resetParticipantPin(
 
     const { hashParticipantPin } = await import('@/lib/pin');
     const pinHash = await hashParticipantPin(pinVal.data.newPin);
-    await prisma.participant.update({
-      where: { id: participantId },
-      data: { pin_hash: pinHash },
+    await prisma.$transaction(async (tx) => {
+      await tx.participant.update({
+        where: { id: participantId },
+        data: { pin_hash: pinHash },
+      });
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'pin_reset',
+        actor: 'HOST',
+        round: room.current_round,
+        participantId,
+      });
     });
 
     revalidatePath(`/dashboard/rooms/${salaId}`);
@@ -576,6 +631,14 @@ export async function expelParticipant(
             participant_id: participantId,
             round: room.current_round,
           },
+        });
+
+        await recordRoomEvent(tx, {
+          roomId: salaId,
+          type: 'participant_expelled',
+          actor: 'HOST',
+          round: room.current_round,
+          participantId,
         });
       });
     }

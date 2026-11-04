@@ -14,6 +14,8 @@
 import prisma from './prisma';
 import { runAggregationEngine, Ballot, AggregationMethod, WeakOrder } from './algorithms';
 import { RoomStatus, Prisma } from '@prisma/client';
+import type { EventActor } from '@prisma/client';
+import { recordRoomEvent } from './room-events';
 import { MIN_PARTICIPANTS } from './validations';
 import type { RankingEntry, BlindArgumentEntry, BlindArgumentsMap } from '@/types/report';
 
@@ -37,7 +39,15 @@ export interface ProcessRoundResult {
  * Processes the consensus for a room whose round has ended.
  * Can be triggered lazily on request, via manual host action, or via background worker.
  */
-export async function processRoundConsensus(roomId: string): Promise<ProcessRoundResult> {
+export interface ProcessRoundTrigger {
+  /** HOST for a manual close; SYSTEM for deadline (lazy check or worker). */
+  actor: EventActor;
+}
+
+export async function processRoundConsensus(
+  roomId: string,
+  trigger: ProcessRoundTrigger = { actor: 'SYSTEM' }
+): Promise<ProcessRoundResult> {
   // CAS atómico: asegura que solo un ejecutor procesa la ronda
   const casResult = await prisma.room.updateMany({
     where: { id: roomId, status: RoomStatus.ROUND_OPEN },
@@ -112,10 +122,7 @@ export async function processRoundConsensus(roomId: string): Promise<ProcessRoun
     const minRequired = MIN_PARTICIPANTS;
     if (effectiveVoters < minRequired) {
       // Quorum guard: transition to INSUFFICIENT_VOTES
-      await prisma.room.update({
-        where: { id: roomId },
-        data: { status: RoomStatus.INSUFFICIENT_VOTES },
-      });
+      await markInsufficientVotes(roomId, currentRound, effectiveVoters, trigger);
 
       return {
         success: true,
@@ -139,10 +146,7 @@ export async function processRoundConsensus(roomId: string): Promise<ProcessRoun
 
     if (!engineOutput.result) {
       // Fallback if quorum check failed inside engine
-      await prisma.room.update({
-        where: { id: roomId },
-        data: { status: RoomStatus.INSUFFICIENT_VOTES },
-      });
+      await markInsufficientVotes(roomId, currentRound, effectiveVoters, trigger);
       return {
         success: true,
         quorumMet: false,
@@ -237,6 +241,20 @@ export async function processRoundConsensus(roomId: string): Promise<ProcessRoun
           deadline: nextState === RoomStatus.ROUND_FEEDBACK ? null : room.deadline,
         },
       });
+
+      await recordRoomEvent(tx, {
+        roomId,
+        type: 'round_closed',
+        actor: trigger.actor,
+        round: currentRound,
+      });
+      await recordRoomEvent(tx, {
+        roomId,
+        type: 'round_processed',
+        actor: 'SYSTEM',
+        round: currentRound,
+        data: { effectiveVoters, nextStatus: nextState },
+      });
     });
 
     const finalState = engineOutput.shouldConclude ? RoomStatus.CONCLUDED : RoomStatus.ROUND_FEEDBACK;
@@ -267,6 +285,28 @@ export async function processRoundConsensus(roomId: string): Promise<ProcessRoun
       error: message,
     };
   }
+}
+
+async function markInsufficientVotes(
+  roomId: string,
+  round: number,
+  effectiveVoters: number,
+  trigger: ProcessRoundTrigger
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await tx.room.update({
+      where: { id: roomId },
+      data: { status: RoomStatus.INSUFFICIENT_VOTES },
+    });
+    await recordRoomEvent(tx, { roomId, type: 'round_closed', actor: trigger.actor, round });
+    await recordRoomEvent(tx, {
+      roomId,
+      type: 'insufficient_votes',
+      actor: 'SYSTEM',
+      round,
+      data: { effectiveVoters },
+    });
+  });
 }
 
 /**
