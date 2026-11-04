@@ -4,55 +4,37 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import { MIN_PARTICIPANTS } from '@/lib/validations';
+import { buildCountableBallots } from '@/lib/round-processor';
 
 describe('Grupo 6: Participantes, expulsión y navegación', () => {
-  describe('AUD-13 & D2: Expulsión lógica y purga exclusiva de ronda activa', () => {
-    it('purga votos de la ronda activa pero preserva votos de rondas cerradas', () => {
-      const room = {
-        id: 'room-1',
-        current_round: 2,
-      };
-
-      const participant = {
-        id: 'part-1',
-        nickname: 'Ana',
-        is_retired: false,
-      };
-
-      // Votos existentes en BD
+  describe('AUD-13 & D2: Expulsión lógica (PT-11: votos conservados y excluidos del cálculo)', () => {
+    // PT-11: expulsar ya no borra votos. Antes esta prueba afirmaba la purga de la
+    // ronda activa; ahora los votos se conservan y el cálculo los excluye.
+    it('conserva los votos del expulsado y los deja fuera del cálculo de la ronda', () => {
+      const optionCount = 2;
       const votes = [
-        { id: 'v1', participant_id: 'part-1', round: 1, option_id: 'opt-1', position: 1 },
-        { id: 'v2', participant_id: 'part-1', round: 1, option_id: 'opt-2', position: 2 },
-        { id: 'v3', participant_id: 'part-1', round: 2, option_id: 'opt-1', position: 2 },
-        { id: 'v4', participant_id: 'part-1', round: 2, option_id: 'opt-2', position: 1 },
-        { id: 'v5', participant_id: 'part-2', round: 2, option_id: 'opt-1', position: 1 },
+        { participant_id: 'part-1', option_id: 'opt-1', position: 2, participant: { is_retired: true } },
+        { participant_id: 'part-1', option_id: 'opt-2', position: 1, participant: { is_retired: true } },
+        { participant_id: 'part-2', option_id: 'opt-1', position: 1, participant: { is_retired: false } },
+        { participant_id: 'part-2', option_id: 'opt-2', position: 2, participant: { is_retired: false } },
+        { participant_id: 'part-3', option_id: 'opt-1', position: 1, participant: { is_retired: false } },
       ];
 
-      // Simulación de la transacción atómica de expulsión (expelParticipant)
-      participant.is_retired = true;
-      const remainingVotes = votes.filter(
-        (v) => !(v.participant_id === participant.id && v.round === room.current_round)
-      );
+      const ballots = buildCountableBallots(votes, optionCount);
 
-      // Ana queda marcada como retirada
-      expect(participant.is_retired).toBe(true);
+      // El expulsado no cuenta; part-3 tiene la boleta incompleta
+      expect([...ballots.keys()]).toEqual(['part-2']);
+      // Los votos del expulsado siguen en la lista de entrada (no se borran)
+      expect(votes.filter((v) => v.participant_id === 'part-1')).toHaveLength(2);
+    });
 
-      // Los votos de Ana de la ronda 1 (cerrada) se conservan intactos
-      const anaRound1Votes = remainingVotes.filter(
-        (v) => v.participant_id === 'part-1' && v.round === 1
-      );
-      expect(anaRound1Votes).toHaveLength(2);
-
-      // Los votos de Ana de la ronda 2 (activa) han sido purgados
-      const anaRound2Votes = remainingVotes.filter(
-        (v) => v.participant_id === 'part-1' && v.round === 2
-      );
-      expect(anaRound2Votes).toHaveLength(0);
-
-      // Los votos de otros participantes no son afectados
-      const otherVotes = remainingVotes.filter((v) => v.participant_id === 'part-2');
-      expect(otherVotes).toHaveLength(1);
+    it('expelParticipant ya no borra votos', () => {
+      const source = fs.readFileSync(path.resolve(__dirname, '../../app/actions/room.ts'), 'utf8');
+      const expel = source.slice(source.indexOf('export async function expelParticipant'));
+      expect(expel).not.toMatch(/vote\.deleteMany/);
     });
 
     it('rechaza el reingreso de un participante expulsado con el mensaje genérico D4', () => {

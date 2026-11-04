@@ -172,7 +172,7 @@ describe('CIERRE §1: Simulación Completa Multirronda y Reproducibilidad', () =
       ];
 
       // En R2, p4 es expulsado:
-      // Se marca is_retired = true y se purgan sus votos de R2 si existieran
+      // Se marca is_retired = true; sus votos de R2, si existieran, se conservan y se excluyen del cálculo (PT-11)
       const activeParticipantsR2 = ['p1', 'p2', 'p3']; // p4 excluido
 
       expect(activeParticipantsR2.length).toBe(3);

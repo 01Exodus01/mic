@@ -39,6 +39,40 @@ export interface ProcessRoundResult {
  * Processes the consensus for a room whose round has ended.
  * Can be triggered lazily on request, via manual host action, or via background worker.
  */
+export interface CountableVote {
+  participant_id: string;
+  option_id: string;
+  position: number;
+  participant: { is_retired: boolean };
+}
+
+/**
+ * Groups a round's votes into complete ballots, leaving out expelled (retired)
+ * participants and incomplete ballots. Expelled participants' votes remain in
+ * the database but never enter the ranking, τ* or the vote count.
+ */
+export function buildCountableBallots(votes: CountableVote[], optionCount: number): Map<string, Ballot> {
+  const votesByParticipant = new Map<string, CountableVote[]>();
+  for (const v of votes) {
+    if (v.participant.is_retired) continue;
+    const list = votesByParticipant.get(v.participant_id) ?? [];
+    list.push(v);
+    votesByParticipant.set(v.participant_id, list);
+  }
+
+  const completeBallots = new Map<string, Ballot>();
+  for (const [partId, pVotes] of votesByParticipant.entries()) {
+    if (pVotes.length === optionCount) {
+      const ballot: Ballot = new Map();
+      for (const v of pVotes) {
+        ballot.set(v.option_id, v.position);
+      }
+      completeBallots.set(partId, ballot);
+    }
+  }
+  return completeBallots;
+}
+
 export interface ProcessRoundTrigger {
   /** HOST for a manual close; SYSTEM for deadline (lazy check or worker). */
   actor: EventActor;
@@ -95,26 +129,9 @@ export async function processRoundConsensus(
       },
     });
 
-    // Group votes by participant
-    // A participant is an "effective voter" only if they submitted votes for all options in this round
-    const votesByParticipant = new Map<string, typeof rawVotes>();
-    for (const v of rawVotes) {
-      const list = votesByParticipant.get(v.participant_id) ?? [];
-      list.push(v);
-      votesByParticipant.set(v.participant_id, list);
-    }
-
-    // Filter only complete ballots
-    const completeBallots = new Map<string, Ballot>();
-    for (const [partId, pVotes] of votesByParticipant.entries()) {
-      if (pVotes.length === optionIds.length) {
-        const ballot: Ballot = new Map();
-        for (const v of pVotes) {
-          ballot.set(v.option_id, v.position);
-        }
-        completeBallots.set(partId, ballot);
-      }
-    }
+    // A participant is an "effective voter" only if they submitted votes for all
+    // options in this round and were not expelled (PT-11: their votes stay stored)
+    const completeBallots = buildCountableBallots(rawVotes, optionIds.length);
 
     const effectiveVoters = completeBallots.size;
 

@@ -490,6 +490,7 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
       where: {
         option: { room_id: salaId },
         round: room.current_round,
+        participant: { is_retired: false },
       },
     });
 
@@ -618,19 +619,12 @@ export async function expelParticipant(
     if (!targetParticipant) throw Errors.PARTICIPANT_NOT_FOUND();
 
     if (!targetParticipant.is_retired) {
-      // D2: Transacción atómica: borrado lógico y purga EXCLUSIVAMENTE de los votos de la ronda activa
+      // PT-11: borrado lógico. Los votos se conservan en la base (también los de la
+      // ronda activa); round-processor los excluye del cálculo y del conteo.
       await prisma.$transaction(async (tx) => {
         await tx.participant.update({
           where: { id: participantId },
           data: { is_retired: true },
-        });
-
-        // Purga solo votos de la ronda actual (rondas cerradas se conservan)
-        await tx.vote.deleteMany({
-          where: {
-            participant_id: participantId,
-            round: room.current_round,
-          },
         });
 
         await recordRoomEvent(tx, {

@@ -99,6 +99,7 @@ export async function GET(
       where: {
         round: room.current_round,
         option: { room_id: roomId },
+        participant: { is_retired: false },
       },
     });
     const voterCount = voteAgg.length;
