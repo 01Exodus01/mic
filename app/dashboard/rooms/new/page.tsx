@@ -7,10 +7,12 @@ import { createRoom, CreateRoomInput } from '@/app/actions/room';
 import {
   CreateRoomSchema,
   OptionItemSchema,
+  RoomSettingsSchema,
   sanitizeText,
   collapseWhitespace,
 } from '@/lib/validations';
 import { Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import RoomAdvancedSettings, { DEFAULT_ROOM_SETTINGS, type RoomSettingsValue } from '@/components/RoomAdvancedSettings';
 import { AggregationMethod } from '@prisma/client';
 
 export default function NewRoomPage() {
@@ -60,6 +62,7 @@ export default function NewRoomPage() {
   ]);
 
   const [optionsGeneralError, setOptionsGeneralError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<RoomSettingsValue>(DEFAULT_ROOM_SETTINGS);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -278,6 +281,12 @@ export default function NewRoomPage() {
       return;
     }
 
+    const settingsCheck = RoomSettingsSchema.safeParse(settings);
+    if (!settingsCheck.success) {
+      setServerError(settingsCheck.error.errors[0]?.message || 'Revisa las opciones avanzadas.');
+      return;
+    }
+
     // General Zod validation check
     const zPayload = {
       title,
@@ -306,6 +315,7 @@ export default function NewRoomPage() {
           title: o.title,
           description: o.description || '',
         })),
+        settings: settingsCheck.data,
       };
 
       const res = await createRoom(input);
@@ -334,6 +344,9 @@ export default function NewRoomPage() {
   if (activeMaxMembersError) totalActiveErrors++;
   if (activeTauError) totalActiveErrors++;
   if (activeMaxRoundsError) totalActiveErrors++;
+  const settingsValidation = RoomSettingsSchema.safeParse(settings);
+  const settingsError = settingsValidation.success ? null : settingsValidation.error.errors[0]?.message ?? null;
+  if (settingsError) totalActiveErrors++;
   for (const optErr of optionsErrors) {
     if (optErr.title) totalActiveErrors++;
     if (optErr.description) totalActiveErrors++;
@@ -862,6 +875,8 @@ export default function NewRoomPage() {
             </p>
           )}
         </section>
+
+        <RoomAdvancedSettings value={settings} onChange={setSettings} error={settingsError} />
 
         {/* Submit button with visible motive if disabled */}
         <div className="pt-2 space-y-2">

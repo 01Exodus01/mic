@@ -19,7 +19,14 @@ import { AggregationMethod, RoomStatus } from '@prisma/client';
 import { processRoundConsensus, checkAndProcessExpiredDeadline } from '@/lib/round-processor';
 import { recordRoomEvent } from '@/lib/room-events';
 
-import { CreateRoomSchema, RoundDurationSchema, ResetPinSchema, MIN_PARTICIPANTS } from '@/lib/validations';
+import {
+  CreateRoomSchema,
+  RoundDurationSchema,
+  ResetPinSchema,
+  MIN_PARTICIPANTS,
+  RoomSettingsSchema,
+  type RoomSettingsInput,
+} from '@/lib/validations';
 import type { ActionResult } from '@/types/actions';
 import type { RankingEntry, BlindArgumentsMap } from '@/types/report';
 
@@ -45,6 +52,8 @@ export interface CreateRoomInput {
   maxRondas?: number;
   options?: { title?: string; titulo?: string; description?: string; descripcion?: string }[];
   proyectos?: { titulo?: string; title?: string; descripcion?: string; description?: string }[];
+  /** Advanced settings (PT-18). Omitted fields take the defaults (previous behaviour). */
+  settings?: RoomSettingsInput;
 }
 
 export interface MappedProjectItem {
@@ -179,6 +188,14 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
 
     const valid = validation.data;
 
+    const settingsValidation = RoomSettingsSchema.safeParse(input.settings ?? {});
+    if (!settingsValidation.success) {
+      throw Errors.INVALID_BALLOT(
+        settingsValidation.error.errors[0]?.message || 'Opciones avanzadas no válidas.'
+      );
+    }
+    const settings = settingsValidation.data;
+
     // Generate unique room PIN
     let pin = generateRoomPin();
     let attempts = 0;
@@ -196,6 +213,11 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
         max_members: valid.maxMembers,
         tau_threshold: valid.tauThreshold,
         max_rounds: valid.maxRounds,
+        tie_break_rule: settings.tieBreakRule,
+        concordance_variant: settings.concordanceVariant,
+        access_mode: settings.accessMode,
+        allow_late_join: settings.allowLateJoin,
+        close_when_all_voted: settings.closeWhenAllVoted,
         options: {
           create: valid.options.map((p, i) => ({
             title: p.title,

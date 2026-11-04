@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { RoomDashboardSkeleton } from '@/components/ui/Skeleton';
 import PasswordInput from '@/components/ui/PasswordInput';
 import DurationPicker from '@/components/DurationPicker';
+import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,11 @@ interface RoomDetails {
   proyectos: ProjectItem[];
   participantes: ParticipantItem[];
   reportes: ReportItem[];
+  tie_break_rule?: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
+  concordance_variant?: 'WITH_TIES' | 'WITHOUT_TIES';
+  access_mode?: 'OPEN_PIN' | 'ROSTER';
+  allow_late_join?: boolean;
+  close_when_all_voted?: boolean;
 }
 
 interface RoomDashboardData {
@@ -517,6 +523,7 @@ export default function RoomHostPage() {
               Regla de agregación: {sala.metodo} · {sala.proyectos.length} opciones · Ronda {sala.ronda_actual} de {sala.max_rondas}
               {deadlineHour ? ` · Hora límite: ${deadlineHour}` : ''}
             </p>
+            <RoomSettingsSummary room={sala} />
           </div>
 
           {/* Bloque sobrio de PIN y Enlace */}

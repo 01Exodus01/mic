@@ -335,6 +335,33 @@ export const RoomAnalysisSchema = z
 
 export type RoomAnalysisInput = z.infer<typeof RoomAnalysisSchema>;
 
+/**
+ * Per-room settings chosen at creation (PT-18). Defaults reproduce the
+ * behaviour before these options existed. They cannot change once the room
+ * has started (there is no update action for them).
+ */
+export const RoomSettingsSchema = z
+  .object({
+    tieBreakRule: z.enum(['NONE', 'LEXICOGRAPHIC', 'REASON_BALANCE'], {
+      invalid_type_error: 'Elige una regla de desempate válida.',
+    }).default('NONE'),
+    concordanceVariant: z.enum(['WITH_TIES', 'WITHOUT_TIES'], {
+      invalid_type_error: 'Elige una forma válida de medir el acuerdo.',
+    }).default('WITH_TIES'),
+    accessMode: z.enum(['OPEN_PIN', 'ROSTER'], {
+      invalid_type_error: 'Elige una forma de ingreso válida.',
+    }).default('OPEN_PIN'),
+    allowLateJoin: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
+    closeWhenAllVoted: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
+  })
+  .refine((v) => !(v.concordanceVariant === 'WITHOUT_TIES' && v.tieBreakRule === 'NONE'), {
+    message: 'Para medir el acuerdo sin empates, elige una regla de desempate.',
+    path: ['concordanceVariant'],
+  });
+
+export type RoomSettingsInput = z.input<typeof RoomSettingsSchema>;
+export type RoomSettings = z.infer<typeof RoomSettingsSchema>;
+
 // ─────────────────────────────────────────────
 // 9. Formularios Adicionales (Duración & Restablecer PIN)
 // ─────────────────────────────────────────────
