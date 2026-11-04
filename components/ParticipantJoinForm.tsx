@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';
 
+import RosterCodeStep from '@/components/RosterCodeStep';
+
 interface ParticipantJoinFormProps {
   initialPin?: string;
 }
@@ -20,6 +22,8 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
   // Step navigation
   const [step, setStep] = useState<1 | 2 | 3>(hasFixedPin ? 2 : 1);
   const [isReturningUser, setIsReturningUser] = useState(false);
+  // PT-22: roster rooms ask for a personal code instead of name + PIN
+  const [accessMode, setAccessMode] = useState<'OPEN_PIN' | 'ROSTER' | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Field 1: Room PIN
@@ -53,6 +57,21 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // With a PIN in the link the first step is skipped: still ask how this room is joined
+  useEffect(() => {
+    if (!hasFixedPin) return;
+    verifyRoomPin(cleanInitialPin)
+      .then((res) => {
+        if (res.success && res.data) {
+          setAccessMode(res.data.accessMode);
+        } else {
+          setPinServerError((!res.success && res.error) || 'No se puede ingresar a esa sala. Revisa el PIN.');
+          setStep(1);
+        }
+      })
+      .catch(() => undefined);
+  }, [hasFixedPin, cleanInitialPin]);
 
   const goToStep = (nextStep: 1 | 2 | 3) => {
     setStep(nextStep);
@@ -137,6 +156,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
         return;
       }
       setPin(res.data?.pin || pin.trim().toUpperCase());
+      setAccessMode(res.data?.accessMode ?? 'OPEN_PIN');
       goToStep(2);
     } catch {
       setPinServerError('No se puede ingresar a esa sala. Revisa el PIN.');
@@ -240,7 +260,8 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
     }
   };
 
-  const totalSteps = hasFixedPin ? 2 : 3;
+  const isRoster = accessMode === 'ROSTER';
+  const totalSteps = isRoster ? (hasFixedPin ? 1 : 2) : hasFixedPin ? 2 : 3;
   const currentStepNumber = hasFixedPin ? (step === 2 ? 1 : 2) : step;
 
   // Active errors per step
@@ -297,7 +318,18 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
             </div>
           )}
 
-          {step === 2 && (
+          {step === 2 && isRoster && (
+            <div>
+              <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
+                Código personal
+              </h1>
+              <p className="text-sm text-[#5A554E] mt-1">
+                Escribe el código que te entregó el anfitrión. Con el mismo código vuelves a entrar después.
+              </p>
+            </div>
+          )}
+
+          {step === 2 && !isRoster && (
             <div>
               <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
                 ¿Cómo te llamas?
@@ -374,8 +406,18 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
           </form>
         )}
 
+        {/* PASO 2 (sala con lista): código personal */}
+        {step === 2 && isRoster && (
+          <RosterCodeStep
+            roomPin={pin.trim().toUpperCase()}
+            showBack={!hasFixedPin}
+            onBack={() => goToStep(1)}
+            onChangeRoom={handleChangeRoom}
+          />
+        )}
+
         {/* PASO 2: Nombre */}
-        {step === 2 && (
+        {step === 2 && !isRoster && accessMode !== null && (
           <form onSubmit={handleStep2Submit} className="space-y-4" noValidate>
             <div>
               <div className="flex items-center justify-between mb-2">

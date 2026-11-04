@@ -22,7 +22,7 @@ import {
   clearParticipantSession,
 } from '@/lib/participant-session';
 import { checkRateLimit, checkLockout, recordFailedAttempt, resetFailedAttempts, getClientIp } from '@/lib/rate-limit';
-import { Errors, toApiError } from '@/lib/errors';
+import { AppError, Errors, toApiError } from '@/lib/errors';
 import { isVotingOpen } from '@/lib/state-machine';
 import {
   ParticipantJoinSchema,
@@ -34,6 +34,7 @@ import {
 import type { ActionResult } from '@/types/actions';
 import { buildVoteSnapshot, isSameSnapshot } from '@/lib/vote-revision';
 import { recordRoomEvent } from '@/lib/room-events';
+import { hashMemberCode, isWellFormedMemberCode } from '@/lib/member-codes';
 import type { ParticipantSessionPayload } from '@/lib/participant-session';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -321,7 +322,9 @@ async function runSerializableWithRetry<T>(run: () => Promise<T>): Promise<T> {
 // Verify Room PIN (Anti-enumeration & Rate limited)
 // ─────────────────────────────────────────────
 
-export async function verifyRoomPin(roomPin: string): Promise<ActionResult<{ pin: string; title: string }>> {
+export async function verifyRoomPin(
+  roomPin: string
+): Promise<ActionResult<{ pin: string; title: string; accessMode: 'OPEN_PIN' | 'ROSTER' }>> {
   try {
     const hdrs = await headers();
     const ip = getClientIp(hdrs);
@@ -339,7 +342,7 @@ export async function verifyRoomPin(roomPin: string): Promise<ActionResult<{ pin
     const pin = validation.data;
     const room = await prisma.room.findUnique({
       where: { pin },
-      select: { pin: true, title: true, status: true },
+      select: { pin: true, title: true, status: true, access_mode: true },
     });
 
     // Unified message: does not disclose whether room exists or is in an invalid state
@@ -347,7 +350,7 @@ export async function verifyRoomPin(roomPin: string): Promise<ActionResult<{ pin
       return { success: false, error: 'No se puede ingresar a esa sala. Revisa el PIN.' };
     }
 
-    return { success: true, data: { pin: room.pin, title: room.title } };
+    return { success: true, data: { pin: room.pin, title: room.title, accessMode: room.access_mode } };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };
@@ -379,7 +382,8 @@ export async function checkNicknameInRoom(
       include: { participants: { select: { nickname: true, is_retired: true } } },
     });
 
-    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT') {
+    // Roster rooms (PT-22) do not use names: same generic message
+    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
       return { success: false, error: 'No se puede ingresar a esa sala. Revisa tus datos.' };
     }
 
@@ -432,8 +436,9 @@ export async function joinRoom(
       include: { participants: { select: { id: true, nickname: true, pin_hash: true, blind_code: true, is_retired: true } } },
     });
 
-    // Unified generic message according to D4 and AGENTS.md (no disclosure of room state)
-    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT') {
+    // Unified generic message according to D4 and AGENTS.md (no disclosure of room state).
+    // Roster rooms (PT-22) only accept a personal code.
+    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
       throw Errors.CANNOT_JOIN();
     }
 
@@ -542,6 +547,115 @@ export async function joinRoom(
     });
 
     return { success: true, data: { blindCode: participant.blind_code, participantId: participant.id } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+// ─────────────────────────────────────────────
+// Join a roster room with a personal code (PT-22)
+// ─────────────────────────────────────────────
+
+const ROSTER_JOIN_ERROR = 'No se puede ingresar a esa sala. Revisa el PIN y tu código.';
+
+/**
+ * Roster rooms: room PIN + personal code, no name or 4-digit PIN. The first
+ * time a code is used a participant with a random blind code is created and
+ * linked to the member; later the same code resumes that identity (from any
+ * device). Every failure returns the same message and counts toward a lockout.
+ */
+export async function joinRoomWithCode(
+  roomPin: string,
+  accessCode: string
+): Promise<ActionResult<{ blindCode: string; participantId: string }>> {
+  try {
+    const hdrs = await headers();
+    const ip = getClientIp(hdrs);
+    // A whole class often shares one public IP: limits are generous, and a
+    // 10-character random code (~2^50) makes guessing infeasible anyway.
+    const rl = checkRateLimit(`join_code:${ip}`, 60, 60);
+    if (!rl.allowed) throw Errors.RATE_LIMITED(rl.resetIn);
+
+    const lockoutKey = `join_code_fail:${ip}:${String(roomPin).toUpperCase().slice(0, 6)}`;
+    const lockout = checkLockout(lockoutKey);
+    if (lockout.isLocked) throw Errors.LOCKED_OUT(lockout.remainingSec);
+
+    const fail = (): never => {
+      const attempt = recordFailedAttempt(lockoutKey, 30, 900);
+      if (attempt.isLocked) throw Errors.LOCKED_OUT(attempt.remainingSec);
+      throw new AppError('CANNOT_JOIN', ROSTER_JOIN_ERROR, 400);
+    };
+
+    const pinVal = RoomPinSchema.safeParse(roomPin);
+    if (!pinVal.success || typeof accessCode !== 'string' || !isWellFormedMemberCode(accessCode)) fail();
+
+    const room = await prisma.room.findUnique({ where: { pin: pinVal.data! } });
+    if (!room || room.access_mode !== 'ROSTER' || ['CONCLUDED', 'CANCELLED', 'DRAFT'].includes(room.status)) fail();
+
+    const member = await prisma.roomMember.findUnique({
+      where: { room_id_access_code_hash: { room_id: room!.id, access_code_hash: hashMemberCode(accessCode) } },
+    });
+    if (!member || member.is_removed) fail();
+
+    const participant = await prisma.$transaction(async (tx) => {
+      // Serialize first logins of the same member (two devices at once share one identity)
+      await tx.$queryRaw`SELECT "id" FROM "RoomMember" WHERE "id" = ${member!.id} FOR UPDATE`;
+      const fresh = await tx.roomMember.findUniqueOrThrow({ where: { id: member!.id } });
+
+      if (fresh.participant_id) {
+        const existing = await tx.participant.findUniqueOrThrow({ where: { id: fresh.participant_id } });
+        if (existing.is_retired) return null;
+        await recordRoomEvent(tx, {
+          roomId: room!.id,
+          type: 'participant_joined',
+          actor: 'PARTICIPANT',
+          round: room!.current_round,
+          participantId: existing.id,
+          data: { returning: true, roster: true },
+        });
+        return existing;
+      }
+
+      // Closed cohort: new identities only in round 1 (PT-23 widens this)
+      if (room!.current_round > 1) return null;
+
+      const taken = await tx.participant.findMany({ where: { room_id: room!.id }, select: { blind_code: true } });
+      const { generateRandomBlindCode } = await import('@/lib/pin');
+      const created = await tx.participant.create({
+        data: {
+          room_id: room!.id,
+          // Internal, never typed or shown: roster participants have no name
+          nickname: `m-${member!.id}`.slice(0, 30),
+          pin_hash: '!roster-code',
+          blind_code: generateRandomBlindCode(taken.map((t) => t.blind_code), room!.max_members),
+          joined_round: room!.current_round,
+        },
+      });
+      await tx.roomMember.update({ where: { id: member!.id }, data: { participant_id: created.id } });
+      await recordRoomEvent(tx, {
+        roomId: room!.id,
+        type: 'participant_joined',
+        actor: 'PARTICIPANT',
+        round: room!.current_round,
+        participantId: created.id,
+        data: { returning: false, roster: true },
+      });
+      return created;
+    });
+    if (!participant) fail();
+
+    resetFailedAttempts(lockoutKey);
+    await createParticipantSession({
+      participantId: participant!.id,
+      roomId: room!.id,
+      salaId: room!.id,
+      // The session shows the blind code; the roster label never leaves RoomMember
+      nickname: participant!.blind_code,
+      blindCode: participant!.blind_code,
+    });
+
+    return { success: true, data: { blindCode: participant!.blind_code, participantId: participant!.id } };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };
