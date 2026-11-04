@@ -27,7 +27,6 @@ interface OptionItem {
 interface ParticipantSessionInfo {
   participantId: string;
   roomId?: string;
-  salaId?: string;
   nickname: string;
   blindCode: string;
 }

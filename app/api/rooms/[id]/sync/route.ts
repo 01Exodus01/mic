@@ -54,7 +54,7 @@ export async function GET(
     }
 
     if (!isHost && participantSession) {
-      const pRoomId = participantSession.roomId || participantSession.salaId;
+      const pRoomId = participantSession.roomId;
       if (pRoomId === roomId) {
         participantId = participantSession.participantId;
       }

@@ -243,7 +243,7 @@ export async function acceptConsent(): Promise<ActionResult> {
   try {
     const session = await getParticipantSession();
     if (!session) throw Errors.UNAUTHORIZED();
-    const roomId = session.roomId || session.salaId!;
+    const roomId = session.roomId;
     const participant = await prisma.participant.findFirst({ where: { id: session.participantId, room_id: roomId } });
     if (!participant || participant.is_retired) throw Errors.UNAUTHORIZED();
     const room = await prisma.room.findUnique({ where: { id: roomId } });
@@ -498,7 +498,6 @@ export async function joinRoom(
       await createParticipantSession({
         participantId: existingParticipant.id,
         roomId: room.id,
-        salaId: room.id,
         nickname: existingParticipant.nickname,
         blindCode: existingParticipant.blind_code,
       });
@@ -556,7 +555,6 @@ export async function joinRoom(
     await createParticipantSession({
       participantId: participant.id,
       roomId: room.id,
-      salaId: room.id,
       nickname: cleanNick,
       blindCode: participant.blind_code,
     });
@@ -664,7 +662,6 @@ export async function joinRoomWithCode(
     await createParticipantSession({
       participantId: participant!.id,
       roomId: room!.id,
-      salaId: room!.id,
       // The session shows the blind code; the roster label never leaves RoomMember
       nickname: participant!.blind_code,
       blindCode: participant!.blind_code,
@@ -695,7 +692,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
     const session = await getParticipantSession();
     if (!session) throw Errors.UNAUTHORIZED();
 
-    const targetRoomId = session.roomId || session.salaId!;
+    const targetRoomId = session.roomId;
 
     // Verify in DB that participant exists and belongs to this room
     const participant = await prisma.participant.findFirst({
@@ -888,7 +885,7 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     const session = await getParticipantSession();
     if (!session) throw Errors.UNAUTHORIZED();
 
-    const targetRoomId = session.roomId || session.salaId!;
+    const targetRoomId = session.roomId;
 
     // Verify in DB that participant exists and belongs to this room
     const participant = await prisma.participant.findFirst({

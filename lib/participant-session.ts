@@ -26,8 +26,7 @@ function getParticipantSecret(): Uint8Array {
 
 export interface ParticipantSessionPayload {
   participantId: string;
-  roomId?: string;
-  salaId?: string; // backwards compatibility
+  roomId: string;
   nickname: string;
   blindCode: string;
 }
@@ -38,8 +37,7 @@ export interface ParticipantSessionPayload {
 export async function createParticipantSession(payload: ParticipantSessionPayload): Promise<void> {
   const normalizedPayload = {
     ...payload,
-    roomId: payload.roomId || payload.salaId,
-    salaId: payload.roomId || payload.salaId,
+    roomId: payload.roomId,
   };
 
   const token = await new SignJWT(normalizedPayload as unknown as Record<string, unknown>)
@@ -72,9 +70,7 @@ export async function getParticipantSession(): Promise<ParticipantSessionPayload
 
     const { payload } = await jwtVerify(token, getParticipantSecret());
     const parsed = payload as unknown as ParticipantSessionPayload;
-    if (parsed && !parsed.roomId && parsed.salaId) {
-      parsed.roomId = parsed.salaId;
-    }
+    if (!parsed || typeof parsed.roomId !== 'string') return null;
     return parsed;
   } catch {
     return null;

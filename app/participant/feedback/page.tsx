@@ -59,7 +59,6 @@ interface FeedbackRoomData {
   session: {
     participantId: string;
     roomId?: string;
-    salaId?: string;
     nickname: string;
     blindCode: string;
   };
