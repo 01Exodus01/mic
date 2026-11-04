@@ -86,23 +86,115 @@ export interface ParticipantRoomViewData {
     posicion: number;
     justificacion: string;
   }>;
-  latestReport: {
-    id: string;
-    room_id: string;
+  latestReport: ParticipantReportView | null;
+  isExpired: boolean;
+  serverTime: string;
+}
+
+export interface ParticipantRankingView {
+  id: string;
+  midRank: number;
+  score?: number;
+}
+
+export interface ParticipantArgumentView {
+  blindCode: string;
+  codigoCiego: string;
+  position: number;
+  posicion: number;
+  justification: string;
+  justificacion: string;
+}
+
+/**
+ * Report shape delivered to participants. Built field by field on the server so
+ * that per-voter metrics (`__metrics`, participant ids, other voters' cix) never
+ * leave it.
+ */
+export interface ParticipantReportView {
+  round: number;
+  ronda: number;
+  effective_voters: number;
+  m_efectivo: number;
+  obtained_tau: number;
+  tau_obtenido: number;
+  collective_ranking: ParticipantRankingView[];
+  ranking_colectivo: ParticipantRankingView[];
+  arguments_json: Record<string, ParticipantArgumentView[]>;
+  argumentos_json: Record<string, ParticipantArgumentView[]>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toRankingView(raw: unknown): ParticipantRankingView[] {
+  if (!Array.isArray(raw)) return [];
+  const result: ParticipantRankingView[] = [];
+  for (const item of raw) {
+    if (!isRecord(item) || typeof item.id !== 'string' || typeof item.midRank !== 'number') continue;
+    const entry: ParticipantRankingView = { id: item.id, midRank: item.midRank };
+    if (typeof item.score === 'number') entry.score = item.score;
+    result.push(entry);
+  }
+  return result;
+}
+
+function toArgumentsView(
+  raw: unknown,
+  optionIds: string[]
+): Record<string, ParticipantArgumentView[]> {
+  const source = isRecord(raw) ? raw : {};
+  const result: Record<string, ParticipantArgumentView[]> = {};
+  for (const optionId of optionIds) {
+    const list = source[optionId];
+    result[optionId] = [];
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      if (!isRecord(item)) continue;
+      const blindCode = typeof item.blindCode === 'string' ? item.blindCode : item.codigoCiego;
+      const position = typeof item.position === 'number' ? item.position : item.posicion;
+      const justification =
+        typeof item.justification === 'string' ? item.justification : item.justificacion;
+      if (typeof blindCode !== 'string' || typeof position !== 'number') continue;
+      const text = typeof justification === 'string' ? justification : '';
+      result[optionId].push({
+        blindCode,
+        codigoCiego: blindCode,
+        position,
+        posicion: position,
+        justification: text,
+        justificacion: text,
+      });
+    }
+  }
+  return result;
+}
+
+function toParticipantReportView(
+  report: {
     round: number;
     effective_voters: number;
     obtained_tau: number;
     collective_ranking: unknown;
     arguments_json: unknown;
-    created_at: Date;
-    ronda: number;
-    m_efectivo: number;
-    ranking_colectivo: unknown;
-    tau_obtenido: number;
-    argumentos_json: unknown;
-  } | null;
-  isExpired: boolean;
-  serverTime: string;
+  },
+  optionIds: string[]
+): ParticipantReportView {
+  const ranking = toRankingView(report.collective_ranking);
+  const args = toArgumentsView(report.arguments_json, optionIds);
+  return {
+    round: report.round,
+    ronda: report.round,
+    effective_voters: report.effective_voters,
+    m_efectivo: report.effective_voters,
+    obtained_tau: report.obtained_tau,
+    tau_obtenido: report.obtained_tau,
+    collective_ranking: ranking,
+    ranking_colectivo: ranking,
+    arguments_json: args,
+    argumentos_json: args,
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -514,14 +606,10 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
         : null;
 
     const mappedReport = latestReport
-      ? {
-          ...latestReport,
-          ronda: latestReport.round,
-          m_efectivo: latestReport.effective_voters,
-          ranking_colectivo: latestReport.collective_ranking,
-          tau_obtenido: latestReport.obtained_tau,
-          argumentos_json: latestReport.arguments_json,
-        }
+      ? toParticipantReportView(
+          latestReport,
+          room.options.map((o) => o.id)
+        )
       : null;
 
     const mappedOptions = room.options.map((o) => ({
