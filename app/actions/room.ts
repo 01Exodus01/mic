@@ -30,7 +30,7 @@ import {
   type RoomSettingsInput,
 } from '@/lib/validations';
 import type { ActionResult } from '@/types/actions';
-import type { RankingEntry, BlindArgumentsMap } from '@/types/report';
+import type { RankingEntry } from '@/types/report';
 
 export type { ActionResult };
 export type EstadoSala = RoomStatus;
@@ -71,14 +71,10 @@ export interface MappedReportItem {
   round: number;
   effective_voters: number;
   obtained_tau: number;
-  collective_ranking: unknown;
-  arguments_json: unknown;
+  collective_ranking: RankingEntry[];
+  /** Always {} for the host (PT-25): no per-voter metrics or signed reasons */
+  arguments_json: Record<string, never>;
   created_at: Date;
-  ronda: number;
-  m_efectivo: number;
-  ranking_colectivo: RankingEntry[];
-  tau_obtenido: number;
-  argumentos_json: BlindArgumentsMap;
 }
 
 export interface MappedRoomDetails {
@@ -97,8 +93,7 @@ export interface MappedRoomDetails {
   updated_at: Date;
   options: Array<{ id: string; room_id: string; title: string; description: string; order_index: number }>;
   participants: MappedParticipantItem[];
-  reports: Array<unknown>;
-  reportes: MappedReportItem[];
+  reports: MappedReportItem[];
 }
 
 export interface RoomStatusData {
@@ -505,19 +500,13 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
     // Map room object to expose both English and legacy fields for compatibility
     const mappedRoom: MappedRoomDetails = {
       ...room,
-      // PT-25: same filtering as reportes (no per-voter metrics or signed reasons)
-      reports: room.reports.map((r) => ({ ...r, arguments_json: {} })),
       // PT-25: the host gets group results only. arguments_json carries per-voter
       // metrics (participant id + cix) and blind-signed reasons; the panel does not
       // use it and it must not let the host link a named person to a cix.
-      reportes: room.reports.map((r) => ({
+      reports: room.reports.map((r) => ({
         ...r,
+        collective_ranking: r.collective_ranking as unknown as RankingEntry[],
         arguments_json: {},
-        ronda: r.round,
-        m_efectivo: r.effective_voters,
-        ranking_colectivo: r.collective_ranking as unknown as RankingEntry[],
-        tau_obtenido: r.obtained_tau,
-        argumentos_json: {} as BlindArgumentsMap,
       })),
     };
 

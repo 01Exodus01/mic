@@ -37,7 +37,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { PersonalPinSchema, MIN_PARTICIPANTS, MAX_ROUND_MINUTES } from '@/lib/validations';
-import type { RankingEntry, BlindArgumentsMap } from '@/types/report';
+import type { RankingEntry } from '@/types/report';
 
 interface ProjectItem {
   id: string;
@@ -52,11 +52,10 @@ interface ParticipantItem {
 }
 
 interface ReportItem {
-  ronda: number;
-  m_efectivo?: number;
-  tau_obtenido: number;
-  ranking_colectivo: RankingEntry[];
-  argumentos_json: BlindArgumentsMap;
+  round: number;
+  effective_voters?: number;
+  obtained_tau: number;
+  collective_ranking: RankingEntry[];
 }
 
 interface RoomDetails {
@@ -72,7 +71,7 @@ interface RoomDetails {
   deadline: string | null;
   options: ProjectItem[];
   participants: ParticipantItem[];
-  reportes: ReportItem[];
+  reports: ReportItem[];
   tie_break_rule?: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
   concordance_variant?: 'WITH_TIES' | 'WITHOUT_TIES';
   access_mode?: 'OPEN_PIN' | 'ROSTER';
@@ -447,8 +446,8 @@ export default function RoomHostPage() {
   const deadlineHour = deadlineDate ? formatDeadlineLabel(deadlineDate) : '';
 
   // Último reporte para nivel de acuerdo y detalle técnico
-  const latestReport = sala.reportes?.[sala.reportes.length - 1] || null;
-  const tauStar = latestReport?.tau_obtenido != null ? latestReport.tau_obtenido : null;
+  const latestReport = sala.reports?.[sala.reports.length - 1] || null;
+  const tauStar = latestReport?.obtained_tau != null ? latestReport.obtained_tau : null;
   const agreementPct = tauStar != null ? Math.round(tauStar * 100) : 0;
   const requiredPct = Math.round(sala.tau_threshold * 100);
 
@@ -818,7 +817,7 @@ export default function RoomHostPage() {
             </div>
             <div>
               <span className="text-[#14171A] font-semibold">Votos recibidos:</span>{' '}
-              {latestReport?.m_efectivo ?? votesCount} participantes
+              {latestReport?.effective_voters ?? votesCount} participantes
             </div>
             <div>
               <span className="text-[#14171A] font-semibold">Regla de agregación:</span>{' '}
@@ -855,13 +854,13 @@ export default function RoomHostPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D9D5CC]">
-                {latestReport.ranking_colectivo.map((item, idx) => {
+                {latestReport.collective_ranking.map((item, idx) => {
                   const proj = sala.options.find((p) => p.id === item.id);
                   const title = proj ? proj.title : item.title || `Opción ${idx + 1}`;
                   const rankLabel = formatRankLabel(
                     item.midRank,
                     idx,
-                    latestReport.ranking_colectivo
+                    latestReport.collective_ranking
                   );
 
                   return (
