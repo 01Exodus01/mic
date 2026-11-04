@@ -66,7 +66,7 @@ interface RoomDetails {
   title: string;
   method: string;
   max_members: number;
-  tau_umbral: number;
+  tau_threshold: number;
   max_rondas: number;
   ronda_actual: number;
   estado: string;
@@ -451,7 +451,7 @@ export default function RoomHostPage() {
   const latestReport = sala.reportes?.[sala.reportes.length - 1] || null;
   const tauStar = latestReport?.tau_obtenido != null ? latestReport.tau_obtenido : null;
   const agreementPct = tauStar != null ? Math.round(tauStar * 100) : 0;
-  const requiredPct = Math.round(sala.tau_umbral * 100);
+  const requiredPct = Math.round(sala.tau_threshold * 100);
 
   // Formato para empates en el ranking colectivo
   const formatRankLabel = (midRank: number, index: number, entries: RankingEntry[]) => {
