@@ -17,12 +17,17 @@ vi.hoisted(() => {
 });
 
 /**
- * Fingerprint of lib/algorithms/*.ts for each procedure version. If this test
- * fails, the computation changed: raise PROCEDURE_VERSION (AGENTS.md) and add
- * the new fingerprint here. Do not just update the hash.
+ * Fingerprints of lib/algorithms/*.ts for each procedure version, oldest first.
+ * If this test fails, lib/algorithms changed: if the computation changed, raise
+ * PROCEDURE_VERSION (AGENTS.md); only for a change that provably does not alter
+ * results (e.g. removing a re-export) append a fingerprint with the reason.
  */
-const ALGORITHMS_FINGERPRINT: Record<string, string> = {
-  'r-fast-cr-2': 'c8ff8791a2c6246412598cde28c0be4a309fb7aabebbb7ade1c6e8245b93c3ea',
+const ALGORITHMS_FINGERPRINTS: Record<string, string[]> = {
+  'r-fast-cr-2': [
+    'c8ff8791a2c6246412598cde28c0be4a309fb7aabebbb7ade1c6e8245b93c3ea',
+    // PT-33: removed the kendallTauC.ts re-export file; no computation change
+    'b5f1c7b825d8962f9919e9c5983120c9247f43ebdabe0863ab3079516e8325fc',
+  ],
 };
 
 function algorithmsFingerprint(): string {
@@ -35,9 +40,10 @@ function algorithmsFingerprint(): string {
 
 describe('PT-29: versión del procedimiento', () => {
   it('lib/algorithms coincide con la huella de la versión actual', () => {
-    expect(ALGORITHMS_FINGERPRINT[PROCEDURE_VERSION], 'raise PROCEDURE_VERSION and record its fingerprint').toBe(
-      algorithmsFingerprint()
-    );
+    const current = algorithmsFingerprint();
+    const known = ALGORITHMS_FINGERPRINTS[PROCEDURE_VERSION] ?? [];
+    // The newest entry must be the current code; older entries document history
+    expect(known[known.length - 1], 'raise PROCEDURE_VERSION and record its fingerprint').toBe(current);
   });
 });
 

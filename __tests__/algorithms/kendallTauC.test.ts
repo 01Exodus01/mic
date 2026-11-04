@@ -12,7 +12,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeVoterCIX, computeGroupConsensus } from '../../lib/algorithms/kendallTauC';
+// PT-33: kendallTauC.ts was only a re-export of kendallTau.ts and has been removed
+import { computeVoterCIX, computeGroupConsensus } from '../../lib/algorithms/kendallTau';
 import type { Ballot, WeakOrder } from '../../lib/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
