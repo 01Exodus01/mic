@@ -46,7 +46,6 @@ export interface CreateRoomInput {
   maxMembers?: number;
   tauThreshold?: number;
   maxRounds?: number;
-  maxRondas?: number;
   options?: { title?: string; titulo?: string; description?: string; descripcion?: string }[];
   proyectos?: { titulo?: string; title?: string; descripcion?: string; description?: string }[];
   /** Advanced settings (PT-18). Omitted fields take the defaults (previous behaviour). */
@@ -123,7 +122,7 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
     if (rawMaxMembers === undefined || rawMaxMembers === null) {
       throw Errors.INVALID_BALLOT('El máximo de participantes es obligatorio.');
     }
-    const rawMaxRounds = input.maxRounds !== undefined ? input.maxRounds : input.maxRondas;
+    const rawMaxRounds = input.maxRounds;
     if (rawMaxRounds === undefined || rawMaxRounds === null) {
       throw Errors.INVALID_BALLOT('El máximo de rondas es obligatorio.');
     }
