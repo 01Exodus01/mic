@@ -28,6 +28,9 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - `lib/algorithms` no se modifica sin aprobación explícita, con el test que
   demuestre el error antes y después. Solo se renombran identificadores si se pide.
   Los valores esperados de sus tests no se cambian para "hacerlos pasar".
+  Aprobación explícita vigente (enmienda E-5): regla de desempate declarada por
+  sala y variante de concordancia (PT-16, PT-17) y limpieza de `kendallTauC.ts`
+  (PT-33). Con la regla "ninguna" el resultado debe ser idéntico al actual.
 - La BD solo cambia con migraciones de Prisma (nunca SQL manual directo).
   Mostrar el SQL antes de aplicar. Prohibido DROP de tablas con datos.
 - Las columnas de los CSV son un contrato con R/Python. Cambiarlas exige
@@ -41,10 +44,30 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Acuerdo requerido: entero de 1 a 100 (%), convertido siempre a fracción
   dividiendo entre 100.
 - Rondas máximas: entero de 1 a 10, sin valor oculto.
-- Cohorte cerrada: solo quien votó en la ronda 1 participa en las siguientes.
-  Sin arrastre de votos de rondas anteriores.
-- Los empates del orden del grupo se conservan (rangos medios); nunca se
-  desempata de forma arbitraria.
+- Cohorte configurable por sala (enmienda E-3). Por defecto, cerrada: solo quien
+  votó en la ronda 1 participa en las siguientes. Si la sala permite
+  participantes tardíos, se puede ingresar o votar por primera vez en cualquier
+  ronda abierta y queda registrada la ronda de ingreso. En ambos casos, sin
+  arrastre de votos de rondas anteriores.
+- Desempate configurable por sala (enmienda E-1). Por defecto, regla "ninguna":
+  los empates del orden del grupo se conservan (rangos medios) y la concordancia
+  es tau-b. Solo si la sala declara una regla al crearse (lexicográfica por el
+  orden de las opciones, o saldo de razones a favor menos en contra) se desempata,
+  y entonces el orden del grupo es estricto. Nunca se desempata de forma
+  arbitraria ni sin dejarlo registrado: el informe de ronda guarda qué grupos
+  estaban empatados y qué regla actuó.
+- Métrica por variante (enmienda E-2). Variante "con empates" (por defecto):
+  tau-b. Variante "sin empates": Kendall estándar, válida solo con una regla de
+  desempate distinta de "ninguna"; el informe guarda la variante usada. cix sigue
+  siendo (τ+1)/2.
+- Consentimiento configurable por sala (enmienda E-4). Si se activa al crear la
+  sala, el anfitrión escribe el texto (no hay texto legal por defecto), se
+  muestra en el primer ingreso, hay que aceptarlo para votar (lo exige el
+  servidor), se guarda la aceptación con hora y versión del texto, y se puede
+  volver a leer después. El texto queda fijo al iniciar la sala. Si no se activa,
+  el paso no existe.
+- La configuración de la sala (desempate, variante, acceso, participantes
+  tardíos, consentimiento, cierre anticipado) no cambia una vez iniciada.
 - Estado de sala cancelada: CANCELLED, distinto de CONCLUDED. Las actividades
   canceladas se distinguen en los datos y los CSV.
 - Participante retirado por el anfitrión: borrado lógico. Sus votos de rondas
@@ -57,7 +80,12 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Sanitizar: recortar, normalizar Unicode, quitar caracteres de control. Nunca
   `dangerouslySetInnerHTML`. La seguridad viene de escapar al renderizar, no de
   bloquear caracteres.
-- Límites: razón 25 a 200 caracteres (sobre el texto recortado); nombre 3 a 30
+- Razones opcionales (enmienda E-6): por opción, de 0 a 5 a favor y de 0 a 5 en
+  contra, cada una de 1 a 200 caracteres sobre el texto recortado, sin mínimo; las
+  vacías se descartan. Se guardan y muestran textuales: no se resumen, no se
+  deduplican ni se reordenan por similitud. Sigue siendo obligatorio ordenar
+  todas las opciones.
+- Límites: nombre 3 a 30
   (letras Unicode, números, espacios y - _ . '); título de sala 5 a 100; título
   de opción 3 a 80; descripción de opción 10 a 300 (opcional); PIN de sala
   6 alfanuméricos; PIN personal 4 dígitos; contraseña de registro 8 a 72 bytes;
@@ -77,6 +105,10 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Anonimato: el anfitrión nunca ve qué persona escribió qué razón. Sin mostrar
   el código ciego junto al nombre, sin horas de ingreso y con códigos ciegos
   asignados al azar. El código ciego solo aparece en los CSV.
+- En salas con lista (enmienda E-7), la etiqueta del estudiante y el código
+  personal identifican personas: la etiqueta solo vive en la lista de la sala,
+  nunca en votos, CSV ni logs; el código se guarda solo como hash. El anfitrión
+  ve quién ingresó y quién votó en cada ronda, nunca el contenido de un voto.
 - CSV: prevenir inyección de fórmulas (celdas que empiezan con = + - @ tras
   recortar espacios) y anteponer BOM UTF-8.
 - Cabeceras de seguridad HTTP configuradas sin romper Next.js.
@@ -145,12 +177,15 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 - Botón de envío deshabilitado solo si muestra el motivo al lado.
 
 ### Participante (375px primero)
-- Ingreso: un campo grande por paso (PIN de sala, nombre, PIN personal). PIN en
+- Ingreso: un campo grande por paso. Sala abierta: PIN de sala, nombre, PIN
+  personal. Sala con lista (enmienda E-7): PIN de sala y código personal. PIN en
   Plex Mono, inputs de 56px. Cada paso con botón "Atrás" (conserva los valores)
   y "Cambiar sala".
 - Ranking: lista vertical con handle de arrastre y número grande (1 a n) a la
   izquierda; alternativa con botones subir/bajar de 44px mínimo.
-- Razón: textarea bajo cada opción, contador que cambia de color al cumplir el mínimo.
+- Razones (enmienda E-6): bajo cada opción, dos listas "A favor" y "En contra"
+  con botones para agregar y quitar, contador de 200 por razón y tope de 5 por
+  lado. Enviar depende solo de haber ordenado todas las opciones.
 - Botón "Enviar voto" fijo abajo, con motivo visible si está deshabilitado.
 - Voto enviado: estado distinguible con mensaje persistente, resumen en solo
   lectura (orden y razones) y botón "Editar voto" que vuelve a habilitar lo ya
@@ -170,7 +205,9 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 - Diálogos con Radix/shadcn (role="dialog", foco atrapado, cierre con Escape).
 - Resultados: tabla densa + barra simple de nivel de acuerdo contra el requerido.
   Rangos con un decimal. Gráficos de una sola serie, sin 3D ni donut.
-- Exportaciones: dos botones planos (matrix_long.csv, matrix_wide_metrics.csv).
+- Exportaciones: botones planos (matrix_long.csv, matrix_wide_metrics.csv y los
+  que agregue PT-26). Las columnas nuevas van al final, sin renombrar ni
+  reordenar las existentes.
 
 ### Navegación y estados
 - Ninguna pantalla depende del botón de retroceso del navegador: botón "Volver"
@@ -232,3 +269,18 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 5. Detenerse y esperar aprobación al terminar cada paso.
 6. Si algo del spec contradice este archivo, manda este archivo; avisar de la
    contradicción.
+
+## Enmiendas
+
+La especificación en PDF (`Especificación Técnica_ Plataforma GDSS r-FAST-CR.pdf`)
+queda desactualizada en los puntos que cubren estas enmiendas; manda este archivo.
+
+| ID | Fecha | Regla | Motivo |
+|---|---|---|---|
+| E-1 | 2026-11-04 | Desempate configurable por sala, registrado en el informe | La metodología r-FAST-CR permite una regla de desempate declarada; decisión aprobada por Jorge (D-1) |
+| E-2 | 2026-11-04 | Métrica según variante: tau-b con empates, Kendall estándar sin empates | Ofrecer la variante "sin empates" de la metodología; aprobada por Jorge (D-2) |
+| E-3 | 2026-11-04 | Cohorte configurable; por defecto cerrada | Permitir participantes tardíos cuando la sala lo declare |
+| E-4 | 2026-11-04 | Consentimiento configurable, texto del anfitrión | La tutora pidió una declaratoria de consentimiento; el texto lo redacta el equipo |
+| E-5 | 2026-11-04 | Aprobación explícita para cambiar `lib/algorithms` en PT-16, PT-17 y PT-33 | Necesaria para E-1 y E-2 |
+| E-6 | 2026-11-04 | Razones opcionales, a favor y en contra, 0 a 5 por lado, 1 a 200 caracteres, textuales | La metodología pide razones a favor y en contra sin mínimo |
+| E-7 | 2026-11-04 | Acceso con lista del curso y código personal, además del modo abierto con PIN | Evitar que cualquiera con el PIN de sala ingrese |
