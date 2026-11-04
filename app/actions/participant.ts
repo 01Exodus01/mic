@@ -107,7 +107,6 @@ export interface ParticipantOptionReasonsView {
 
 export interface ParticipantReportView {
   round: number;
-  ronda: number;
   effective_voters: number;
   m_efectivo: number;
   obtained_tau: number;
@@ -221,7 +220,6 @@ function toParticipantReportView(
   const args = toArgumentsView(report.arguments_json, optionIds);
   return {
     round: report.round,
-    ronda: report.round,
     effective_voters: report.effective_voters,
     m_efectivo: report.effective_voters,
     obtained_tau: report.obtained_tau,
