@@ -34,7 +34,6 @@ interface CollectiveRankingItem {
 
 interface RoundReportData {
   round?: number;
-  m_efectivo?: number;
   effective_voters?: number;
   ranking_colectivo?: CollectiveRankingItem[];
   collective_ranking?: CollectiveRankingItem[];

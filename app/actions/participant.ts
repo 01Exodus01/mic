@@ -108,7 +108,6 @@ export interface ParticipantOptionReasonsView {
 export interface ParticipantReportView {
   round: number;
   effective_voters: number;
-  m_efectivo: number;
   obtained_tau: number;
   tau_obtenido: number;
   collective_ranking: ParticipantRankingView[];
@@ -221,7 +220,6 @@ function toParticipantReportView(
   return {
     round: report.round,
     effective_voters: report.effective_voters,
-    m_efectivo: report.effective_voters,
     obtained_tau: report.obtained_tau,
     tau_obtenido: report.obtained_tau,
     collective_ranking: ranking,
