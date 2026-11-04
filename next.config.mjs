@@ -1,3 +1,28 @@
+/**
+ * Content-Security-Policy (PT-35).
+ * - 'unsafe-eval' only in development: the dev server's hot reload needs it;
+ *   the production build does not.
+ * - script-src keeps 'unsafe-inline': Next.js 14 App Router inlines its
+ *   bootstrap and RSC payload scripts. Replacing it with a nonce requires a
+ *   middleware on every route that generates the nonce per request and forces
+ *   dynamic rendering of all pages (today middleware only guards /dashboard and
+ *   several pages are static). Documented rather than changed.
+ * - style-src keeps 'unsafe-inline' for React style attributes (e.g. bar widths).
+ */
+const isDev = process.env.NODE_ENV !== 'production';
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ') + ';';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -14,7 +39,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';",
+            value: contentSecurityPolicy,
           },
           {
             key: 'X-Frame-Options',
