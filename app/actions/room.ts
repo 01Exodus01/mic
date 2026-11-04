@@ -43,7 +43,6 @@ export interface CreateRoomInput {
   title?: string;
   method: AggregationMethod;
   minMembers?: number;
-  minMiembros?: number;
   maxMembers?: number;
   maxMiembros?: number;
   tauThreshold?: number;
