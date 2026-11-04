@@ -30,7 +30,6 @@ export interface FeedbackLegacyArgument {
   codigoCiego?: string;
   position?: number;
   justification?: string;
-  justificacion?: string;
 }
 
 export interface FeedbackReportData {
@@ -158,7 +157,7 @@ export default function RoundFeedbackReport({
           const group = midRank !== undefined ? formatRankPosition(midRank, ranking).label : 'Sin posición';
           const mine = report.myPositions?.[option.id];
           const reasons = report.reasonsByOption?.[option.id] ?? { reasonsFor: [], reasonsAgainst: [] };
-          const legacy = (report.arguments_json?.[option.id] ?? []).filter((a) => a.justification || a.justificacion);
+          const legacy = (report.arguments_json?.[option.id] ?? []).filter((a) => a.justification);
           const total = reasons.reasonsFor.length + reasons.reasonsAgainst.length + legacy.length;
 
           return (
@@ -181,7 +180,7 @@ export default function RoundFeedbackReport({
                     reasons={legacy.map((a) => ({
                       blindCode: a.blindCode || a.codigoCiego || '',
                       position: a.position ?? 0,
-                      text: a.justification || a.justificacion || '',
+                      text: a.justification || '',
                     }))}
                   />
                 )}

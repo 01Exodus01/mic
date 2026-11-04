@@ -181,14 +181,12 @@ describe('PT-02: vista del informe para participantes', () => {
         codigoCiego: 'P-07',
         position: 1,
         justification: 'Razón textual de A sobre la opción 1',
-        justificacion: 'Razón textual de A sobre la opción 1',
       },
       {
         blindCode: 'P-12',
         codigoCiego: 'P-12',
         position: 2,
         justification: 'Razón textual de B sobre la opción 1',
-        justificacion: 'Razón textual de B sobre la opción 1',
       },
     ]);
     expect(report.argumentos_json).toEqual(report.arguments_json);

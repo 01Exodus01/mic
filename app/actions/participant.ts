@@ -67,7 +67,6 @@ export interface ParticipantRoomViewData {
     position: number;
     justification: string;
     created_at: Date;
-    justificacion: string;
     reasonsFor: string[];
     reasonsAgainst: string[];
   }>;
@@ -89,7 +88,6 @@ export interface ParticipantArgumentView {
   codigoCiego: string;
   position: number;
   justification: string;
-  justificacion: string;
 }
 
 /**
@@ -168,7 +166,6 @@ function toArgumentsView(
         codigoCiego: blindCode,
         position,
         justification: text,
-        justificacion: text,
       });
     }
   }
@@ -699,7 +696,6 @@ export async function joinRoomWithCode(
 export interface VoteEntry {
   optionId?: string;
   position?: number;
-  justificacion?: string;
   justification?: string;
   /** Optional reasons for and against the option (PT-13) */
   reasonsFor?: string[];
@@ -730,7 +726,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
     const validatedVotes = votes.map((v) => {
       const optId = v.optionId;
       const pos = v.position;
-      const just = v.justification !== undefined ? v.justification : v.justificacion;
+      const just = v.justification;
 
       const result = SingleVoteEntrySchema.safeParse({
         optionId: optId,
@@ -939,7 +935,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     const mappedVotes = myVotes.map(({ reasons, ...v }) => ({
       ...v,
       justification: v.justification ?? '',
-      justificacion: v.justification ?? '',
       reasonsFor: reasons.filter((r) => r.side === 'FOR').map((r) => r.text),
       reasonsAgainst: reasons.filter((r) => r.side === 'AGAINST').map((r) => r.text),
     }));

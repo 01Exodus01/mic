@@ -49,7 +49,6 @@ interface ParticipantRoomData {
     id: string;
     option_id?: string;
     position?: number;
-    justificacion?: string;
     justification?: string;
     reasonsFor?: string[];
     reasonsAgainst?: string[];
@@ -89,7 +88,7 @@ export default function ParticipantVotePage() {
     for (const v of myVotes) {
       const optId = v.option_id!;
       reasonMap[optId] = { for: [...(v.reasonsFor ?? [])], against: [...(v.reasonsAgainst ?? [])] };
-      const legacy = v.justification || v.justificacion || '';
+      const legacy = v.justification || '';
       if (legacy) legacyMap[optId] = legacy;
     }
     setReasonsByOption(reasonMap);

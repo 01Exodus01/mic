@@ -24,7 +24,6 @@ interface BlindArgumentItem {
   codigoCiego?: string;
   blindCode?: string;
   position?: number;
-  justificacion?: string;
   justification?: string;
 }
 
