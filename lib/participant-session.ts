@@ -21,7 +21,7 @@ const COOKIE_NAME = 'gdss_participant_session';
 const LEGACY_COOKIE_NAME = 'gdss_student_session';
 const COOKIE_MAX_AGE = 12 * 60 * 60; // 12 hours
 function getParticipantSecret(): Uint8Array {
-  return new TextEncoder().encode(env.NEXTAUTH_SECRET);
+  return new TextEncoder().encode(env.PARTICIPANT_SESSION_SECRET);
 }
 
 export interface ParticipantSessionPayload {

@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 
 function loadDotenvIfNeeded() {
-  if (process.env.NEXTAUTH_SECRET && process.env.WORKER_SECRET) return;
+  if (process.env.NEXTAUTH_SECRET && process.env.WORKER_SECRET && process.env.PARTICIPANT_SESSION_SECRET) return;
   try {
     const envPath = path.resolve(process.cwd(), '.env');
     if (fs.existsSync(envPath)) {
@@ -49,10 +49,18 @@ export function getValidatedEnv() {
   loadDotenvIfNeeded();
   const nextAuthSecret = validateSecret('NEXTAUTH_SECRET', process.env.NEXTAUTH_SECRET);
   const workerSecret = validateSecret('WORKER_SECRET', process.env.WORKER_SECRET);
+  // PT-06: participants sign their session with their own secret
+  const participantSecret = validateSecret('PARTICIPANT_SESSION_SECRET', process.env.PARTICIPANT_SESSION_SECRET);
+  if (participantSecret === nextAuthSecret) {
+    throw new Error(
+      "[SEGURIDAD] 'PARTICIPANT_SESSION_SECRET' debe ser distinto de 'NEXTAUTH_SECRET'. El arranque falla de acuerdo con AGENTS.md."
+    );
+  }
 
   return {
     NEXTAUTH_SECRET: nextAuthSecret,
     WORKER_SECRET: workerSecret,
+    PARTICIPANT_SESSION_SECRET: participantSecret,
     DATABASE_URL: process.env.DATABASE_URL || '',
     NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
     BACKGROUND_WORKER_INTERVAL_SEC: parseInt(process.env.BACKGROUND_WORKER_INTERVAL_SEC || '60', 10),
