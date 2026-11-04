@@ -115,6 +115,17 @@ export interface ParticipantArgumentView {
  * that per-voter metrics (`__metrics`, participant ids, other voters' cix) never
  * leave it.
  */
+export interface ParticipantReasonView {
+  blindCode: string;
+  position: number;
+  text: string;
+}
+
+export interface ParticipantOptionReasonsView {
+  reasonsFor: ParticipantReasonView[];
+  reasonsAgainst: ParticipantReasonView[];
+}
+
 export interface ParticipantReportView {
   round: number;
   ronda: number;
@@ -126,6 +137,14 @@ export interface ParticipantReportView {
   ranking_colectivo: ParticipantRankingView[];
   arguments_json: Record<string, ParticipantArgumentView[]>;
   argumentos_json: Record<string, ParticipantArgumentView[]>;
+  /** PT-19: all reasons for and against per option, verbatim, with blind codes */
+  reasonsByOption: Record<string, ParticipantOptionReasonsView>;
+  /** PT-19: declared tie-break rule and whether it resolved a tie in this round */
+  tieBreak: { rule: string; applied: boolean };
+  /** PT-19: only the requesting participant's own concordance, never others' */
+  myConcordance: { voted: boolean; cix: number | null };
+  /** PT-19: positions this participant gave in the report's round */
+  myPositions: Record<string, number>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -175,6 +194,41 @@ function toArgumentsView(
   return result;
 }
 
+function toReasonsView(raw: unknown, optionIds: string[]): Record<string, ParticipantOptionReasonsView> {
+  const source = isRecord(raw) && isRecord(raw.__reasons) ? raw.__reasons : {};
+  const pick = (list: unknown): ParticipantReasonView[] =>
+    Array.isArray(list)
+      ? list.flatMap((r) =>
+          isRecord(r) && typeof r.blindCode === 'string' && typeof r.position === 'number' && typeof r.text === 'string'
+            ? [{ blindCode: r.blindCode, position: r.position, text: r.text }]
+            : []
+        )
+      : [];
+  const result: Record<string, ParticipantOptionReasonsView> = {};
+  for (const id of optionIds) {
+    const entry = isRecord(source[id]) ? (source[id] as Record<string, unknown>) : {};
+    result[id] = { reasonsFor: pick(entry.reasonsFor), reasonsAgainst: pick(entry.reasonsAgainst) };
+  }
+  return result;
+}
+
+function toTieBreakView(raw: unknown): { rule: string; applied: boolean } {
+  const tb = isRecord(raw) && isRecord(raw.__tieBreak) ? raw.__tieBreak : {};
+  return {
+    rule: typeof tb.rule === 'string' ? tb.rule : 'NONE',
+    applied: tb.applied === true,
+  };
+}
+
+/** Reads only the requesting participant's cix from the stored per-voter metrics. */
+function toOwnConcordance(raw: unknown, participantId: string): { voted: boolean; cix: number | null } {
+  const metrics = isRecord(raw) && isRecord(raw.__metrics) ? raw.__metrics : {};
+  const voters = Array.isArray(metrics.voters) ? metrics.voters : [];
+  const own = voters.find((v) => isRecord(v) && v.participantId === participantId);
+  if (!isRecord(own) || typeof own.cix !== 'number') return { voted: false, cix: null };
+  return { voted: true, cix: own.cix };
+}
+
 function toParticipantReportView(
   report: {
     round: number;
@@ -183,7 +237,9 @@ function toParticipantReportView(
     collective_ranking: unknown;
     arguments_json: unknown;
   },
-  optionIds: string[]
+  optionIds: string[],
+  participantId: string,
+  myPositions: Record<string, number>
 ): ParticipantReportView {
   const ranking = toRankingView(report.collective_ranking);
   const args = toArgumentsView(report.arguments_json, optionIds);
@@ -198,6 +254,10 @@ function toParticipantReportView(
     ranking_colectivo: ranking,
     arguments_json: args,
     argumentos_json: args,
+    reasonsByOption: toReasonsView(report.arguments_json, optionIds),
+    tieBreak: toTieBreakView(report.arguments_json),
+    myConcordance: toOwnConcordance(report.arguments_json, participantId),
+    myPositions,
   };
 }
 
@@ -737,10 +797,21 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
         ? room.reports[room.reports.length - 1] ?? null
         : null;
 
+    const reportVotes = latestReport
+      ? latestReport.round === room.current_round
+        ? myVotes
+        : await prisma.vote.findMany({
+            where: { participant_id: session.participantId, round: latestReport.round },
+          })
+      : [];
+    const myPositions = Object.fromEntries(reportVotes.map((v) => [v.option_id, v.position]));
+
     const mappedReport = latestReport
       ? toParticipantReportView(
           latestReport,
-          room.options.map((o) => o.id)
+          room.options.map((o) => o.id),
+          session.participantId,
+          myPositions
         )
       : null;
 

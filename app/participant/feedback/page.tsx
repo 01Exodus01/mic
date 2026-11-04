@@ -6,6 +6,11 @@ import { getParticipantRoomView, logoutParticipant } from '@/app/actions/partici
 import { ParticipantFeedbackSkeleton } from '@/components/ui/Skeleton';
 import { CheckCircle2, Clock, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import RoundFeedbackReport, {
+  formatParticipantSignature,
+  formatRankPosition,
+  type FeedbackReportData,
+} from '@/components/RoundFeedbackReport';
 
 interface OptionItem {
   id: string;
@@ -43,6 +48,10 @@ interface RoundReportData {
   obtained_tau?: number;
   argumentos_json?: Record<string, BlindArgumentItem[]>;
   arguments_json?: Record<string, BlindArgumentItem[]>;
+  reasonsByOption?: FeedbackReportData['reasonsByOption'];
+  tieBreak?: FeedbackReportData['tieBreak'];
+  myConcordance?: FeedbackReportData['myConcordance'];
+  myPositions?: FeedbackReportData['myPositions'];
 }
 
 interface FeedbackRoomData {
@@ -67,45 +76,10 @@ interface FeedbackRoomData {
   latestReport: RoundReportData | null;
 }
 
-// Convierte identificadores internos a "Participante NN"
-function formatParticipantSignature(rawCode?: string): string {
-  if (!rawCode) return 'Participante';
-  const match = rawCode.match(/(\d+)/);
-  if (match) {
-    const num = match[1].padStart(2, '0');
-    return `Participante ${num}`;
-  }
-  return rawCode.replace(/Sujeto_/i, 'Participante ').replace(/Evaluador\s*/i, 'Participante ');
-}
-
-// Formatea empates según AGENTS.md (ej. "1.º y 2.º empatadas")
-function formatRankPosition(
-  midRank: number,
-  allRanks: Array<{ id: string; midRank: number }>
-): { label: string; isTied: boolean } {
-  const tiedGroup = allRanks.filter((r) => r.midRank === midRank);
-  const k = tiedGroup.length;
-
-  if (k > 1) {
-    const start = Math.round(midRank - (k - 1) / 2);
-    const end = Math.round(midRank + (k - 1) / 2);
-    if (k === 2) {
-      return { label: `${start}.º y ${end}.º empatadas`, isTied: true };
-    }
-    const positions = Array.from({ length: k }, (_, i) => `${start + i}.º`);
-    const allExceptLast = positions.slice(0, -1).join(', ');
-    const last = positions[positions.length - 1];
-    return { label: `${allExceptLast} y ${last} empatadas`, isTied: true };
-  }
-
-  return { label: `${Math.round(midRank)}.º`, isTied: false };
-}
-
 export default function ParticipantFeedbackPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [roomData, setRoomData] = useState<FeedbackRoomData | null>(null);
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -118,11 +92,6 @@ export default function ParticipantFeedbackPage() {
       const data = res.data as unknown as FeedbackRoomData;
       setRoomData(data);
 
-      const options = data.proyectos || [];
-      if (options.length > 0 && !selectedOptionId) {
-        setSelectedOptionId(options[0].id);
-      }
-
       // Si el anfitrión abre la siguiente ronda, volver a la votación
       if (data.sala.estado === 'ROUND_OPEN') {
         router.push('/participant/vote');
@@ -133,7 +102,7 @@ export default function ParticipantFeedbackPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, selectedOptionId]);
+  }, [router]);
 
   useEffect(() => {
     loadData();
@@ -163,8 +132,6 @@ export default function ParticipantFeedbackPage() {
   const isConcluded = sala.estado === 'CONCLUDED';
   const collectiveRanking: CollectiveRankingItem[] =
     latestReport?.collective_ranking || latestReport?.ranking_colectivo || [];
-  const argumentsByOption: Record<string, BlindArgumentItem[]> =
-    latestReport?.arguments_json || latestReport?.argumentos_json || {};
 
   // Ordenar opciones según el midRank del orden colectivo
   const sortedOptions = [...(proyectos || [])].sort((a, b) => {
@@ -173,8 +140,6 @@ export default function ParticipantFeedbackPage() {
     return rA - rB;
   });
 
-  const selectedOption = sortedOptions.find((p) => p.id === selectedOptionId) || sortedOptions[0];
-  const currentArguments = selectedOption ? argumentsByOption[selectedOption.id] || [] : [];
 
   // Métricas de acuerdo en %
   const tauRaw = latestReport?.obtained_tau ?? latestReport?.tau_obtenido ?? 0;
@@ -182,8 +147,6 @@ export default function ParticipantFeedbackPage() {
   const requiredPct = Math.round((sala.tauUmbral || 0.8) * 100);
   const agreementMet = tauPct >= requiredPct;
 
-  const selectedTitle = selectedOption?.title || selectedOption?.titulo;
-  const selectedDescription = selectedOption?.description || selectedOption?.descripcion;
 
   return (
     <main className="flex-1 max-w-[760px] w-full mx-auto px-4 py-8 pb-16">
@@ -335,88 +298,21 @@ export default function ParticipantFeedbackPage() {
         </div>
       </section>
 
-      {/* Argumentos agrupados por opción */}
+      {/* PT-19: tu concordancia y, por opción, tu posición, la del grupo y todas las razones */}
       <section>
         <div className="mb-3">
           <h2 className="font-heading text-lg font-bold text-[#14171A]">
             Argumentos del grupo por opción
           </h2>
           <p className="text-xs text-[#5A554E] mt-0.5">
-            Selecciona una opción para revisar los motivos escritos por los participantes.
+            Abre cada opción para ver tu posición, la del grupo y las razones a favor y en contra que escribió cada participante.
           </p>
         </div>
-
-        {/* Selector de opciones sobrio */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {sortedOptions.map((option) => {
-            const isSelected = selectedOption?.id === option.id;
-            const count = (argumentsByOption[option.id] || []).length;
-            const optTitle = option.title || option.titulo;
-
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setSelectedOptionId(option.id)}
-                className={`min-h-[44px] px-3.5 py-2.5 rounded-[6px] text-xs font-medium border transition-colors flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'border-[#E4572E] bg-white text-[#14171A] font-semibold'
-                    : 'border-[#D9D5CC] bg-[#F6F4EF] text-[#6B6860] hover:text-[#14171A]'
-                }`}
-              >
-                <span>{optTitle}</span>
-                <span className="font-mono text-[11px] text-[#6B6860]">({count})</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Lista de argumentos firmados como "Participante 04" */}
-        <div className="border border-[#D9D5CC] rounded-[6px] bg-white p-5 space-y-3">
-          <div>
-            <h3 className="font-sans font-bold text-base text-[#14171A]">
-              {selectedTitle}
-            </h3>
-            {selectedDescription && (
-              <p className="text-xs text-[#5A554E] mt-1 leading-relaxed">
-                {selectedDescription}
-              </p>
-            )}
-          </div>
-
-          <div className="border-t border-[#D9D5CC] pt-3">
-            {currentArguments.length === 0 ? (
-              <p className="text-xs text-[#5A554E] py-6 text-center">
-                No hay razones registradas para esta opción en esta ronda.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {currentArguments.map((arg, idx) => {
-                  const blind = arg.blindCode || arg.codigoCiego;
-                  const pos = arg.position || arg.posicion;
-                  const just = arg.justification || arg.justificacion;
-
-                  return (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-[6px] border border-[#D9D5CC] bg-[#F6F4EF] text-xs space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between font-mono text-[11px] text-[#5A554E]">
-                        <span className="font-semibold text-[#14171A]">
-                          {formatParticipantSignature(blind)}
-                        </span>
-                        <span>Posición asignada: {pos}.º</span>
-                      </div>
-                      <p className="text-[#14171A] leading-relaxed italic">
-                        &quot;{just}&quot;
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+        {latestReport ? (
+          <RoundFeedbackReport options={proyectos || []} report={latestReport} />
+        ) : (
+          <p className="text-xs text-[#5A554E]">Todavía no hay resultados de esta ronda.</p>
+        )}
       </section>
     </main>
   );

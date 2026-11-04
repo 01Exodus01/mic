@@ -75,7 +75,7 @@ vi.mock('@/lib/prisma', () => ({
   default: {
     participant: {
       findFirst: async ({ where }: { where: { id: string; room_id: string } }) =>
-        [PARTICIPANT_A, PARTICIPANT_B].includes(where.id) && where.room_id === ROOM_ID
+        [PARTICIPANT_A, PARTICIPANT_B, 'participant-c-id'].includes(where.id) && where.room_id === ROOM_ID
           ? { id: where.id, room_id: ROOM_ID, is_retired: false }
           : null,
     },
@@ -139,7 +139,10 @@ describe('PT-02: vista del informe para participantes', () => {
 
     expect(reportJson).not.toContain('__metrics');
     expect(reportJson).not.toContain('participantId');
-    expect(reportJson).not.toContain('cix');
+    // PT-19: the only cix delivered is the requester's own, under myConcordance
+    const { myConcordance, ...rest } = data.latestReport!;
+    expect(JSON.stringify(rest)).not.toContain('cix');
+    expect(myConcordance).toEqual({ voted: true, cix: 0.6650001 });
     expect(reportJson).not.toContain(PARTICIPANT_A);
     expect(reportJson).not.toContain(PARTICIPANT_B);
     expect(Object.keys(data.latestReport!.arguments_json).sort()).toEqual([...OPTION_IDS].sort());
@@ -187,5 +190,30 @@ describe('PT-02: vista del informe para participantes', () => {
       },
     ]);
     expect(report.argumentos_json).toEqual(report.arguments_json);
+  });
+});
+
+describe('PT-19: cada participante ve solo su nivel de concordancia', () => {
+  it('A recibe su cix y no el de B; B recibe el suyo y no el de A', async () => {
+    const dataA = await viewAs(PARTICIPANT_A, 'P-07');
+    const dataB = await viewAs(PARTICIPANT_B, 'P-12');
+    expect(dataA.latestReport!.myConcordance).toEqual({ voted: true, cix: 0.6650001 });
+    expect(dataB.latestReport!.myConcordance).toEqual({ voted: true, cix: 0.3350001 });
+    expect(JSON.stringify(dataA)).not.toContain('0.3350001');
+    expect(JSON.stringify(dataB)).not.toContain('0.6650001');
+  });
+
+  it('quien no votó en la ronda recibe "sin voto" en lugar de un cix', async () => {
+    const data = await viewAs('participant-c-id', 'P-20');
+    expect(data.latestReport!.myConcordance).toEqual({ voted: false, cix: null });
+    expect(JSON.stringify(data)).not.toContain('0.6650001');
+    expect(JSON.stringify(data)).not.toContain('0.3350001');
+  });
+
+  it('entrega sus propias posiciones de la ronda del informe', async () => {
+    const data = await viewAs(PARTICIPANT_A, 'P-07');
+    expect(data.latestReport!.myPositions).toEqual({ 'opt-1': 1 });
+    expect(data.latestReport!.tieBreak).toEqual({ rule: 'NONE', applied: false });
+    expect(data.latestReport!.reasonsByOption['opt-1']).toEqual({ reasonsFor: [], reasonsAgainst: [] });
   });
 });
