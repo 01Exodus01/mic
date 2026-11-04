@@ -41,9 +41,9 @@ import type { RankingEntry, BlindArgumentsMap } from '@/types/report';
 
 interface ProjectItem {
   id: string;
-  titulo: string;
-  descripcion: string;
-  orden_idx: number;
+  title: string;
+  description: string;
+  order_index: number;
 }
 
 interface ParticipantItem {
@@ -71,7 +71,7 @@ interface RoomDetails {
   current_round: number;
   status: string;
   deadline: string | null;
-  proyectos: ProjectItem[];
+  options: ProjectItem[];
   participantes: ParticipantItem[];
   reportes: ReportItem[];
   tie_break_rule?: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
@@ -511,7 +511,7 @@ export default function RoomHostPage() {
               {sala.title}
             </h1>
             <p className="text-xs text-[#5A554E]">
-              Regla de agregación: {sala.method} · {sala.proyectos.length} opciones · Ronda {sala.current_round} de {sala.max_rounds}
+              Regla de agregación: {sala.method} · {sala.options.length} opciones · Ronda {sala.current_round} de {sala.max_rounds}
               {deadlineHour ? ` · Hora límite: ${deadlineHour}` : ''}
             </p>
             <RoomSettingsSummary room={sala} />
@@ -857,8 +857,8 @@ export default function RoomHostPage() {
               </thead>
               <tbody className="divide-y divide-[#D9D5CC]">
                 {latestReport.ranking_colectivo.map((item, idx) => {
-                  const proj = sala.proyectos.find((p) => p.id === item.id);
-                  const title = proj ? proj.titulo : item.titulo || `Opción ${idx + 1}`;
+                  const proj = sala.options.find((p) => p.id === item.id);
+                  const title = proj ? proj.title : item.title || `Opción ${idx + 1}`;
                   const rankLabel = formatRankLabel(
                     item.midRank,
                     idx,
@@ -875,9 +875,9 @@ export default function RoomHostPage() {
                       </td>
                       <td className="py-2.5 px-3 text-[#14171A]">
                         <span className="font-medium">{title}</span>
-                        {proj?.descripcion && (
+                        {proj?.description && (
                           <span className="block text-[11px] text-[#5A554E] mt-0.5">
-                            {proj.descripcion}
+                            {proj.description}
                           </span>
                         )}
                       </td>
@@ -898,16 +898,16 @@ export default function RoomHostPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D9D5CC]">
-                {sala.proyectos.map((p, idx) => (
+                {sala.options.map((p, idx) => (
                   <tr key={p.id} className="hover:bg-[#F6F4EF]/50">
                     <td className="py-2.5 px-3 font-mono font-bold text-[#14171A]">
                       {idx + 1}
                     </td>
                     <td className="py-2.5 px-3 font-medium text-[#14171A]">
-                      {p.titulo}
+                      {p.title}
                     </td>
                     <td className="py-2.5 px-3 text-[#5A554E]">
-                      {p.descripcion}
+                      {p.description}
                     </td>
                   </tr>
                 ))}

@@ -58,17 +58,6 @@ export interface CreateRoomInput {
   settings?: RoomSettingsInput;
 }
 
-export interface MappedProjectItem {
-  id: string;
-  room_id: string;
-  title: string;
-  description: string;
-  order_index: number;
-  titulo: string;
-  descripcion: string;
-  orden_idx: number;
-}
-
 export interface MappedParticipantItem {
   id: string;
   nickname: string;
@@ -108,7 +97,6 @@ export interface MappedRoomDetails {
   created_at: Date;
   updated_at: Date;
   options: Array<{ id: string; room_id: string; title: string; description: string; order_index: number }>;
-  proyectos: MappedProjectItem[];
   participantes: MappedParticipantItem[];
   reports: Array<unknown>;
   reportes: MappedReportItem[];
@@ -520,12 +508,6 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
       ...room,
       // PT-25: same filtering as reportes (no per-voter metrics or signed reasons)
       reports: room.reports.map((r) => ({ ...r, arguments_json: {} })),
-      proyectos: room.options.map((o) => ({
-        ...o,
-        titulo: o.title,
-        descripcion: o.description,
-        orden_idx: o.order_index,
-      })),
       participantes: room.participants.map((p) => ({
         id: p.id,
         nickname: p.nickname,
