@@ -97,7 +97,6 @@ export interface MappedRoomDetails {
 }
 
 export interface RoomStatusData {
-  sala: MappedRoomDetails;
   room: MappedRoomDetails;
   votesThisRound: number;
   voterIds: string[];
@@ -513,7 +512,6 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
     return {
       success: true,
       data: {
-        sala: mappedRoom,
         room: mappedRoom,
         votesThisRound: votesThisRound.length,
         voterIds,

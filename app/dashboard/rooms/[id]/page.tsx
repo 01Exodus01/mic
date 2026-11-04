@@ -81,7 +81,7 @@ interface RoomDetails {
 }
 
 interface RoomDashboardData {
-  sala: RoomDetails;
+  room: RoomDetails;
   votesThisRound: number;
   voterIds?: string[];
   isExpired: boolean;
@@ -217,12 +217,12 @@ export default function RoomHostPage() {
 
   // Server-time-based countdown timer
   useEffect(() => {
-    if (data?.sala?.status !== 'ROUND_OPEN' || !data.sala.deadline) {
+    if (data?.room?.status !== 'ROUND_OPEN' || !data.room.deadline) {
       setRemainingTime('');
       return;
     }
 
-    const deadlineMs = new Date(data.sala.deadline).getTime();
+    const deadlineMs = new Date(data.room.deadline).getTime();
 
     const updateCountdown = () => {
       const serverNow = Date.now() + serverOffsetRef.current;
@@ -239,19 +239,19 @@ export default function RoomHostPage() {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [data?.sala?.status, data?.sala?.deadline]);
+  }, [data?.room?.status, data?.room?.deadline]);
 
   const copyPin = () => {
-    if (!data?.sala?.pin) return;
-    navigator.clipboard.writeText(data.sala.pin);
+    if (!data?.room?.pin) return;
+    navigator.clipboard.writeText(data.room.pin);
     setCopiedPin(true);
     toast.success('PIN copiado al portapapeles.');
     setTimeout(() => setCopiedPin(false), 2000);
   };
 
   const copyLink = () => {
-    if (!data?.sala?.pin) return;
-    const url = `${window.location.origin}/room/${data.sala.pin}`;
+    if (!data?.room?.pin) return;
+    const url = `${window.location.origin}/room/${data.room.pin}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     toast.success('Enlace de ingreso copiado.');
@@ -356,7 +356,7 @@ export default function RoomHostPage() {
     try {
       const res = await openNextRound(salaId, selectedMinutes);
       if (res.success) {
-        toast.success(`Ronda ${data ? data.sala.current_round + 1 : ''} abierta.`);
+        toast.success(`Ronda ${data ? data.room.current_round + 1 : ''} abierta.`);
         await fetchStatus();
       } else {
         toast.error(res.error || 'No fue posible abrir la siguiente ronda.');
@@ -436,7 +436,7 @@ export default function RoomHostPage() {
     );
   }
 
-  const { sala, votesThisRound: votesCount, voterIds = [] } = data;
+  const { room: sala, votesThisRound: votesCount, voterIds = [] } = data;
   const totalParticipants = sala.participants?.length || 0;
   const minRequired = MIN_PARTICIPANTS;
   const stateLabel = STATE_LABELS[sala.status] || sala.status;
