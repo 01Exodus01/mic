@@ -9,6 +9,7 @@
 
 'use server';
 
+import { createHash } from 'crypto';
 import prisma from '@/lib/prisma';
 import { Prisma, AggregationMethod, RoomStatus } from '@prisma/client';
 import {
@@ -83,9 +84,8 @@ export interface ParticipantRankingView {
   score?: number;
 }
 
+/** Legacy single reason (before PT-13): text only, never who wrote it. */
 export interface ParticipantArgumentView {
-  blindCode: string;
-  position: number;
   justification: string;
 }
 
@@ -94,9 +94,8 @@ export interface ParticipantArgumentView {
  * that per-voter metrics (`__metrics`, participant ids, other voters' cix) never
  * leave it.
  */
+/** A reason as participants see it: text only, not grouped or signed by author. */
 export interface ParticipantReasonView {
-  blindCode: string;
-  position: number;
   text: string;
 }
 
@@ -137,48 +136,61 @@ function toRankingView(raw: unknown): ParticipantRankingView[] {
   return result;
 }
 
+/**
+ * Order for reasons shown to participants: a hash of the report id and the
+ * reason's internal position, so reasons by the same person do not appear
+ * together and the order says nothing about authorship or content. Stable for
+ * a given report (no reshuffling on every poll).
+ */
+function mixedOrderKey(reportId: string, ...parts: Array<string | number>): string {
+  return createHash('sha256').update([reportId, ...parts].join('|')).digest('hex');
+}
+
 function toArgumentsView(
   raw: unknown,
-  optionIds: string[]
+  optionIds: string[],
+  reportId: string
 ): Record<string, ParticipantArgumentView[]> {
   const source = isRecord(raw) ? raw : {};
   const result: Record<string, ParticipantArgumentView[]> = {};
   for (const optionId of optionIds) {
     const list = source[optionId];
-    result[optionId] = [];
-    if (!Array.isArray(list)) continue;
-    for (const item of list) {
-      if (!isRecord(item)) continue;
-      const blindCode = typeof item.blindCode === 'string' ? item.blindCode : item.codigoCiego;
-      const position = typeof item.position === 'number' ? item.position : item.posicion;
-      const justification =
-        typeof item.justification === 'string' ? item.justification : item.justificacion;
-      if (typeof blindCode !== 'string' || typeof position !== 'number') continue;
-      const text = typeof justification === 'string' ? justification : '';
-      result[optionId].push({
-        blindCode,
-        position,
-        justification: text,
+    const keyed: Array<{ key: string; view: ParticipantArgumentView }> = [];
+    if (Array.isArray(list)) {
+      list.forEach((item, i) => {
+        if (!isRecord(item)) return;
+        const justification =
+          typeof item.justification === 'string' ? item.justification : item.justificacion;
+        if (typeof justification !== 'string' || justification.length === 0) return;
+        keyed.push({ key: mixedOrderKey(reportId, optionId, 'legacy', i), view: { justification } });
       });
     }
+    result[optionId] = keyed.sort((a, b) => a.key.localeCompare(b.key)).map((k) => k.view);
   }
   return result;
 }
 
-function toReasonsView(raw: unknown, optionIds: string[]): Record<string, ParticipantOptionReasonsView> {
+function toReasonsView(
+  raw: unknown,
+  optionIds: string[],
+  reportId: string
+): Record<string, ParticipantOptionReasonsView> {
   const source = isRecord(raw) && isRecord(raw.__reasons) ? raw.__reasons : {};
-  const pick = (list: unknown): ParticipantReasonView[] =>
+  const pick = (optionId: string, side: string, list: unknown): ParticipantReasonView[] =>
     Array.isArray(list)
-      ? list.flatMap((r) =>
-          isRecord(r) && typeof r.blindCode === 'string' && typeof r.position === 'number' && typeof r.text === 'string'
-            ? [{ blindCode: r.blindCode, position: r.position, text: r.text }]
-            : []
-        )
+      ? list
+          .flatMap((r, i) =>
+            isRecord(r) && typeof r.text === 'string'
+              ? [{ key: mixedOrderKey(reportId, optionId, side, i), view: { text: r.text } }]
+              : []
+          )
+          .sort((a, b) => a.key.localeCompare(b.key))
+          .map((k) => k.view)
       : [];
   const result: Record<string, ParticipantOptionReasonsView> = {};
   for (const id of optionIds) {
     const entry = isRecord(source[id]) ? (source[id] as Record<string, unknown>) : {};
-    result[id] = { reasonsFor: pick(entry.reasonsFor), reasonsAgainst: pick(entry.reasonsAgainst) };
+    result[id] = { reasonsFor: pick(id, 'for', entry.reasonsFor), reasonsAgainst: pick(id, 'against', entry.reasonsAgainst) };
   }
   return result;
 }
@@ -202,6 +214,7 @@ function toOwnConcordance(raw: unknown, participantId: string): { voted: boolean
 
 function toParticipantReportView(
   report: {
+    id: string;
     round: number;
     effective_voters: number;
     obtained_tau: number;
@@ -213,14 +226,14 @@ function toParticipantReportView(
   myPositions: Record<string, number>
 ): ParticipantReportView {
   const ranking = toRankingView(report.collective_ranking);
-  const args = toArgumentsView(report.arguments_json, optionIds);
+  const args = toArgumentsView(report.arguments_json, optionIds, report.id);
   return {
     round: report.round,
     effective_voters: report.effective_voters,
     obtained_tau: report.obtained_tau,
     collective_ranking: ranking,
     arguments_json: args,
-    reasonsByOption: toReasonsView(report.arguments_json, optionIds),
+    reasonsByOption: toReasonsView(report.arguments_json, optionIds, report.id),
     tieBreak: toTieBreakView(report.arguments_json),
     myConcordance: toOwnConcordance(report.arguments_json, participantId),
     myPositions,

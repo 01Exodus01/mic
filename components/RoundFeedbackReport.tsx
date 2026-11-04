@@ -7,8 +7,9 @@
  *
  * Shows the participant's own concordance and, per option (collapsible), their
  * position, the group position (ties as "1.º y 2.º empatadas", or the declared
- * tie-break rule) and every reason for and against, verbatim, signed with the
- * blind code. Nothing is summarized or shortened.
+ * tie-break rule) and every reason for and against, verbatim, as a plain list
+ * per side: not signed and not grouped by participant. Nothing is summarized or
+ * shortened.
  */
 
 import React from 'react';
@@ -19,15 +20,12 @@ export interface FeedbackOption {
   description?: string;
 }
 
+/** Reasons are shown as a plain list per side, without the author (not grouped by participant). */
 export interface FeedbackReason {
-  blindCode: string;
-  position: number;
   text: string;
 }
 
 export interface FeedbackLegacyArgument {
-  blindCode?: string;
-  position?: number;
   justification?: string;
 }
 
@@ -79,12 +77,8 @@ function ReasonList({ title, reasons }: { title: string; reasons: FeedbackReason
       ) : (
         <ul className="space-y-2">
           {reasons.map((r, i) => (
-            <li key={i} className="p-3 rounded-[6px] border border-[#D9D5CC] bg-[#F6F4EF] text-xs space-y-1">
-              <div className="flex items-center justify-between gap-2 font-mono text-[11px] text-[#5A554E]">
-                <span className="font-semibold text-[#14171A]">{formatParticipantSignature(r.blindCode)}</span>
-                <span>Le dio el {r.position}.º lugar</span>
-              </div>
-              <p className="text-[#14171A] leading-relaxed whitespace-pre-wrap break-words">{r.text}</p>
+            <li key={i} className="p-3 rounded-[6px] border border-[#D9D5CC] bg-[#F6F4EF] text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words">
+              {r.text}
             </li>
           ))}
         </ul>
@@ -176,11 +170,7 @@ export default function RoundFeedbackReport({
                 {legacy.length > 0 && (
                   <ReasonList
                     title="Razones"
-                    reasons={legacy.map((a) => ({
-                      blindCode: a.blindCode || '',
-                      position: a.position ?? 0,
-                      text: a.justification || '',
-                    }))}
+                    reasons={legacy.map((a) => ({ text: a.justification || '' }))}
                   />
                 )}
               </div>

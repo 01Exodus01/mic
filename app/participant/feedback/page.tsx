@@ -296,7 +296,7 @@ export default function ParticipantFeedbackPage() {
             Argumentos del grupo por opción
           </h2>
           <p className="text-xs text-[#5A554E] mt-0.5">
-            Abre cada opción para ver tu posición, la del grupo y las razones a favor y en contra que escribió cada participante.
+            Abre cada opción para ver tu posición, la del grupo y todas las razones a favor y en contra que escribió el grupo.
           </p>
         </div>
         {latestReport ? (

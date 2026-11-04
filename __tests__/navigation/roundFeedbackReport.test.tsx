@@ -16,8 +16,6 @@ const options = [
 ];
 
 const many = Array.from({ length: 40 }, (_, i) => ({
-  blindCode: `Participante ${String(i + 1).padStart(2, '0')}`,
-  position: (i % 3) + 1,
   text: `Razón número ${i + 1} con <etiqueta> y "comillas" sin acortar`,
 }));
 
@@ -29,7 +27,7 @@ describe('PT-19: componente de retroalimentación', () => {
         defaultOpen
         report={{
           collective_ranking: [{ id: 'a', midRank: 1.5 }, { id: 'b', midRank: 1.5 }, { id: 'c', midRank: 3 }],
-          reasonsByOption: { a: { reasonsFor: many, reasonsAgainst: [{ blindCode: 'Participante 02', position: 3, text: 'Caro' }] } },
+          reasonsByOption: { a: { reasonsFor: many, reasonsAgainst: [{ text: 'Caro' }] } },
           myConcordance: { voted: true, cix: 0.725 },
           myPositions: { a: 2, b: 1, c: 3 },
           tieBreak: { rule: 'NONE', applied: false },
@@ -45,8 +43,12 @@ describe('PT-19: componente de retroalimentación', () => {
     for (let i = 1; i <= 40; i++) {
       expect(html).toContain(`Razón número ${i} con &lt;etiqueta&gt; y &quot;comillas&quot; sin acortar`);
     }
-    expect(html).toContain('Participante 40');
     expect(html).toContain('Caro');
+    // Reasons are a plain list per side: no author signature or position per reason
+    expect(html).not.toContain('Participante');
+    expect(html).not.toContain('lugar');
+    expect(html).toContain('A favor');
+    expect(html).toContain('En contra');
   });
 
   it('si no votó muestra un aviso y si hubo desempate dice qué regla actuó', () => {

@@ -34,7 +34,7 @@ describe('PT-20: línea de la ronda anterior junto a cada opción', () => {
         optionId="a"
         report={{
           collective_ranking: [{ id: 'a', midRank: 1.5 }, { id: 'b', midRank: 1.5 }],
-          reasonsByOption: { a: { reasonsFor: [{ blindCode: 'Participante 03', position: 1, text: 'Barata' }], reasonsAgainst: [] } },
+          reasonsByOption: { a: { reasonsFor: [{ text: 'Barata' }], reasonsAgainst: [] } },
         }}
       />
     );

@@ -173,18 +173,12 @@ describe('PT-02: vista del informe para participantes', () => {
 
     expect(report.obtained_tau).toBe(0.42);
     expect(report.collective_ranking).toEqual(storedReport.collective_ranking);
-    expect(report.arguments_json['opt-1']).toEqual([
-      {
-        blindCode: 'P-07',
-        position: 1,
-        justification: 'Razón textual de A sobre la opción 1',
-      },
-      {
-        blindCode: 'P-12',
-        position: 2,
-        justification: 'Razón textual de B sobre la opción 1',
-      },
+    // Shown without author or position, not grouped by participant
+    expect(report.arguments_json['opt-1'].map((x) => x.justification).sort()).toEqual([
+      'Razón textual de A sobre la opción 1',
+      'Razón textual de B sobre la opción 1',
     ]);
+    expect(report.arguments_json['opt-1'].every((x) => Object.keys(x).join() === 'justification')).toBe(true);
   });
 });
 
