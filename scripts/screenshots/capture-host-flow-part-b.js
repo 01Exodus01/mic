@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const BASE_URL = process.env.BASE_URL || 'http://gdss_app:3000';
-const outDir = path.join(__dirname, '..', 'screenshots');
+const outDir = path.join(__dirname, '..', '..', 'screenshots');
 
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
@@ -14,6 +14,34 @@ const viewports = [
   { name: '375px', width: 375, height: 750 },
 ];
 
+const rooms = [
+  {
+    stateName: 'borrador',
+    pin: '101010',
+    id: 'cmvrm6c5b000114c7epdk79g6',
+  },
+  {
+    stateName: 'votacion-abierta',
+    pin: '834192',
+    id: 'f7316a3e-8e5c-493d-b3e0-6a011ab62ad4',
+  },
+  {
+    stateName: 'faltan-votos',
+    pin: '777777',
+    id: 'cmvrlm5060001vv3n7hnsmcmo',
+  },
+  {
+    stateName: 'revision-argumentos',
+    pin: '999999',
+    id: 'cmvrlm50e0009vv3nnhvh40m9',
+  },
+  {
+    stateName: 'finalizada',
+    pin: '303030',
+    id: 'cmvrm6c5v000e14c771yw85ov',
+  },
+];
+
 async function loginAsHost(page) {
   console.log('Logging in as host...');
   await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'networkidle' });
@@ -21,7 +49,6 @@ async function loginAsHost(page) {
   await page.fill('input[type="password"]', 'DocentePass123!');
   await page.click('button[type="submit"]');
   await page.waitForURL('**/dashboard', { timeout: 15000 });
-  await page.waitForSelector('table', { state: 'visible', timeout: 10000 });
 }
 
 async function preparePageForFullScreenshot(page) {
@@ -55,38 +82,37 @@ async function run() {
       });
       const page = await context.newPage();
 
-      // 1. Dashboard con lista de salas en cada estado
       await loginAsHost(page);
-      await page.waitForTimeout(500);
-      await preparePageForFullScreenshot(page);
-      const file1 = path.join(outDir, `dashboard-salas-${vp.name}.png`);
-      await page.screenshot({ path: file1, fullPage: true });
-      console.log(`Saved: dashboard-salas-${vp.name}.png`);
 
-      // 2. Formulario vacío de nueva sala
-      console.log('Navigating to /dashboard/rooms/new (empty)...');
-      await page.goto(`${BASE_URL}/dashboard/rooms/new`, { waitUntil: 'networkidle' });
-      await page.waitForSelector('#titulo-input', { state: 'visible', timeout: 10000 });
-      await page.waitForTimeout(400);
-      await preparePageForFullScreenshot(page);
-      const file2 = path.join(outDir, `sala-nueva-vacia-${vp.name}.png`);
-      await page.screenshot({ path: file2, fullPage: true });
-      console.log(`Saved: sala-nueva-vacia-${vp.name}.png`);
+      for (const r of rooms) {
+        console.log(`\nNavigating to room ${r.pin} (${r.stateName}) -> ID ${r.id}...`);
+        await page.goto(`${BASE_URL}/dashboard/rooms/${r.id}`, { waitUntil: 'networkidle' });
+        
+        // Wait for page title or room data to load
+        await page.waitForSelector('h1', { state: 'visible', timeout: 10000 });
+        await page.waitForTimeout(500);
 
-      // 3. Formulario con error de validación
-      console.log('Submitting empty form to trigger validation error...');
-      await page.click('button[type="submit"]');
-      await page.waitForSelector('#error-banner', { state: 'visible', timeout: 10000 });
-      await page.waitForTimeout(400);
-      await preparePageForFullScreenshot(page);
-      const file3 = path.join(outDir, `sala-nueva-error-${vp.name}.png`);
-      await page.screenshot({ path: file3, fullPage: true });
-      console.log(`Saved: sala-nueva-error-${vp.name}.png`);
+        // If it's revision-argumentos or finalizada, let's open the "Detalle técnico" <details> so it's visible in one of them or verify it renders properly
+        if (r.stateName === 'revision-argumentos') {
+          await page.evaluate(() => {
+            const details = document.querySelector('details');
+            if (details) details.open = true;
+          });
+          await page.waitForTimeout(200);
+        }
+
+        await preparePageForFullScreenshot(page);
+
+        const filename = `sala-detalle-${r.stateName}-${vp.name}.png`;
+        const filepath = path.join(outDir, filename);
+        await page.screenshot({ path: filepath, fullPage: true });
+        console.log(`Saved: ${filename}`);
+      }
 
       await context.close();
     }
 
-    console.log('\nAll host Part A screenshots captured successfully!');
+    console.log('\nAll Host Part B screenshots captured successfully!');
   } catch (err) {
     console.error('Capture error:', err);
     process.exit(1);

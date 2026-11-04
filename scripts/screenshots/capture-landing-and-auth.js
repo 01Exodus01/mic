@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const BASE_URL = process.env.BASE_URL || 'http://gdss_app:3000';
-const outDir = path.join(__dirname, '..', 'screenshots');
+const outDir = path.join(__dirname, '..', '..', 'screenshots');
 
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });

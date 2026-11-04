@@ -1,5 +1,5 @@
 /**
- * scripts/capture-screenshots.js
+ * scripts/screenshots/capture-screenshots.js
  * Captures Playwright screenshots of key views at 375px and 1280px viewports.
  */
 
@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const outputDir = path.join(__dirname, '..', 'docs', 'screenshots');
+const outputDir = path.join(__dirname, '..', '..', 'docs', 'screenshots');
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }

@@ -5,7 +5,7 @@ const fs = require('fs');
 const BASE_URL = process.env.BASE_URL || 'http://gdss_app:3000';
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || '/ms-playwright/chromium-1140/chrome-linux/chrome';
 
-const outDir = path.join(__dirname, '../screenshots');
+const outDir = path.join(__dirname, '../../screenshots');
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
 }

@@ -4,7 +4,7 @@ const fs = require('fs');
 
 async function main() {
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-  const outDir = path.join(__dirname, '../screenshots');
+  const outDir = path.join(__dirname, '../../screenshots');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
   }

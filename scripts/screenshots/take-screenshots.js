@@ -14,7 +14,7 @@ async function run() {
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
 
-  const outDir = path.join(__dirname, '../public/screenshots');
+  const outDir = path.join(__dirname, '../../public/screenshots');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
   }
