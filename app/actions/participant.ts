@@ -198,6 +198,29 @@ function toParticipantReportView(
   };
 }
 
+function isSerializationConflict(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034';
+}
+
+const SERIALIZABLE_MAX_ATTEMPTS = 10;
+
+/**
+ * Runs a Serializable transaction, retrying on write conflicts (P2034) with a
+ * random, growing pause. Any other error is thrown as is.
+ */
+async function runSerializableWithRetry<T>(run: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await run();
+    } catch (err) {
+      if (!isSerializationConflict(err)) throw err;
+      if (attempt >= SERIALIZABLE_MAX_ATTEMPTS) throw Errors.BUSY();
+      const pauseMs = Math.floor(Math.random() * 40 * attempt) + 10;
+      await new Promise((resolve) => setTimeout(resolve, pauseMs));
+    }
+  }
+}
+
 // ─────────────────────────────────────────────
 // Verify Room PIN (Anti-enumeration & Rate limited)
 // ─────────────────────────────────────────────
@@ -469,8 +492,9 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
       throw Errors.INVALID_BALLOT('Cada opción debe tener una posición única (sin empates).');
     }
 
-    // Transacción interactiva serializable para validar estado, plazo y persistir boleta atómicamente
-    await prisma.$transaction(
+    // Transacción interactiva serializable para validar estado, plazo y persistir boleta atómicamente.
+    // Votos simultáneos chocan en la fila de la sala (P2034): se reintenta la transacción completa.
+    await runSerializableWithRetry(() => prisma.$transaction(
       async (tx) => {
         const room = await tx.room.findUnique({
           where: { id: targetRoomId },
@@ -491,7 +515,8 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
             where: { id: targetRoomId, status: 'ROUND_OPEN' },
             data: { updated_at: new Date() },
           });
-        } catch {
+        } catch (lockErr) {
+          if (isSerializationConflict(lockErr)) throw lockErr;
           throw Errors.ROOM_CLOSED();
         }
 
@@ -562,7 +587,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
       {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       }
-    );
+    ));
 
     return { success: true };
   } catch (err) {
