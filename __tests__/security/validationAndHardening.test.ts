@@ -1,7 +1,7 @@
 /**
  * __tests__/security/validationAndHardening.test.ts
  * Rigorous security audit test suite:
- *  1. Boundary testing for justification lengths (24, 25, 199, 200, 201 chars).
+ *  1. Boundary testing for reason lengths (no minimum since PT-13; maximum 200 chars).
  *  2. Participant name/alias length bounds (2, 3, 30, 31 chars).
  *  3. PIN personal (4 digits) and Room PIN (6 alphanumeric chars).
  *  4. Room creation parameter bounds and mandatory numeric fields without hidden defaults.
@@ -30,13 +30,16 @@ import {
   resetFailedAttempts,
 } from '../../lib/rate-limit';
 
-describe('1. Justification Length Boundary Tests (24, 25, 199, 200, 201)', () => {
+// PT-13: las razones pasaron a ser opcionales y sin mínimo (enmienda E-6 de AGENTS.md).
+// Antes este bloque exigía 25 caracteres; ahora comprueba que no hay mínimo y que
+// el máximo de 200 se mantiene, tanto en la razón heredada como en las nuevas listas.
+describe('1. Justification Length Boundary Tests (sin mínimo, máximo 200)', () => {
   const baseEntry = {
     optionId: 'opt-123',
     position: 1,
   };
 
-  it('rejects justification with 24 characters (below minimum 25)', () => {
+  it('accepts a 24-character justification (no minimum since PT-13)', () => {
     const text24 = '123456789012345678901234'; // length = 24
     expect(text24.length).toBe(24);
 
@@ -44,40 +47,35 @@ describe('1. Justification Length Boundary Tests (24, 25, 199, 200, 201)', () =>
       ...baseEntry,
       justification: text24,
     });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.errors[0]?.message).toMatch(/mínimo 25 caracteres/i);
-    }
+    expect(result.success).toBe(true);
   });
 
-  it('rejects justification with 25 spaces (empty content rejected)', () => {
+  it('turns a justification of only spaces into no justification', () => {
     const spaces25 = ' '.repeat(25);
     const result = SingleVoteEntrySchema.safeParse({
       ...baseEntry,
       justification: spaces25,
     });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.errors[0]?.message).toMatch(/mínimo 25 caracteres/i);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.justification).toBeNull();
     }
   });
 
-  it('accepts justification with exactly 25 characters (lower bound)', () => {
-    const text25 = '1234567890123456789012345'; // length = 25
-    expect(text25.length).toBe(25);
-
-    const result = SingleVoteEntrySchema.safeParse({
-      ...baseEntry,
-      justification: text25,
-    });
+  it('accepts a vote without any reason', () => {
+    const result = SingleVoteEntrySchema.safeParse(baseEntry);
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reasonsFor).toEqual([]);
+      expect(result.data.reasonsAgainst).toEqual([]);
+      expect(result.data.justification).toBeNull();
+    }
   });
 
   it('counts unicode emojis accurately in justifications', () => {
-    // 21 text chars + 2 emojis (2 code points each = 4 surrogates in JS string.length, but 23 code points)
-    const baseText = 'Justificación clara '; // 20 chars
-    const emojiText = baseText + '🚀🎯💡✨🌟'; // 20 + 5 emojis = 25 code points
-    expect(getUnicodeLength(emojiText)).toBe(25);
+    const emojiText = 'Á'.repeat(195) + '🚀🎯💡✨🌟'; // 200 code points, more UTF-16 units
+    expect(getUnicodeLength(emojiText)).toBe(200);
+    expect(emojiText.length).toBeGreaterThan(200);
 
     const result = SingleVoteEntrySchema.safeParse({
       ...baseEntry,

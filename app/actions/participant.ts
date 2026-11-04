@@ -87,6 +87,8 @@ export interface ParticipantRoomViewData {
     proyecto_id: string;
     posicion: number;
     justificacion: string;
+    reasonsFor: string[];
+    reasonsAgainst: string[];
   }>;
   latestReport: ParticipantReportView | null;
   isExpired: boolean;
@@ -497,6 +499,9 @@ export interface VoteEntry {
   position?: number;
   justificacion?: string;
   justification?: string;
+  /** Optional reasons for and against the option (PT-13) */
+  reasonsFor?: string[];
+  reasonsAgainst?: string[];
 }
 
 export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
@@ -529,6 +534,8 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
         optionId: optId,
         position: pos,
         justification: just,
+        reasonsFor: v.reasonsFor,
+        reasonsAgainst: v.reasonsAgainst,
       });
 
       if (!result.success) {
@@ -607,7 +614,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           },
         });
 
-        await tx.vote.createMany({
+        const createdVotes = await tx.vote.createManyAndReturn({
           data: validatedVotes.map((vote) => ({
             participant_id: session.participantId,
             round: room.current_round,
@@ -615,7 +622,21 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
             position: vote.position,
             justification: vote.justification,
           })),
+          select: { id: true, option_id: true },
         });
+
+        // PT-13: one VoteReason row per non-empty reason, recreated with the votes
+        const voteIdByOption = new Map(createdVotes.map((cv) => [cv.option_id, cv.id]));
+        const reasonRows = validatedVotes.flatMap((vote) => {
+          const voteId = voteIdByOption.get(vote.optionId)!;
+          return [
+            ...vote.reasonsFor.map((text, i) => ({ vote_id: voteId, side: 'FOR' as const, text, order_index: i })),
+            ...vote.reasonsAgainst.map((text, i) => ({ vote_id: voteId, side: 'AGAINST' as const, text, order_index: i })),
+          ];
+        });
+        if (reasonRows.length > 0) {
+          await tx.voteReason.createMany({ data: reasonRows });
+        }
 
         // PT-09: append a revision only when the ballot content changed
         const snapshot = buildVoteSnapshot(validatedVotes);
@@ -696,15 +717,18 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
         round: room.current_round,
       },
       orderBy: { position: 'asc' },
+      include: { reasons: { orderBy: [{ side: 'asc' }, { order_index: 'asc' }] } },
     });
 
     // Map votes to support both field naming styles
-    const mappedVotes = myVotes.map((v) => ({
+    const mappedVotes = myVotes.map(({ reasons, ...v }) => ({
       ...v,
       justification: v.justification ?? '',
       proyecto_id: v.option_id,
       posicion: v.position,
       justificacion: v.justification ?? '',
+      reasonsFor: reasons.filter((r) => r.side === 'FOR').map((r) => r.text),
+      reasonsAgainst: reasons.filter((r) => r.side === 'AGAINST').map((r) => r.text),
     }));
 
     // Get latest report for feedback

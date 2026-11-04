@@ -113,6 +113,7 @@ vi.mock('@/lib/prisma', () => ({
           position: 1,
           justification: 'Mi propia razón',
           created_at: new Date('2026-11-04T09:00:00Z'),
+          reasons: [],
         },
       ],
     },

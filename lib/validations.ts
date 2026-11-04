@@ -115,6 +115,29 @@ export type ParticipantJoinInput = z.infer<typeof ParticipantJoinSchema>;
 // 5. Boleta de Votación y Razones
 // ─────────────────────────────────────────────
 
+/** Reasons are optional: up to this many per side and option (PT-13). */
+export const MAX_REASONS_PER_SIDE = 5;
+/** Maximum length of one reason, counted on the trimmed text. */
+export const REASON_MAX_LENGTH = 200;
+
+/**
+ * One side (for or against) of an option's reasons. Empty entries are dropped;
+ * the rest are kept verbatim apart from trimming and control-character removal.
+ */
+export const ReasonListSchema = z
+  .array(z.string({ invalid_type_error: 'Cada razón debe ser texto.' }), {
+    invalid_type_error: 'Las razones deben ser una lista.',
+  })
+  .max(50, `Máximo ${MAX_REASONS_PER_SIDE} razones por lado.`)
+  .optional()
+  .transform((list) => (list ?? []).map((t) => sanitizeText(t)).filter((t) => t.length > 0))
+  .refine((list) => list.every((t) => getUnicodeLength(t) <= REASON_MAX_LENGTH), {
+    message: `Máximo ${REASON_MAX_LENGTH} caracteres por razón.`,
+  })
+  .refine((list) => list.length <= MAX_REASONS_PER_SIDE, {
+    message: `Máximo ${MAX_REASONS_PER_SIDE} razones por lado.`,
+  });
+
 export const SingleVoteEntrySchema = z.object({
   optionId: z
     .string({ required_error: 'Campo obligatorio: optionId' })
@@ -123,13 +146,18 @@ export const SingleVoteEntrySchema = z.object({
     .number({ required_error: 'Campo obligatorio: posición' })
     .int('La posición debe ser un número entero.')
     .min(1, 'La posición mínima es 1.'),
+  reasonsFor: ReasonListSchema,
+  reasonsAgainst: ReasonListSchema,
+  // Legacy single reason, still accepted from older clients: optional, no minimum
   justification: z
-    .string({ required_error: 'La razón es obligatoria.' })
-    .transform((v) => sanitizeText(v))
-    .refine((v) => getUnicodeLength(v) >= 25, {
-      message: 'Mínimo 25 caracteres.',
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => {
+      const clean = sanitizeText(v ?? '');
+      return clean.length > 0 ? clean : null;
     })
-    .refine((v) => getUnicodeLength(v) <= 200, {
+    .refine((v) => v === null || getUnicodeLength(v) <= REASON_MAX_LENGTH, {
       message: 'Máximo 200 caracteres.',
     }),
 });
