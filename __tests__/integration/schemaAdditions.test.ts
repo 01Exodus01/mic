@@ -121,3 +121,63 @@ describe.skipIf(!dbUrl)('PT-07: filas en las tablas nuevas (PostgreSQL)', () => 
     expect(await prisma.voteReason.count({ where: { vote_id: voteId } })).toBe(0);
   });
 });
+
+describe('PT-08: configuración por sala, lista y consentimiento', () => {
+  it('los valores por defecto reproducen el comportamiento anterior', () => {
+    const room = modelBlock('Room');
+    expect(room).toMatch(/access_mode\s+AccessMode\s+@default\(OPEN_PIN\)/);
+    expect(room).toMatch(/allow_late_join\s+Boolean\s+@default\(false\)/);
+    expect(room).toMatch(/consent_required\s+Boolean\s+@default\(false\)/);
+    expect(room).toMatch(/close_when_all_voted\s+Boolean\s+@default\(false\)/);
+    expect(room).toMatch(/tie_break_rule\s+TieBreakRule\s+@default\(NONE\)/);
+    expect(room).toMatch(/concordance_variant\s+ConcordanceVariant\s+@default\(WITH_TIES\)/);
+    expect(modelBlock('Participant')).toMatch(/joined_round\s+Int\s+@default\(1\)/);
+  });
+
+  it('la etiqueta del estudiante solo vive en RoomMember', () => {
+    expect(modelBlock('RoomMember')).toMatch(/label\s+String/);
+    for (const model of ['Vote', 'VoteReason', 'VoteRevision', 'RoomEvent', 'Participant', 'RoundReport']) {
+      expect(modelBlock(model), model).not.toMatch(/\blabel\b/);
+    }
+  });
+});
+
+describe.skipIf(!dbUrl)('PT-08: valores por defecto en la base (PostgreSQL)', () => {
+  it('una sala creada sin configuración queda abierta, cerrada a tardíos, sin consentimiento ni desempate', async () => {
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
+    const suffix = (Date.now() + 1).toString(36);
+    try {
+      const host = await prisma.user.create({
+        data: { email: `pt08-${suffix}@example.test`, name: 'Host PT08', password_hash: 'x' },
+      });
+      const room = await prisma.room.create({
+        data: { pin: suffix.slice(-6).toUpperCase().padStart(6, 'Y'), title: 'Sala PT-08', host_id: host.id },
+      });
+      expect(room).toMatchObject({
+        access_mode: 'OPEN_PIN',
+        allow_late_join: false,
+        consent_required: false,
+        consent_text: null,
+        close_when_all_voted: false,
+        tie_break_rule: 'NONE',
+        concordance_variant: 'WITH_TIES',
+      });
+      const participant = await prisma.participant.create({
+        data: { room_id: room.id, nickname: 'Ana', pin_hash: 'x', blind_code: 'Participante 01' },
+      });
+      expect(participant.joined_round).toBe(1);
+      const member = await prisma.roomMember.create({
+        data: { room_id: room.id, label: 'A001', access_code_hash: 'a'.repeat(64), participant_id: participant.id },
+      });
+      await expect(
+        prisma.roomMember.create({ data: { room_id: room.id, label: 'A001', access_code_hash: 'b'.repeat(64) } })
+      ).rejects.toThrow();
+      expect(member.added_round).toBe(1);
+      await prisma.consentRecord.create({ data: { participant_id: participant.id, room_id: room.id, text_version: 1 } });
+      expect(await prisma.consentRecord.count({ where: { room_id: room.id } })).toBe(1);
+      await prisma.user.delete({ where: { id: host.id } });
+    } finally {
+      await prisma.$disconnect();
+    }
+  });
+});

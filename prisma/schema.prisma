@@ -25,6 +25,22 @@ enum EventActor {
   SYSTEM
 }
 
+enum AccessMode {
+  OPEN_PIN
+  ROSTER
+}
+
+enum TieBreakRule {
+  NONE
+  LEXICOGRAPHIC
+  REASON_BALANCE
+}
+
+enum ConcordanceVariant {
+  WITH_TIES
+  WITHOUT_TIES
+}
+
 enum RoomStatus {
   DRAFT
   ROUND_OPEN
@@ -60,11 +76,23 @@ model Room {
   created_at    DateTime          @default(now())
   updated_at    DateTime          @updatedAt
 
+  // Per-room configuration. Defaults reproduce the behaviour before PT-08.
+  access_mode          AccessMode         @default(OPEN_PIN)
+  allow_late_join      Boolean            @default(false)
+  consent_required     Boolean            @default(false)
+  consent_text         String?            @db.VarChar(4000)
+  consent_version      Int                @default(1)
+  close_when_all_voted Boolean            @default(false)
+  tie_break_rule       TieBreakRule       @default(NONE)
+  concordance_variant  ConcordanceVariant @default(WITH_TIES)
+
   options       Option[]
   participants  Participant[]
   reports       RoundReport[]
   voteRevisions VoteRevision[]
   events        RoomEvent[]
+  members       RoomMember[]
+  consents      ConsentRecord[]
 
   @@index([status, deadline])
   @@index([host_id])
@@ -90,10 +118,13 @@ model Participant {
   pin_hash   String   // bcrypt cost=10
   blind_code String   @db.VarChar(30) // e.g. "Participante 01"
   is_retired Boolean  @default(false)
+  joined_round Int    @default(1)
   created_at DateTime @default(now())
   votes      Vote[]
   voteRevisions VoteRevision[]
   events     RoomEvent[]
+  member     RoomMember?
+  consents   ConsentRecord[]
 
   @@unique([room_id, nickname])
   @@unique([room_id, blind_code])
@@ -177,4 +208,36 @@ model RoomEvent {
 
   @@index([room_id, created_at])
   @@index([room_id, type, round])
+}
+
+// Course roster entry. The label identifies a person: it never goes into votes,
+// CSV exports or logs. The access code is stored only as a hash.
+model RoomMember {
+  id               String       @id @default(cuid())
+  room_id          String
+  room             Room         @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  label            String       @db.VarChar(100)
+  access_code_hash String       @db.VarChar(64) // sha256 hex of a high-entropy random code
+  participant_id   String?      @unique
+  participant      Participant? @relation(fields: [participant_id], references: [id], onDelete: SetNull)
+  added_round      Int          @default(1)
+  is_removed       Boolean      @default(false)
+  created_at       DateTime     @default(now())
+
+  @@unique([room_id, label])
+  @@unique([room_id, access_code_hash])
+}
+
+// Informed consent acceptance, one row per participant and text version.
+model ConsentRecord {
+  id             String      @id @default(cuid())
+  participant_id String
+  participant    Participant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+  room_id        String
+  room           Room        @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  text_version   Int
+  accepted_at    DateTime    @default(now())
+
+  @@unique([participant_id, text_version])
+  @@index([room_id])
 }
