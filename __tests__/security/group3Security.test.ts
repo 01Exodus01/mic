@@ -148,3 +148,15 @@ describe('Grupo 3: Seguridad y sesiones', () => {
     });
   });
 });
+
+// PT-31: los límites viven en memoria; la limitación queda documentada en el módulo
+import fsPt31 from 'fs';
+import pathPt31 from 'path';
+describe('PT-31: límite de intentos en memoria', () => {
+  it('la limitación (reinicio y varias instancias) está documentada y el despliegue usa una sola instancia', () => {
+    const src = fsPt31.readFileSync(pathPt31.resolve(__dirname, '../../lib/rate-limit.ts'), 'utf8');
+    expect(src).toMatch(/Known limitation \(PT-31/);
+    const compose = fsPt31.readFileSync(pathPt31.resolve(__dirname, '../../docker-compose.yml'), 'utf8');
+    expect(compose).not.toMatch(/replicas:/);
+  });
+});

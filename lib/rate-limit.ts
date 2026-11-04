@@ -6,6 +6,14 @@
  *  1. Sliding window rate limiting (requests per time window).
  *  2. Brute-force lockout: blocks key for N seconds after M consecutive failures.
  *  3. Automatic cleanup of expired entries.
+ *
+ * Known limitation (PT-31, decided not to persist): counters and lockouts live
+ * in this process's memory. A restart clears them, and with more than one app
+ * instance each instance counts on its own. The deployment in docker-compose.yml
+ * runs a single app container, so this is accepted. If the app is ever scaled
+ * to several instances or restarted often during a session, move these maps to
+ * the database (or another shared store) before relying on the lockouts. Host
+ * login (lib/auth.ts) and participant joins share the same limitation.
  */
 
 interface RateLimitEntry {
