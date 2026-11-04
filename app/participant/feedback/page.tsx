@@ -35,7 +35,6 @@ interface CollectiveRankingItem {
 interface RoundReportData {
   round?: number;
   effective_voters?: number;
-  ranking_colectivo?: CollectiveRankingItem[];
   collective_ranking?: CollectiveRankingItem[];
   obtained_tau?: number;
   argumentos_json?: Record<string, BlindArgumentItem[]>;
@@ -124,7 +123,7 @@ export default function ParticipantFeedbackPage() {
   const { sala, options, latestReport } = roomData;
   const isConcluded = sala.status === 'CONCLUDED';
   const collectiveRanking: CollectiveRankingItem[] =
-    latestReport?.collective_ranking || latestReport?.ranking_colectivo || [];
+    latestReport?.collective_ranking || [];
 
   // Ordenar opciones según el midRank del orden colectivo
   const sortedOptions = [...(options || [])].sort((a, b) => {

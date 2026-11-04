@@ -110,7 +110,6 @@ export interface ParticipantReportView {
   effective_voters: number;
   obtained_tau: number;
   collective_ranking: ParticipantRankingView[];
-  ranking_colectivo: ParticipantRankingView[];
   arguments_json: Record<string, ParticipantArgumentView[]>;
   argumentos_json: Record<string, ParticipantArgumentView[]>;
   /** PT-19: all reasons for and against per option, verbatim, with blind codes */
@@ -221,7 +220,6 @@ function toParticipantReportView(
     effective_voters: report.effective_voters,
     obtained_tau: report.obtained_tau,
     collective_ranking: ranking,
-    ranking_colectivo: ranking,
     arguments_json: args,
     argumentos_json: args,
     reasonsByOption: toReasonsView(report.arguments_json, optionIds),

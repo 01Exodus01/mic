@@ -173,7 +173,6 @@ describe('PT-02: vista del informe para participantes', () => {
 
     expect(report.obtained_tau).toBe(0.42);
     expect(report.collective_ranking).toEqual(storedReport.collective_ranking);
-    expect(report.ranking_colectivo).toEqual(storedReport.collective_ranking);
     expect(report.arguments_json['opt-1']).toEqual([
       {
         blindCode: 'P-07',
