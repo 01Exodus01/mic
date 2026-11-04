@@ -19,6 +19,7 @@ import PasswordInput from '@/components/ui/PasswordInput';
 import DurationPicker from '@/components/DurationPicker';
 import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import RoomRosterManager from '@/components/RoomRosterManager';
+import ParticipationTable from '@/components/ParticipationTable';
 import {
   Dialog,
   DialogContent,
@@ -927,6 +928,10 @@ export default function RoomHostPage() {
           </div>
         )}
       </section>
+
+      <div className="pb-6 border-b border-[#D9D5CC]">
+        <ParticipationTable roomId={sala.id} refreshKey={`${sala.estado}:${sala.ronda_actual}:${votesCount}:${totalParticipants}`} />
+      </div>
 
       {/* 6. Tabla Densa de Participantes */}
       <section className="pb-6 border-b border-[#D9D5CC] space-y-3">

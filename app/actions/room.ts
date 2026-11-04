@@ -526,6 +526,8 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
     // Map room object to expose both English and legacy fields for compatibility
     const mappedRoom: MappedRoomDetails = {
       ...room,
+      // PT-25: same filtering as reportes (no per-voter metrics or signed reasons)
+      reports: room.reports.map((r) => ({ ...r, arguments_json: {} })),
       titulo: room.title,
       metodo: room.method,
       min_miembros: MIN_PARTICIPANTS,
@@ -545,13 +547,17 @@ export async function getRoomStatus(salaId: string): Promise<ActionResult<RoomSt
         nickname: p.nickname,
         is_retired: p.is_retired,
       })),
+      // PT-25: the host gets group results only. arguments_json carries per-voter
+      // metrics (participant id + cix) and blind-signed reasons; the panel does not
+      // use it and it must not let the host link a named person to a cix.
       reportes: room.reports.map((r) => ({
         ...r,
+        arguments_json: {},
         ronda: r.round,
         m_efectivo: r.effective_voters,
         ranking_colectivo: r.collective_ranking as unknown as RankingEntry[],
         tau_obtenido: r.obtained_tau,
-        argumentos_json: r.arguments_json as unknown as BlindArgumentsMap,
+        argumentos_json: {} as BlindArgumentsMap,
       })),
     };
 
@@ -870,6 +876,92 @@ export async function regenerateMemberCode(roomId: string, memberId: string): Pr
       });
     });
     return { success: true, data: { issued: { memberId, label: member.label, code } } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+// ─────────────────────────────────────────────
+// Participation by round (PT-25): states only, never ballot content
+// ─────────────────────────────────────────────
+
+export type ParticipationState = 'not_joined' | 'joined' | 'voted' | 'not_voted' | 'retired' | 'removed';
+
+export interface ParticipationRow {
+  key: string;
+  /** Roster label (roster rooms) or nickname (open rooms); never the blind code */
+  name: string;
+  states: ParticipationState[];
+}
+
+export interface ParticipationData {
+  rounds: number[];
+  rows: ParticipationRow[];
+}
+
+export async function getRoomParticipation(roomId: string): Promise<ActionResult<ParticipationData>> {
+  try {
+    const hostId = await requireHost();
+    const room = await prisma.room.findFirst({
+      where: { id: roomId, host_id: hostId },
+      include: { options: { select: { id: true } }, reports: { select: { round: true } } },
+    });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+
+    const lastRound = room.status === 'DRAFT' ? 0 : room.current_round;
+    const rounds = Array.from({ length: lastRound }, (_, i) => i + 1);
+    const optionCount = room.options.length;
+
+    const participants = await prisma.participant.findMany({
+      where: { room_id: roomId },
+      select: { id: true, nickname: true, is_retired: true, joined_round: true },
+      orderBy: { created_at: 'asc' },
+    });
+    const voteCounts = await prisma.vote.groupBy({
+      by: ['participant_id', 'round'],
+      where: { option: { room_id: roomId } },
+      _count: { _all: true },
+    });
+    const complete = new Set(
+      voteCounts.filter((v) => v._count._all === optionCount).map((v) => `${v.participant_id}:${v.round}`)
+    );
+    const retiredEvents = await prisma.roomEvent.findMany({
+      where: { room_id: roomId, type: { in: ['participant_expelled', 'member_removed'] }, participant_id: { not: null } },
+      select: { participant_id: true, round: true },
+    });
+    const retiredRound = new Map(retiredEvents.map((e) => [e.participant_id!, e.round ?? lastRound]));
+
+    const roundIsOpen = (r: number) => r === room.current_round && !room.reports.some((rep) => rep.round === r)
+      && ['ROUND_OPEN', 'INSUFFICIENT_VOTES'].includes(room.status);
+
+    const statesFor = (p: (typeof participants)[number] | undefined, removed: boolean): ParticipationState[] =>
+      rounds.map((r) => {
+        if (!p) return removed ? 'removed' : 'not_joined';
+        if (p.is_retired && r >= (retiredRound.get(p.id) ?? lastRound)) return 'retired';
+        if (complete.has(`${p.id}:${r}`)) return 'voted';
+        if (r < p.joined_round) return 'not_joined';
+        return roundIsOpen(r) ? 'joined' : 'not_voted';
+      });
+
+    let rows: ParticipationRow[];
+    if (room.access_mode === 'ROSTER') {
+      const members = await prisma.roomMember.findMany({
+        where: { room_id: roomId },
+        select: { id: true, label: true, participant_id: true, is_removed: true },
+        orderBy: { label: 'asc' },
+      });
+      const byId = new Map(participants.map((p) => [p.id, p]));
+      rows = members.map((m) => ({
+        key: m.id,
+        name: m.label,
+        states: statesFor(m.participant_id ? byId.get(m.participant_id) : undefined, m.is_removed),
+      }));
+    } else {
+      rows = participants.map((p) => ({ key: p.id, name: p.nickname, states: statesFor(p, false) }));
+    }
+
+    return { success: true, data: { rounds, rows } };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };
