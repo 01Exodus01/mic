@@ -42,7 +42,6 @@ export type EstadoSala = RoomStatus;
 export interface CreateRoomInput {
   title?: string;
   method: AggregationMethod;
-  metodo?: AggregationMethod;
   minMembers?: number;
   minMiembros?: number;
   maxMembers?: number;
@@ -148,7 +147,7 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
 
     const validation = CreateRoomSchema.safeParse({
       title: input.title,
-      method: input.method || input.metodo,
+      method: input.method,
       maxMembers: rawMaxMembers,
       tauThreshold: rawTau,
       maxRounds: rawMaxRounds,
