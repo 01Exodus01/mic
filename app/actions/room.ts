@@ -45,7 +45,6 @@ export interface CreateRoomInput {
   minMembers?: number;
   maxMembers?: number;
   tauThreshold?: number;
-  tauUmbral?: number;
   maxRounds?: number;
   maxRondas?: number;
   options?: { title?: string; titulo?: string; description?: string; descripcion?: string }[];
@@ -128,7 +127,7 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
     if (rawMaxRounds === undefined || rawMaxRounds === null) {
       throw Errors.INVALID_BALLOT('El máximo de rondas es obligatorio.');
     }
-    let rawTau = input.tauThreshold !== undefined ? input.tauThreshold : input.tauUmbral;
+    let rawTau = input.tauThreshold;
     if (rawTau === undefined || rawTau === null) {
       throw Errors.INVALID_BALLOT('El acuerdo requerido es obligatorio.');
     }
