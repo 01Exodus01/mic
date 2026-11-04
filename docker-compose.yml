@@ -31,6 +31,8 @@ services:
       - WORKER_SECRET=${WORKER_SECRET}
       - BACKGROUND_WORKER_INTERVAL_SEC=${BACKGROUND_WORKER_INTERVAL_SEC:-60}
       - TRUSTED_PROXY_HOPS=${TRUSTED_PROXY_HOPS:-0}
+      # Empty means host registration is closed
+      - HOST_INVITE_CODE=${HOST_INVITE_CODE:-}
     depends_on:
       db:
         condition: service_healthy

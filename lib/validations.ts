@@ -182,6 +182,16 @@ export const HostRegisterSchema = z.object({
 export type HostRegisterInput = z.infer<typeof HostRegisterSchema>;
 export const RegisterHostSchema = HostRegisterSchema;
 
+export const HostInviteCodeSchema = z
+  .string({ required_error: 'El código de invitación es obligatorio.' })
+  .transform((v) => sanitizeText(v))
+  .pipe(
+    z
+      .string()
+      .min(1, 'El código de invitación es obligatorio.')
+      .max(200, 'Máximo 200 caracteres.')
+  );
+
 // ─────────────────────────────────────────────
 // 7. Opciones de Sala
 // ─────────────────────────────────────────────

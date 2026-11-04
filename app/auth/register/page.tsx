@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { registerHost } from '@/app/actions/auth';
-import { HostRegisterSchema } from '@/lib/validations';
+import { HostRegisterSchema, HostInviteCodeSchema } from '@/lib/validations';
 import { AlertCircle } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';
 
@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
+  const inviteCodeInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState('');
   const [nameTouched, setNameTouched] = useState(false);
@@ -25,6 +26,10 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCodeTouched, setInviteCodeTouched] = useState(false);
+  const [inviteCodeError, setInviteCodeError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -52,6 +57,28 @@ export default function RegisterPage() {
       return res.error.errors[0]?.message || 'Mínimo 8 caracteres.';
     }
     return null;
+  };
+
+  const validateInviteCode = (val: string): string | null => {
+    const res = HostInviteCodeSchema.safeParse(val);
+    if (!res.success) {
+      return res.error.errors[0]?.message || 'El código de invitación es obligatorio.';
+    }
+    return null;
+  };
+
+  const handleInviteCodeBlur = () => {
+    setInviteCodeTouched(true);
+    setInviteCodeError(validateInviteCode(inviteCode));
+  };
+
+  const handleInviteCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setInviteCode(next);
+    setServerError(null);
+    if (inviteCodeTouched) {
+      setInviteCodeError(validateInviteCode(next));
+    }
   };
 
   const handleNameBlur = () => {
@@ -102,14 +129,17 @@ export default function RegisterPage() {
     setNameTouched(true);
     setEmailTouched(true);
     setPasswordTouched(true);
+    setInviteCodeTouched(true);
 
     const nmErr = validateName(name);
     const emErr = validateEmail(email);
     const pwErr = validatePassword(password);
+    const icErr = validateInviteCode(inviteCode);
 
     setNameError(nmErr);
     setEmailError(emErr);
     setPasswordError(pwErr);
+    setInviteCodeError(icErr);
 
     if (nmErr) {
       nameInputRef.current?.focus();
@@ -123,10 +153,14 @@ export default function RegisterPage() {
       passwordInputRef.current?.focus();
       return;
     }
+    if (icErr) {
+      inviteCodeInputRef.current?.focus();
+      return;
+    }
 
     setLoading(true);
     try {
-      const res = await registerHost(name, email, password);
+      const res = await registerHost(name, email, password, inviteCode);
       if (res.success) {
         setSuccess(true);
         setTimeout(() => router.push('/auth/login'), 1500);
@@ -144,8 +178,13 @@ export default function RegisterPage() {
   const isNameInvalid = nameTouched && Boolean(nameError);
   const isEmailInvalid = emailTouched && Boolean(emailError);
   const isPasswordInvalid = passwordTouched && Boolean(passwordError);
+  const isInviteCodeInvalid = inviteCodeTouched && Boolean(inviteCodeError);
 
-  const errorsCount = (isNameInvalid ? 1 : 0) + (isEmailInvalid ? 1 : 0) + (isPasswordInvalid ? 1 : 0);
+  const errorsCount =
+    (isNameInvalid ? 1 : 0) +
+    (isEmailInvalid ? 1 : 0) +
+    (isPasswordInvalid ? 1 : 0) +
+    (isInviteCodeInvalid ? 1 : 0);
   const isSubmitDisabled = loading || success || errorsCount > 0;
   const submitMotive = errorsCount === 1 ? 'Corrige 1 campo' : errorsCount > 1 ? `Corrige ${errorsCount} campos` : '';
 
@@ -277,6 +316,40 @@ export default function RegisterPage() {
             {isPasswordInvalid && (
               <p id="register-password-error" role="alert" className="text-xs text-[#B42318] mt-1">
                 {passwordError}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="register-invite-code"
+              className="block text-xs font-semibold text-[#14171A]"
+            >
+              Código de invitación
+            </label>
+            <PasswordInput
+              ref={inviteCodeInputRef}
+              id="register-invite-code"
+              autoComplete="off"
+              maxLength={200}
+              value={inviteCode}
+              onChange={handleInviteCodeChange}
+              onBlur={handleInviteCodeBlur}
+              aria-invalid={isInviteCodeInvalid}
+              aria-describedby={isInviteCodeInvalid ? 'register-invite-code-error' : 'register-invite-code-help'}
+              className={`h-11 px-3 ${
+                isInviteCodeInvalid
+                  ? 'border-[#B42318] focus:border-[#B42318]'
+                  : 'border-[#D9D5CC] focus:border-[#E4572E]'
+              }`}
+            />
+            {isInviteCodeInvalid ? (
+              <p id="register-invite-code-error" role="alert" className="text-xs text-[#B42318] mt-1">
+                {inviteCodeError}
+              </p>
+            ) : (
+              <p id="register-invite-code-help" className="text-xs text-[#5A554E] mt-1">
+                Lo entrega quien administra la plataforma.
               </p>
             )}
           </div>

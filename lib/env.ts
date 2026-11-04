@@ -61,4 +61,14 @@ export function getValidatedEnv() {
   };
 }
 
+/**
+ * Invite code required to register a host account. Read at call time.
+ * Missing or empty means host registration is closed.
+ */
+export function getHostInviteCode(): string | null {
+  loadDotenvIfNeeded();
+  const value = (process.env.HOST_INVITE_CODE || '').trim();
+  return value.length > 0 ? value : null;
+}
+
 export const env = getValidatedEnv();
