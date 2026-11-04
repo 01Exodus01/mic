@@ -102,4 +102,19 @@ describe.skipIf(!hasTestDb)('Votos simultáneos (PostgreSQL)', () => {
     const stored = await prisma.vote.groupBy({ by: ['participant_id'], where: { option: { room_id: fx.roomId }, round: 1 } });
     expect(stored).toHaveLength(accepted);
   }, 60000);
+  it('el mismo participante enviando desde varias pestañas a la vez recibe respuesta clara y queda una sola boleta', async () => {
+    const fx = await createRoomFixture(prisma, { participants: 3 });
+    fixtures.push(fx);
+    const { submitVote } = await import('@/app/actions/participant');
+    const session = { participantId: fx.participantIds[0], roomId: fx.roomId, nickname: 'Persona 1', blindCode: fx.blindCodes[0] };
+    const results = await Promise.all(
+      Array.from({ length: 8 }, (_, t) =>
+        sessionStore.run(session, () =>
+          submitVote(fx.optionIds.map((optionId, k) => ({ optionId, position: ((k + t) % fx.optionIds.length) + 1 })))
+        )
+      )
+    );
+    expect(results.map((r) => r.success)).toEqual(Array(8).fill(true));
+    expect(await prisma.vote.count({ where: { participant_id: fx.participantIds[0], round: 1 } })).toBe(3);
+  }, 60000);
 });

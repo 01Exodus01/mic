@@ -319,7 +319,9 @@ async function recordReportViewedOnce(roomId: string, participantId: string, rou
 
 function isSerializationConflict(err: unknown): boolean {
   if (!(err instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  if (err.code === 'P2034') return true;
+  // P2034: write conflict; P2002: a concurrent ballot of the same participant
+  // inserted the same unique row first (two tabs). Both succeed on retry.
+  if (err.code === 'P2034' || err.code === 'P2002') return true;
   // Raw queries report PostgreSQL serialization_failure (40001) as P2010
   const meta = err.meta as { code?: string } | undefined;
   return err.code === 'P2010' && (meta?.code === '40001' || /could not serialize/i.test(err.message));
@@ -773,6 +775,10 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           SELECT "status" FROM "Room" WHERE "id" = ${targetRoomId} FOR SHARE
         `;
         if (locked[0]?.status !== 'ROUND_OPEN') throw Errors.ROOM_CLOSED();
+
+        // The same participant voting from two tabs: their ballots go one after
+        // the other (the second waits, then retries on the fresh state)
+        await tx.$queryRaw`SELECT "id" FROM "Participant" WHERE "id" = ${session.participantId} FOR UPDATE`;
 
         const n = room.options.length;
         const optionIds = new Set(room.options.map((p) => p.id));
