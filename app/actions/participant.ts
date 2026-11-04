@@ -43,7 +43,6 @@ export interface ParticipantRoomViewData {
   sala: {
     id: string;
     title: string;
-    titulo: string;
     status: RoomStatus;
     estado: RoomStatus;
     currentRound: number;
@@ -1024,7 +1023,6 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
         sala: {
           id: room.id,
           title: room.title,
-          titulo: room.title,
           status: room.status,
           estado: room.status,
           currentRound: room.current_round,

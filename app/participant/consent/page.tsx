@@ -13,7 +13,7 @@ import { acceptConsent, getParticipantRoomView, logoutParticipant } from '@/app/
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 
 interface ConsentView {
-  sala: { titulo: string };
+  sala: { title: string };
   session: { blindCode: string };
   consent: { required: boolean; accepted: boolean; text: string | null };
 }
@@ -78,7 +78,7 @@ export default function ParticipantConsentPage() {
         </button>
       </div>
 
-      <p className="text-xs text-[#5A554E] font-mono mb-1">{data.sala.titulo}</p>
+      <p className="text-xs text-[#5A554E] font-mono mb-1">{data.sala.title}</p>
       <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">Consentimiento informado</h1>
       <p className="text-xs text-[#5A554E] mt-2">Lee el texto. Para votar tienes que aceptarlo. Podrás volver a leerlo después.</p>
 

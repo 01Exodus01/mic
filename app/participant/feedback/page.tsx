@@ -58,7 +58,7 @@ interface RoundReportData {
 interface FeedbackRoomData {
   sala: {
     id: string;
-    titulo: string;
+    title: string;
     estado: string;
     rondaActual: number;
     maxRondas: number;
@@ -183,7 +183,7 @@ export default function ParticipantFeedbackPage() {
         </div>
 
         <h1 className="font-heading text-3xl font-bold text-[#14171A] leading-tight">
-          {sala.titulo}
+          {sala.title}
         </h1>
 
         {/* Mensaje de estado directo y sin exclamaciones */}

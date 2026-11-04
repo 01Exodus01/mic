@@ -38,7 +38,7 @@ interface ParticipantSessionInfo {
 interface ParticipantRoomData {
   sala: {
     id: string;
-    titulo: string;
+    title: string;
     estado: string;
     rondaActual: number;
     maxRondas: number;
@@ -435,7 +435,7 @@ export default function ParticipantVotePage() {
         </div>
 
         <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
-          {roomData?.sala?.titulo}
+          {roomData?.sala?.title}
         </h1>
 
         {/* Visible countdown timer */}
