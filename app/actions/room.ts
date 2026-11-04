@@ -46,8 +46,7 @@ export interface CreateRoomInput {
   maxMembers?: number;
   tauThreshold?: number;
   maxRounds?: number;
-  options?: { title?: string; titulo?: string; description?: string; descripcion?: string }[];
-  proyectos?: { titulo?: string; title?: string; descripcion?: string; description?: string }[];
+  options?: { title?: string; description?: string }[];
   /** Advanced settings (PT-18). Omitted fields take the defaults (previous behaviour). */
   settings?: RoomSettingsInput;
 }
@@ -136,9 +135,9 @@ export async function createRoom(input: CreateRoomInput): Promise<ActionResult<{
     }
 
     // minMembers in payload is ignored (fixed at 3 per methodology)
-    const rawOptions = (input.options || input.proyectos || []).map((o) => ({
-      title: o.title || o.titulo,
-      description: o.description || o.descripcion,
+    const rawOptions = (input.options || []).map((o) => ({
+      title: o.title,
+      description: o.description,
     }));
 
     const validation = CreateRoomSchema.safeParse({
