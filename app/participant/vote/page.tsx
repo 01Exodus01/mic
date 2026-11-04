@@ -43,7 +43,7 @@ interface ParticipantRoomData {
     currentRound: number;
     maxRounds: number;
     deadline: string | null;
-    metodo: string;
+    method: string;
     closeWhenAllVoted?: boolean;
   };
   proyectos: OptionItem[];

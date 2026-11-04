@@ -63,7 +63,7 @@ interface FeedbackRoomData {
     currentRound: number;
     maxRounds: number;
     deadline: string | null;
-    metodo: string;
+    method: string;
     tauUmbral: number;
   };
   proyectos: OptionItem[];
