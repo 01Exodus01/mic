@@ -99,6 +99,10 @@ vi.mock('@/lib/prisma', () => ({
         reports: [storedReport],
       }),
     },
+    roomEvent: {
+      // PT-12: report already logged as viewed, so no write is attempted here
+      findFirst: async () => ({ id: 'event-1' }),
+    },
     vote: {
       findMany: async ({ where }: { where: { participant_id: string } }) => [
         {

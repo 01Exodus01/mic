@@ -199,6 +199,35 @@ function toParticipantReportView(
   };
 }
 
+/**
+ * PT-12: logs the first time a participant receives the report of a round.
+ * Polling calls this every few seconds, so the check and the insert run under a
+ * transaction-level advisory lock per participant and round.
+ */
+async function recordReportViewedOnce(roomId: string, participantId: string, round: number): Promise<void> {
+  const already = await prisma.roomEvent.findFirst({
+    where: { room_id: roomId, participant_id: participantId, type: 'report_viewed', round },
+    select: { id: true },
+  });
+  if (already) return;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`report_viewed:${participantId}:${round}`}))`;
+    const existing = await tx.roomEvent.findFirst({
+      where: { room_id: roomId, participant_id: participantId, type: 'report_viewed', round },
+      select: { id: true },
+    });
+    if (existing) return;
+    await recordRoomEvent(tx, {
+      roomId,
+      type: 'report_viewed',
+      actor: 'PARTICIPANT',
+      round,
+      participantId,
+    });
+  });
+}
+
 function isSerializationConflict(err: unknown): boolean {
   if (!(err instanceof Prisma.PrismaClientKnownRequestError)) return false;
   if (err.code === 'P2034') return true;
@@ -690,6 +719,10 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
           room.options.map((o) => o.id)
         )
       : null;
+
+    if (latestReport) {
+      await recordReportViewedOnce(room.id, session.participantId, latestReport.round);
+    }
 
     const mappedOptions = room.options.map((o) => ({
       ...o,
