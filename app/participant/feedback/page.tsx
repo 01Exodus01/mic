@@ -80,6 +80,11 @@ export default function ParticipantFeedbackPage() {
         setRetired(true);
         return;
       }
+      if (!res.success && res.code === 'SESSION_EXPIRED') {
+        toast.error(res.error);
+        router.push('/join');
+        return;
+      }
       if (!res.success || !res.data) {
         router.push('/join');
         return;

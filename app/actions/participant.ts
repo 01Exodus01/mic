@@ -260,6 +260,7 @@ export async function acceptConsent(): Promise<ActionResult> {
     const participant = await prisma.participant.findFirst({ where: { id: session.participantId, room_id: roomId } });
     if (!participant) throw Errors.UNAUTHORIZED();
     if (participant.is_retired) throw Errors.RETIRED();
+    if (participant.session_version !== (session.sessionVersion ?? 0)) throw Errors.SESSION_EXPIRED();
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw Errors.ROOM_NOT_FOUND();
     if (!room.consent_required) return { success: true };
@@ -462,7 +463,7 @@ export async function joinRoom(
     // 3. Find room
     const room = await prisma.room.findUnique({
       where: { pin: validPin },
-      include: { participants: { select: { id: true, nickname: true, pin_hash: true, blind_code: true, is_retired: true } } },
+      include: { participants: { select: { id: true, nickname: true, pin_hash: true, blind_code: true, is_retired: true, session_version: true } } },
     });
 
     // Unified generic message according to D4 and AGENTS.md (no disclosure of room state).
@@ -513,6 +514,7 @@ export async function joinRoom(
 
       await createParticipantSession({
         participantId: existingParticipant.id,
+        sessionVersion: existingParticipant.session_version,
         roomId: room.id,
         nickname: existingParticipant.nickname,
         blindCode: existingParticipant.blind_code,
@@ -570,6 +572,7 @@ export async function joinRoom(
 
     await createParticipantSession({
       participantId: participant.id,
+      sessionVersion: participant.session_version,
       roomId: room.id,
       nickname: cleanNick,
       blindCode: participant.blind_code,
@@ -677,6 +680,7 @@ export async function joinRoomWithCode(
     resetFailedAttempts(lockoutKey);
     await createParticipantSession({
       participantId: participant!.id,
+      sessionVersion: participant!.session_version,
       roomId: room!.id,
       // The session shows the blind code; the roster label never leaves RoomMember
       nickname: participant!.blind_code,
@@ -716,6 +720,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
     });
     if (!participant) throw Errors.UNAUTHORIZED();
     if (participant.is_retired) throw Errors.RETIRED();
+    if (participant.session_version !== (session.sessionVersion ?? 0)) throw Errors.SESSION_EXPIRED();
 
     const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
     await checkAndProcessExpiredDeadline(targetRoomId);
@@ -914,6 +919,7 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     });
     if (!participant) throw Errors.UNAUTHORIZED();
     if (participant.is_retired) throw Errors.RETIRED();
+    if (participant.session_version !== (session.sessionVersion ?? 0)) throw Errors.SESSION_EXPIRED();
 
     const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
     await checkAndProcessExpiredDeadline(targetRoomId);

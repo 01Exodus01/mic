@@ -76,7 +76,7 @@ vi.mock('@/lib/prisma', () => ({
     participant: {
       findFirst: async ({ where }: { where: { id: string; room_id: string } }) =>
         [PARTICIPANT_A, PARTICIPANT_B, 'participant-c-id'].includes(where.id) && where.room_id === ROOM_ID
-          ? { id: where.id, room_id: ROOM_ID, is_retired: false }
+          ? { id: where.id, room_id: ROOM_ID, is_retired: false, session_version: 0 }
           : null,
     },
     room: {

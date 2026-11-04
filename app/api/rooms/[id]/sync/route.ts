@@ -86,8 +86,12 @@ export async function GET(
     if (participantId) {
       const part = await prisma.participant.findUnique({
         where: { id: participantId },
-        select: { id: true, is_retired: true },
+        select: { id: true, is_retired: true, session_version: true },
       });
+      if (part && part.session_version !== (participantSession?.sessionVersion ?? 0)) {
+        // Session opened before a PIN reset / code regeneration
+        return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
+      }
       if (!part || part.is_retired) {
         isRetired = true;
       }

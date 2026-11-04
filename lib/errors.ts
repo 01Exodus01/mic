@@ -38,6 +38,8 @@ export const Errors = {
   RATE_LIMITED:         (resetIn: number) =>
     new AppError('RATE_LIMITED', `Demasiadas solicitudes. Reintenta en ${resetIn}s.`, 429),
   UNAUTHORIZED:         () => new AppError('UNAUTHORIZED', 'No autorizado.', 401),
+  SESSION_EXPIRED:      () =>
+    new AppError('SESSION_EXPIRED', 'Tu sesión se cerró porque el anfitrión cambió tu acceso. Vuelve a ingresar.', 401),
   RETIRED:              () =>
     new AppError('RETIRED', 'Fuiste retirado de la sala. Tus votos anteriores se conservan.', 403),
   CONSENT_REQUIRED:     () =>

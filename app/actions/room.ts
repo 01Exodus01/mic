@@ -549,7 +549,8 @@ export async function resetParticipantPin(
     await prisma.$transaction(async (tx) => {
       await tx.participant.update({
         where: { id: participantId },
-        data: { pin_hash: pinHash },
+        // Raising session_version signs out sessions opened with the old PIN
+        data: { pin_hash: pinHash, session_version: { increment: 1 } },
       });
       await recordRoomEvent(tx, {
         roomId: salaId,
@@ -807,6 +808,10 @@ export async function regenerateMemberCode(roomId: string, memberId: string): Pr
     const code = generateMemberCode();
     await prisma.$transaction(async (tx) => {
       await tx.roomMember.update({ where: { id: memberId }, data: { access_code_hash: hashMemberCode(code) } });
+      if (member.participant_id) {
+        // Sessions opened with the old code stop working
+        await tx.participant.update({ where: { id: member.participant_id }, data: { session_version: { increment: 1 } } });
+      }
       await recordRoomEvent(tx, {
         roomId,
         type: 'member_code_regenerated',

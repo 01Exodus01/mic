@@ -119,6 +119,7 @@ model Participant {
   blind_code String   @db.VarChar(30) // e.g. "Participante 01"
   is_retired Boolean  @default(false)
   joined_round Int    @default(1)
+  session_version Int @default(0) // raised on PIN reset / code regeneration: older sessions stop working
   created_at DateTime @default(now())
   votes      Vote[]
   voteRevisions VoteRevision[]

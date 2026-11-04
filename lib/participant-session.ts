@@ -28,6 +28,8 @@ export interface ParticipantSessionPayload {
   participantId: string;
   roomId: string;
   nickname: string;
+  /** Participant.session_version when the session was created (PIN reset / code regeneration raise it) */
+  sessionVersion?: number;
   blindCode: string;
 }
 

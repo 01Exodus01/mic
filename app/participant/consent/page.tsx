@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { LogOut } from 'lucide-react';
 import { acceptConsent, getParticipantRoomView, logoutParticipant } from '@/app/actions/participant';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
@@ -30,6 +31,11 @@ export default function ParticipantConsentPage() {
     const res = await getParticipantRoomView();
     if (!res.success && res.code === 'RETIRED') {
       setRetired(true);
+      return;
+    }
+    if (!res.success && res.code === 'SESSION_EXPIRED') {
+      toast.error(res.error);
+      router.push('/join');
       return;
     }
     if (!res.success || !res.data) {

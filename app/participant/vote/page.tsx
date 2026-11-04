@@ -103,6 +103,11 @@ export default function ParticipantVotePage() {
         setRetired(true);
         return;
       }
+      if (!res.success && res.code === 'SESSION_EXPIRED') {
+        toast.error(res.error);
+        router.push('/join');
+        return;
+      }
       if (!res.success || !res.data) {
         toast.error('No se puede ingresar a esa sala. Revisa tus datos.');
         router.push('/join');
