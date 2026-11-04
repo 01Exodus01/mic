@@ -111,7 +111,6 @@ export interface ParticipantReportView {
   obtained_tau: number;
   collective_ranking: ParticipantRankingView[];
   arguments_json: Record<string, ParticipantArgumentView[]>;
-  argumentos_json: Record<string, ParticipantArgumentView[]>;
   /** PT-19: all reasons for and against per option, verbatim, with blind codes */
   reasonsByOption: Record<string, ParticipantOptionReasonsView>;
   /** PT-19: declared tie-break rule and whether it resolved a tie in this round */
@@ -221,7 +220,6 @@ function toParticipantReportView(
     obtained_tau: report.obtained_tau,
     collective_ranking: ranking,
     arguments_json: args,
-    argumentos_json: args,
     reasonsByOption: toReasonsView(report.arguments_json, optionIds),
     tieBreak: toTieBreakView(report.arguments_json),
     myConcordance: toOwnConcordance(report.arguments_json, participantId),

@@ -37,7 +37,6 @@ interface RoundReportData {
   effective_voters?: number;
   collective_ranking?: CollectiveRankingItem[];
   obtained_tau?: number;
-  argumentos_json?: Record<string, BlindArgumentItem[]>;
   arguments_json?: Record<string, BlindArgumentItem[]>;
   reasonsByOption?: FeedbackReportData['reasonsByOption'];
   tieBreak?: FeedbackReportData['tieBreak'];

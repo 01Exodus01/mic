@@ -185,7 +185,6 @@ describe('PT-02: vista del informe para participantes', () => {
         justification: 'Razón textual de B sobre la opción 1',
       },
     ]);
-    expect(report.argumentos_json).toEqual(report.arguments_json);
   });
 });
 
