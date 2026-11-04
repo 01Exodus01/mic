@@ -69,7 +69,7 @@ interface RoomDetails {
   tau_threshold: number;
   max_rounds: number;
   current_round: number;
-  estado: string;
+  status: string;
   deadline: string | null;
   proyectos: ProjectItem[];
   participantes: ParticipantItem[];
@@ -219,7 +219,7 @@ export default function RoomHostPage() {
 
   // Server-time-based countdown timer
   useEffect(() => {
-    if (data?.sala?.estado !== 'ROUND_OPEN' || !data.sala.deadline) {
+    if (data?.sala?.status !== 'ROUND_OPEN' || !data.sala.deadline) {
       setRemainingTime('');
       return;
     }
@@ -241,7 +241,7 @@ export default function RoomHostPage() {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [data?.sala?.estado, data?.sala?.deadline]);
+  }, [data?.sala?.status, data?.sala?.deadline]);
 
   const copyPin = () => {
     if (!data?.sala?.pin) return;
@@ -441,8 +441,8 @@ export default function RoomHostPage() {
   const { sala, votesThisRound: votesCount, voterIds = [] } = data;
   const totalParticipants = sala.participantes?.length || 0;
   const minRequired = MIN_PARTICIPANTS;
-  const stateLabel = STATE_LABELS[sala.estado] || sala.estado;
-  const stateClass = STATE_CLASSES[sala.estado] || 'text-[#14171A]';
+  const stateLabel = STATE_LABELS[sala.status] || sala.status;
+  const stateClass = STATE_CLASSES[sala.status] || 'text-[#14171A]';
 
   const deadlineDate = sala.deadline ? new Date(sala.deadline) : null;
   const deadlineHour = deadlineDate ? formatDeadlineLabel(deadlineDate) : '';
@@ -489,7 +489,7 @@ export default function RoomHostPage() {
           <span className={`text-xs ${stateClass}`}>
             {stateLabel}
           </span>
-          {remainingTime && sala.estado === 'ROUND_OPEN' && (
+          {remainingTime && sala.status === 'ROUND_OPEN' && (
             <span
               className={`font-mono text-xs font-bold px-2 py-0.5 rounded-[4px] border ${
                 remainingTime === 'Votación cerrada'
@@ -542,14 +542,14 @@ export default function RoomHostPage() {
 
       {sala.access_mode === 'ROSTER' && (
         <div className="py-6 border-b border-[#D9D5CC]">
-          <RoomRosterManager roomId={sala.id} roomPin={sala.pin} readOnly={sala.estado === 'CONCLUDED' || sala.estado === 'CANCELLED'} />
+          <RoomRosterManager roomId={sala.id} roomPin={sala.pin} readOnly={sala.status === 'CONCLUDED' || sala.status === 'CANCELLED'} />
         </div>
       )}
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
       <div className="pb-6 border-b border-[#D9D5CC]">
         {/* BORRADOR (DRAFT) */}
-        {sala.estado === 'DRAFT' && (
+        {sala.status === 'DRAFT' && (
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
@@ -581,7 +581,7 @@ export default function RoomHostPage() {
         )}
 
         {/* VOTACIÓN ABIERTA (ROUND_OPEN) */}
-        {sala.estado === 'ROUND_OPEN' && (
+        {sala.status === 'ROUND_OPEN' && (
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
@@ -629,7 +629,7 @@ export default function RoomHostPage() {
         )}
 
         {/* FALTAN VOTOS (INSUFFICIENT_VOTES / QUORUM_UNMET) */}
-        {(sala.estado === 'INSUFFICIENT_VOTES' || sala.estado === 'QUORUM_UNMET') && (
+        {(sala.status === 'INSUFFICIENT_VOTES' || sala.status === 'QUORUM_UNMET') && (
           <div className="p-4 rounded-[6px] border border-[#B42318]/30 bg-white space-y-4">
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 stroke-[1.5] text-[#B42318] shrink-0 mt-0.5" />
@@ -673,7 +673,7 @@ export default function RoomHostPage() {
         )}
 
         {/* REVISIÓN DE ARGUMENTOS (ROUND_FEEDBACK) */}
-        {sala.estado === 'ROUND_FEEDBACK' && (
+        {sala.status === 'ROUND_FEEDBACK' && (
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
@@ -724,7 +724,7 @@ export default function RoomHostPage() {
         )}
 
         {/* FINALIZADA (CONCLUDED) */}
-        {sala.estado === 'CONCLUDED' && (
+        {sala.status === 'CONCLUDED' && (
           <div className="space-y-1">
             <h2 className="text-sm font-semibold text-[#14171A]">
               Actividad finalizada
@@ -736,7 +736,7 @@ export default function RoomHostPage() {
         )}
 
         {/* CANCELADA (CANCELLED) */}
-        {sala.estado === 'CANCELLED' && (
+        {sala.status === 'CANCELLED' && (
           <div className="space-y-1">
             <h2 className="text-sm font-semibold text-[#B42318]">
               Actividad cancelada
@@ -748,7 +748,7 @@ export default function RoomHostPage() {
         )}
 
         {/* CALCULANDO RESULTADOS (PROCESSING) */}
-        {sala.estado === 'PROCESSING' && (
+        {sala.status === 'PROCESSING' && (
           <div className="space-y-1">
             <h2 className="text-sm font-semibold text-[#14171A]">
               Calculando resultados
@@ -918,7 +918,7 @@ export default function RoomHostPage() {
       </section>
 
       <div className="pb-6 border-b border-[#D9D5CC]">
-        <ParticipationTable roomId={sala.id} refreshKey={`${sala.estado}:${sala.current_round}:${votesCount}:${totalParticipants}`} />
+        <ParticipationTable roomId={sala.id} refreshKey={`${sala.status}:${sala.current_round}:${votesCount}:${totalParticipants}`} />
       </div>
 
       {/* 6. Tabla Densa de Participantes */}
