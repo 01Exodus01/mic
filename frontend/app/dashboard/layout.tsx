@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Plus, Users, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Plus } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -56,16 +56,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         <div className="pt-4 border-t border-[#D9D5CC] space-y-2">
-          <Link
-            href="/join"
-            className="flex items-center justify-between px-3 py-2 rounded-[6px] text-xs text-[#6B6860] hover:text-[#14171A] hover:bg-[#EBE7DF]/60 transition-colors"
-          >
-            <span className="flex items-center gap-2">
-              <Users className="w-4 h-4 stroke-[1.5]" />
-              <span>Participante</span>
-            </span>
-            <ExternalLink className="w-3.5 h-3.5 stroke-[1.5]" />
-          </Link>
           <div className="text-[11px] font-mono text-[#6B6860] px-3">
             v1.0 · GDSS
           </div>
