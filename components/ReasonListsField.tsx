@@ -74,9 +74,20 @@ interface ReasonListsFieldProps {
   value: OptionReasons;
   onChange: (next: OptionReasons) => void;
   disabled?: boolean;
+  /** P2.3 telemetry: a reason field was added on this side (no text is passed) */
+  onFieldAdded?: (side: ReasonSideKey) => void;
+  /** P2.3 telemetry: the participant typed in a reason of this side (no text is passed) */
+  onTyping?: (side: ReasonSideKey) => void;
 }
 
-export default function ReasonListsField({ optionId, value, onChange, disabled = false }: ReasonListsFieldProps) {
+export default function ReasonListsField({
+  optionId,
+  value,
+  onChange,
+  disabled = false,
+  onFieldAdded,
+  onTyping,
+}: ReasonListsFieldProps) {
   return (
     <fieldset className="mt-3 space-y-3" disabled={disabled}>
       <legend className="text-xs text-[#5A554E] leading-relaxed">
@@ -108,7 +119,10 @@ export default function ReasonListsField({ optionId, value, onChange, disabled =
                       rows={2}
                       maxLength={REASON_MAX_LENGTH}
                       value={text}
-                      onChange={(e) => onChange(updateReason(value, side, index, e.target.value))}
+                      onChange={(e) => {
+                        onTyping?.(side);
+                        onChange(updateReason(value, side, index, e.target.value));
+                      }}
                       aria-invalid={Boolean(err)}
                       aria-describedby={err ? `${fieldId}-error` : undefined}
                       className={`flex-1 min-w-0 p-2.5 rounded-[6px] border bg-[#F6F4EF] text-sm text-[#14171A] focus:outline-none ${
@@ -135,7 +149,10 @@ export default function ReasonListsField({ optionId, value, onChange, disabled =
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => onChange(addReason(value, side))}
+                onClick={() => {
+                  onFieldAdded?.(side);
+                  onChange(addReason(value, side));
+                }}
                 disabled={atLimit}
                 className="min-h-[44px] px-2 flex items-center gap-1.5 text-xs font-medium text-[#14171A] hover:text-[#E4572E] disabled:text-[#5A554E] disabled:cursor-not-allowed"
               >

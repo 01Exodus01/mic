@@ -147,10 +147,27 @@ Una fila por evento. Nunca contiene el contenido de un voto.
 | `room_id` | `CUID` | Sala. |
 | `created_at` | `ISO 8601` (UTC) | Hora del evento. |
 | `round` | `Integer` o vacío | Ronda en que ocurrió. |
-| `type` | `String` | `room_started`, `round_closed`, `round_processed`, `insufficient_votes`, `round_opened`, `deadline_extended`, `room_cancelled`, `pin_reset`, `participant_expelled`, `participant_joined`, `vote_submitted`, `report_viewed`, `member_added`, `member_removed`, `member_code_regenerated`, `consent_accepted`. |
+| `type` | `String` | `room_started`, `round_closed`, `round_processed`, `insufficient_votes`, `round_opened`, `deadline_extended`, `room_cancelled`, `pin_reset`, `participant_expelled`, `participant_joined`, `vote_submitted`, `report_viewed`, `member_added`, `member_removed`, `member_code_regenerated`, `consent_accepted`, `join_failed` y los eventos de uso de la sección 3d. |
 | `actor` | `String` | `HOST`, `PARTICIPANT` o `SYSTEM`. |
 | `blind_code` | `String` o vacío | Participante involucrado, por código ciego. |
 | `data` | `JSON` o vacío | Metadatos planos del evento (por ejemplo `{"version":2,"changed":true}` en `vote_submitted`). |
+
+### 3d. Eventos de uso (plan de mejora P2)
+
+Los envía la pantalla del participante, en lotes; cada uno guarda el momento en que ocurrió, no el de llegada. Solo llevan identificadores, conteos y duraciones: **nunca el texto escrito, el PIN ni el código personal**.
+
+| `type` | Cuándo | Campos de `data` |
+|---|---|---|
+| `report_read` | El informe estuvo realmente en pantalla (página visible y, en la pantalla de voto, el bloque de resultados abierto). Se envía al ocultar o dejar la página, cerrar el bloque o cambiar de informe; nunca con 0 ms. | `report_round`, `surface` (`feedback` o `vote`), `visible_ms`, `sections_opened` |
+| `report_section_opened` | Se desplegó una opción del informe: se mostraron las razones de los demás. | `report_round`, `surface`, `option_id` |
+| `ballot_viewed` | Apareció el formulario de voto editable (referencia para medir el primer reordenamiento). | `editing` |
+| `ranking_reordered` | Un cambio de orden antes de enviar. | `method` (`buttons`, `drag`, `touch`), `option_id`, `from_position`, `to_position`, `reorder_index` |
+| `reason_field_added` | Se agregó un campo de razón. | `option_id`, `side` (`for` / `against`) |
+| `reason_typing_started` | Primera vez que se escribe en las razones de esa opción y lado, en la ronda. | `option_id`, `side` |
+| `vote_submitted` | Envío del voto (ya existía); ahora con cuántas razones se mandaron. | `version`, `changed`, `reasons_for`, `reasons_against` |
+| `join_failed` | Ingreso rechazado a una sala que existe. | `reason` (`wrong_pin`, `locked_out`, `retired`, `room_unavailable`, `late_join_closed`, `room_full`, `invalid_code`, `removed_member`), `mode` (`pin` / `roster`), `device_tag` |
+
+`report_viewed` (el servidor entregó el informe) sigue existiendo, pero **no es una lectura**: en el export normalizado se llama `report_delivered`, y la lectura real es `report_read`. `participant_joined` lleva `returning` (reingreso) y `device_tag`. `device_tag` es una etiqueta aleatoria que guarda el navegador para contar reintentos de un mismo dispositivo; no identifica a nadie ni se liga al nombre o código escrito.
 
 ---
 

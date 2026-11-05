@@ -105,7 +105,7 @@ describe.skipIf(!hasTestDb)('PT-10: bitácora de la sala (PostgreSQL)', () => {
         ['vote_submitted', 'PARTICIPANT', fx.participantIds[i]],
       ]);
       expect(JSON.stringify(fresh[0].data)).not.toContain('secreto');
-      expect(Object.keys(fresh[0].data as object).sort()).toEqual(['changed', 'version']);
+      expect(Object.keys(fresh[0].data as object).sort()).toEqual(['changed', 'reasons_against', 'reasons_for', 'version']);
     }
 
     expect((await step(() => room.extendDeadline(fx.roomId, 15))).map((e) => e.type)).toEqual(['deadline_extended']);
@@ -152,15 +152,18 @@ describe.skipIf(!hasTestDb)('PT-10: bitácora de la sala (PostgreSQL)', () => {
     const first = await countNew(fx.roomId, 0, async () => {
       expect((await participant.joinRoom(fx.pin, 'Nueva Persona', '1234')).success).toBe(true);
     });
-    expect(first.map((e) => [e.type, e.data])).toEqual([['participant_joined', { returning: false }]]);
+    expect(first.map((e) => [e.type, e.data])).toEqual([['participant_joined', { returning: false, device_tag: null }]]);
     const second = await countNew(fx.roomId, 1, async () => {
       expect((await participant.joinRoom(fx.pin, 'Nueva Persona', '1234')).success).toBe(true);
     });
-    expect(second.map((e) => [e.type, e.data])).toEqual([['participant_joined', { returning: true }]]);
+    expect(second.map((e) => [e.type, e.data])).toEqual([['participant_joined', { returning: true, device_tag: null }]]);
+    // P2.4: a refused attempt is logged with its reason, never with the PIN typed
     const wrong = await countNew(fx.roomId, 2, async () => {
-      expect((await participant.joinRoom(fx.pin, 'Nueva Persona', '9999')).success).toBe(false);
+      expect((await participant.joinRoom(fx.pin, 'Nueva Persona', '9999', 'a1b2c3d4e5f6')).success).toBe(false);
     });
-    expect(wrong).toEqual([]);
+    expect(wrong.map((e) => [e.type, e.participant_id, e.data])).toEqual([
+      ['join_failed', first[0].participant_id, { reason: 'wrong_pin', mode: 'pin', device_tag: 'a1b2c3d4e5f6' }],
+    ]);
   });
 
   it('el cierre por plazo queda registrado como del sistema', async () => {

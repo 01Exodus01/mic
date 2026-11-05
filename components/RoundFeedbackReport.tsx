@@ -91,14 +91,28 @@ function ReasonList({ title, reasons }: { title: string; reasons: FeedbackReason
  * Compact line next to an option on the vote screen (PT-20): group position in
  * the previous round and, on demand, its reasons for and against.
  */
-export function OptionPreviousRound({ optionId, report }: { optionId: string; report: FeedbackReportData }) {
+export function OptionPreviousRound({
+  optionId,
+  report,
+  onOpen,
+}: {
+  optionId: string;
+  report: FeedbackReportData;
+  /** P2.3 telemetry: called when the participant expands the reasons of others */
+  onOpen?: (optionId: string) => void;
+}) {
   const ranking = report.collective_ranking ?? [];
   const midRank = ranking.find((r) => r.id === optionId)?.midRank;
   if (midRank === undefined) return null;
   const reasons = report.reasonsByOption?.[optionId] ?? { reasonsFor: [], reasonsAgainst: [] };
   const total = reasons.reasonsFor.length + reasons.reasonsAgainst.length;
   return (
-    <details className="mt-2 text-xs">
+    <details
+      className="mt-2 text-xs"
+      onToggle={(e) => {
+        if (e.currentTarget.open) onOpen?.(optionId);
+      }}
+    >
       <summary className="cursor-pointer select-none min-h-[44px] flex items-center text-[#5A554E]">
         Ronda anterior: grupo {formatRankPosition(midRank, ranking).label} · {total} {total === 1 ? 'razón' : 'razones'}
       </summary>
@@ -114,10 +128,13 @@ export default function RoundFeedbackReport({
   options,
   report,
   defaultOpen = false,
+  onSectionOpen,
 }: {
   options: FeedbackOption[];
   report: FeedbackReportData;
   defaultOpen?: boolean;
+  /** P2.1 / P2.3 telemetry: called when the participant expands one option */
+  onSectionOpen?: (optionId: string) => void;
 }) {
   const ranking = report.collective_ranking ?? [];
   const sorted = [...options].sort(
@@ -156,7 +173,14 @@ export default function RoundFeedbackReport({
           const total = reasons.reasonsFor.length + reasons.reasonsAgainst.length + legacy.length;
 
           return (
-            <details key={option.id} open={defaultOpen} className="rounded-[6px] border border-[#D9D5CC] bg-white">
+            <details
+              key={option.id}
+              open={defaultOpen}
+              onToggle={(e) => {
+                if (e.currentTarget.open && !defaultOpen) onSectionOpen?.(option.id);
+              }}
+              className="rounded-[6px] border border-[#D9D5CC] bg-white"
+            >
               <summary className="cursor-pointer select-none p-4 min-h-[44px]">
                 <span className="font-sans font-semibold text-sm text-[#14171A]">{title}</span>
                 <span className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[#5A554E] font-mono">

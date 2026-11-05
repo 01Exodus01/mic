@@ -10,6 +10,7 @@ import ReasonListsField, {
   reasonError,
   type OptionReasons,
 } from '@/components/ReasonListsField';
+import { trackEvent, useReportReadTracker } from '@/lib/telemetry/client';
 import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
 import RetiredNotice from '@/components/RetiredNotice';
@@ -78,6 +79,16 @@ export default function ParticipantVotePage() {
   const currentRoundRef = useRef<number | null>(null);
 
   const serverOffsetRef = useRef<number>(0);
+  // P2 telemetry: reorders and reason fields of this round, never their text
+  const reorderCountRef = useRef(0);
+  const typedFieldsRef = useRef<Set<string>>(new Set());
+  const dragFromRef = useRef<{ optionId: string; from: number } | null>(null);
+  const [previousOpen, setPreviousOpen] = useState(false);
+  const onReportSectionOpen = useReportReadTracker(
+    roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 ? roomData.latestReport.round : null,
+    'vote',
+    previousOpen
+  );
 
   // Mobile touch references
   const touchStartY = useRef<number>(0);
@@ -140,6 +151,8 @@ export default function ParticipantVotePage() {
       if (currentRoundRef.current !== currentRound) {
         currentRoundRef.current = currentRound;
         initialLoadDoneRef.current = false;
+        reorderCountRef.current = 0;
+        typedFieldsRef.current = new Set();
         setIsEditing(false);
         isEditingRef.current = false;
       }
@@ -240,9 +253,24 @@ export default function ParticipantVotePage() {
     return () => clearInterval(tInterval);
   }, [roomData?.sala?.deadline, roomData?.sala?.status]);
 
+  // P2.2: one event per reorder before sending (positions are 1-based)
+  const trackReorder = (method: 'buttons' | 'drag' | 'touch', optionId: string, from: number, to: number) => {
+    if (from === to) return;
+    reorderCountRef.current += 1;
+    trackEvent({
+      type: 'ranking_reordered',
+      method,
+      option_id: optionId,
+      from_position: from + 1,
+      to_position: to + 1,
+      reorder_index: reorderCountRef.current,
+    });
+  };
+
   // Reordering helpers
-  const moveUp = (index: number) => {
+  const moveUp = (index: number, method: 'buttons' | 'touch' = 'buttons') => {
     if (index === 0) return;
+    trackReorder(method, orderedOptions[index].id, index, index - 1);
     const next = [...orderedOptions];
     const temp = next[index - 1];
     next[index - 1] = next[index];
@@ -250,8 +278,9 @@ export default function ParticipantVotePage() {
     setOrderedOptions(next);
   };
 
-  const moveDown = (index: number) => {
+  const moveDown = (index: number, method: 'buttons' | 'touch' = 'buttons') => {
     if (index === orderedOptions.length - 1) return;
+    trackReorder(method, orderedOptions[index].id, index, index + 1);
     const next = [...orderedOptions];
     const temp = next[index + 1];
     next[index + 1] = next[index];
@@ -260,6 +289,7 @@ export default function ParticipantVotePage() {
   };
 
   const handleDragStart = (index: number) => {
+    dragFromRef.current = { optionId: orderedOptions[index].id, from: index };
     setDraggedIndex(index);
   };
 
@@ -275,6 +305,12 @@ export default function ParticipantVotePage() {
   };
 
   const handleDragEnd = () => {
+    const start = dragFromRef.current;
+    dragFromRef.current = null;
+    if (start) {
+      const to = orderedOptions.findIndex((o) => o.id === start.optionId);
+      if (to >= 0) trackReorder('drag', start.optionId, start.from, to);
+    }
     setDraggedIndex(null);
   };
 
@@ -291,12 +327,12 @@ export default function ParticipantVotePage() {
     const threshold = 60;
 
     if (diff > threshold && touchCurrentIndex.current < orderedOptions.length - 1) {
-      moveDown(touchCurrentIndex.current);
+      moveDown(touchCurrentIndex.current, 'touch');
       touchCurrentIndex.current += 1;
       touchStartY.current = currentY;
       setDraggedIndex(touchCurrentIndex.current);
     } else if (diff < -threshold && touchCurrentIndex.current > 0) {
-      moveUp(touchCurrentIndex.current);
+      moveUp(touchCurrentIndex.current, 'touch');
       touchCurrentIndex.current -= 1;
       touchStartY.current = currentY;
       setDraggedIndex(touchCurrentIndex.current);
@@ -377,6 +413,17 @@ export default function ParticipantVotePage() {
       router.push('/join');
     }
   };
+
+  // P2.2: the editable ballot became visible (reference for time to first reorder)
+  const ballotFormShown = Boolean(
+    roomData &&
+      roomData.sala.status === 'ROUND_OPEN' &&
+      !isExpiredLocally &&
+      ((roomData.myVotes?.length ?? 0) !== (roomData.options?.length ?? 0) || isEditing)
+  );
+  useEffect(() => {
+    if (ballotFormShown) trackEvent({ type: 'ballot_viewed', editing: isEditing });
+  }, [ballotFormShown, isEditing, roomData?.sala.currentRound]);
 
   if (retired) {
     return <RetiredNotice />;
@@ -483,12 +530,19 @@ export default function ParticipantVotePage() {
 
       {/* PT-20: results of the previous round, collapsible, only from round 2 on */}
       {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
-        <details className="mb-6 rounded-[6px] border border-[#D9D5CC] bg-white">
+        <details
+          className="mb-6 rounded-[6px] border border-[#D9D5CC] bg-white"
+          onToggle={(e) => setPreviousOpen(e.currentTarget.open)}
+        >
           <summary className="cursor-pointer select-none p-4 min-h-[44px] text-sm font-semibold text-[#14171A]">
             Resultados de la ronda anterior
           </summary>
           <div className="px-4 pb-4">
-            <RoundFeedbackReport options={roomData.options} report={roomData.latestReport} />
+            <RoundFeedbackReport
+              options={roomData.options}
+              report={roomData.latestReport}
+              onSectionOpen={onReportSectionOpen}
+            />
           </div>
         </details>
       )}
@@ -631,13 +685,24 @@ export default function ParticipantVotePage() {
                       </p>
                     )}
                     {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
-                      <OptionPreviousRound optionId={option.id} report={roomData.latestReport} />
+                      <OptionPreviousRound
+                        optionId={option.id}
+                        report={roomData.latestReport}
+                        onOpen={onReportSectionOpen}
+                      />
                     )}
                     <ReasonListsField
                       optionId={option.id}
                       value={reasonsByOption[option.id] ?? EMPTY_REASONS}
                       onChange={(next) => handleReasonsChange(option.id, next)}
                       disabled={isClosed}
+                      onFieldAdded={(side) => trackEvent({ type: 'reason_field_added', option_id: option.id, side })}
+                      onTyping={(side) => {
+                        const key = `${option.id}:${side}`;
+                        if (typedFieldsRef.current.has(key)) return;
+                        typedFieldsRef.current.add(key);
+                        trackEvent({ type: 'reason_typing_started', option_id: option.id, side });
+                      }}
                     />
                   </div>
                 </div>

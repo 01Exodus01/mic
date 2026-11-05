@@ -441,11 +441,52 @@ export async function checkNicknameInRoom(
 // Join Room
 // ─────────────────────────────────────────────
 
+/** P2.4: random, non-identifying tag the browser keeps to count retries per device. */
+function cleanDeviceTag(tag: unknown): string | null {
+  return typeof tag === 'string' && /^[a-f0-9]{12}$/.test(tag) ? tag : null;
+}
+
+type JoinFailureReason =
+  | 'room_unavailable'
+  | 'retired'
+  | 'locked_out'
+  | 'wrong_pin'
+  | 'late_join_closed'
+  | 'room_full'
+  | 'invalid_code'
+  | 'removed_member';
+
+/**
+ * P2.4: logs a refused join to an existing room (never the PIN or code typed).
+ * The participant is known only when the name matched; otherwise the device tag
+ * groups the retries. Logging never changes the answer the person gets.
+ */
+async function recordJoinFailure(
+  room: { id: string; current_round: number },
+  reason: JoinFailureReason,
+  opts: { participantId?: string | null; deviceTag: string | null; mode: 'pin' | 'roster' }
+): Promise<void> {
+  try {
+    await recordRoomEvent(prisma, {
+      roomId: room.id,
+      type: 'join_failed',
+      actor: 'PARTICIPANT',
+      round: room.current_round,
+      participantId: opts.participantId ?? null,
+      data: { reason, mode: opts.mode, device_tag: opts.deviceTag },
+    });
+  } catch {
+    // the refusal itself is what matters to the person
+  }
+}
+
 export async function joinRoom(
   roomPin: string,
   nickname: string,
-  pin4: string
+  pin4: string,
+  deviceTagInput?: string
 ): Promise<ActionResult<{ blindCode: string; participantId: string }>> {
+  const deviceTag = cleanDeviceTag(deviceTagInput);
   try {
     // 1. Rate limit by IP
     const hdrs = await headers();
@@ -471,8 +512,11 @@ export async function joinRoom(
     // Unified generic message according to D4 and AGENTS.md (no disclosure of room state).
     // Roster rooms (PT-22) only accept a personal code.
     if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
+      if (room) await recordJoinFailure(room, 'room_unavailable', { deviceTag, mode: 'pin' });
       throw Errors.CANNOT_JOIN();
     }
+    const failJoin = async (reason: JoinFailureReason, participantId?: string) =>
+      recordJoinFailure(room, reason, { participantId, deviceTag, mode: 'pin' });
 
     // 4. Check if nickname already exists in this room (re-authentication)
     const existingParticipant = room.participants.find(
@@ -480,6 +524,7 @@ export async function joinRoom(
     );
 
     if (existingParticipant?.is_retired) {
+      await failJoin('retired', existingParticipant.id);
       throw Errors.CANNOT_JOIN();
     }
 
@@ -489,6 +534,7 @@ export async function joinRoom(
       // Check temporal lockout
       const lockout = checkLockout(lockoutKey);
       if (lockout.isLocked) {
+        await failJoin('locked_out', existingParticipant.id);
         throw Errors.LOCKED_OUT(lockout.remainingSec);
       }
 
@@ -496,6 +542,7 @@ export async function joinRoom(
       const valid = await verifyParticipantPin(validPin4, existingParticipant.pin_hash);
       if (!valid) {
         const attempt = recordFailedAttempt(lockoutKey, 5, 900);
+        await failJoin(attempt.isLocked ? 'locked_out' : 'wrong_pin', existingParticipant.id);
         if (attempt.isLocked) {
           throw Errors.LOCKED_OUT(attempt.remainingSec);
         }
@@ -511,7 +558,7 @@ export async function joinRoom(
         actor: 'PARTICIPANT',
         round: room.current_round,
         participantId: existingParticipant.id,
-        data: { returning: true },
+        data: { returning: true, device_tag: deviceTag },
       });
 
       await createParticipantSession({
@@ -531,6 +578,7 @@ export async function joinRoom(
     // 5. New registration. Closed cohort by default: only in round 1, unless
     // the room allows late participants (PT-23)
     if (room.current_round > 1 && !room.allow_late_join) {
+      await failJoin('late_join_closed');
       throw Errors.CANNOT_JOIN();
     }
 
@@ -544,6 +592,7 @@ export async function joinRoom(
       });
 
       if (existing.length >= room.max_members) {
+        await failJoin('room_full');
         throw Errors.ROOM_FULL(room.max_members);
       }
 
@@ -566,7 +615,7 @@ export async function joinRoom(
         actor: 'PARTICIPANT',
         round: room.current_round,
         participantId: created.id,
-        data: { returning: false },
+        data: { returning: false, device_tag: deviceTag },
       });
 
       return created;
@@ -601,8 +650,10 @@ const ROSTER_JOIN_ERROR = 'No se puede ingresar a esa sala. Revisa el PIN y tu c
  */
 export async function joinRoomWithCode(
   roomPin: string,
-  accessCode: string
+  accessCode: string,
+  deviceTagInput?: string
 ): Promise<ActionResult<{ blindCode: string; participantId: string }>> {
+  const deviceTag = cleanDeviceTag(deviceTagInput);
   try {
     const hdrs = await headers();
     const ip = getClientIp(hdrs);
@@ -615,44 +666,52 @@ export async function joinRoomWithCode(
     const lockout = checkLockout(lockoutKey);
     if (lockout.isLocked) throw Errors.LOCKED_OUT(lockout.remainingSec);
 
-    const fail = (): never => {
+    let room: Awaited<ReturnType<typeof prisma.room.findUnique>> = null;
+    const fail = async (reason?: JoinFailureReason, participantId?: string): Promise<never> => {
       const attempt = recordFailedAttempt(lockoutKey, 30, 900);
+      // P2.4: logged only when the room exists; the code typed is never stored
+      if (room && reason) {
+        await recordJoinFailure(room, attempt.isLocked ? 'locked_out' : reason, { participantId, deviceTag, mode: 'roster' });
+      }
       if (attempt.isLocked) throw Errors.LOCKED_OUT(attempt.remainingSec);
       throw new AppError('CANNOT_JOIN', ROSTER_JOIN_ERROR, 400);
     };
 
     const pinVal = RoomPinSchema.safeParse(roomPin);
-    if (!pinVal.success || typeof accessCode !== 'string' || !isWellFormedMemberCode(accessCode)) fail();
-
-    const room = await prisma.room.findUnique({ where: { pin: pinVal.data! } });
-    if (!room || room.access_mode !== 'ROSTER' || ['CONCLUDED', 'CANCELLED', 'DRAFT'].includes(room.status)) fail();
+    if (pinVal.success) room = await prisma.room.findUnique({ where: { pin: pinVal.data } });
+    if (!pinVal.success || !room) await fail();
+    if (room!.access_mode !== 'ROSTER' || ['CONCLUDED', 'CANCELLED', 'DRAFT'].includes(room!.status)) {
+      await fail('room_unavailable');
+    }
+    if (typeof accessCode !== 'string' || !isWellFormedMemberCode(accessCode)) await fail('invalid_code');
 
     const member = await prisma.roomMember.findUnique({
       where: { room_id_access_code_hash: { room_id: room!.id, access_code_hash: hashMemberCode(accessCode) } },
     });
-    if (!member || member.is_removed) fail();
+    if (!member) await fail('invalid_code');
+    if (member!.is_removed) await fail('removed_member');
 
-    const participant = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Serialize first logins of the same member (two devices at once share one identity)
       await tx.$queryRaw`SELECT "id" FROM "RoomMember" WHERE "id" = ${member!.id} FOR UPDATE`;
       const fresh = await tx.roomMember.findUniqueOrThrow({ where: { id: member!.id } });
 
       if (fresh.participant_id) {
         const existing = await tx.participant.findUniqueOrThrow({ where: { id: fresh.participant_id } });
-        if (existing.is_retired) return null;
+        if (existing.is_retired) return { refused: 'retired' as const, participantId: existing.id };
         await recordRoomEvent(tx, {
           roomId: room!.id,
           type: 'participant_joined',
           actor: 'PARTICIPANT',
           round: room!.current_round,
           participantId: existing.id,
-          data: { returning: true, roster: true },
+          data: { returning: true, roster: true, device_tag: deviceTag },
         });
         return existing;
       }
 
       // Closed cohort: new identities only in round 1, unless late participants are allowed (PT-23)
-      if (room!.current_round > 1 && !room!.allow_late_join) return null;
+      if (room!.current_round > 1 && !room!.allow_late_join) return { refused: 'late_join_closed' as const, participantId: undefined };
 
       const taken = await tx.participant.findMany({ where: { room_id: room!.id }, select: { blind_code: true } });
       const { generateRandomBlindCode } = await import('@/lib/pin');
@@ -673,11 +732,12 @@ export async function joinRoomWithCode(
         actor: 'PARTICIPANT',
         round: room!.current_round,
         participantId: created.id,
-        data: { returning: false, roster: true },
+        data: { returning: false, roster: true, device_tag: deviceTag },
       });
       return created;
     });
-    if (!participant) fail();
+    if ('refused' in result) await fail(result.refused, result.participantId);
+    const participant = result as Exclude<typeof result, { refused: string }>;
 
     resetFailedAttempts(lockoutKey);
     await createParticipantSession({
@@ -888,7 +948,13 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           actor: 'PARTICIPANT',
           round: room.current_round,
           participantId: session.participantId,
-          data: { version, changed },
+          // P2.3: how many reasons were sent (counts only, never the text)
+          data: {
+            version,
+            changed,
+            reasons_for: validatedVotes.reduce((n, v) => n + (v.reasonsFor?.length ?? 0), 0),
+            reasons_against: validatedVotes.reduce((n, v) => n + (v.reasonsAgainst?.length ?? 0), 0),
+          },
         });
       },
       {

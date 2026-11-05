@@ -9,6 +9,7 @@ import { ArrowLeft, AlertCircle } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';
 
 import RosterCodeStep from '@/components/RosterCodeStep';
+import { getDeviceTag } from '@/lib/telemetry/client';
 
 interface ParticipantJoinFormProps {
   initialPin?: string;
@@ -242,7 +243,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
 
     setLoading(true);
     try {
-      const res = await joinRoom(pin.trim().toUpperCase(), nickname.trim(), pin4.trim());
+      const res = await joinRoom(pin.trim().toUpperCase(), nickname.trim(), pin4.trim(), getDeviceTag());
       if (res.success) {
         toast.success('Ingreso confirmado');
         router.push('/participant/vote');

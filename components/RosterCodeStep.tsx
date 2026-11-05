@@ -13,6 +13,7 @@ import { AlertCircle, ArrowLeft } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';
 import { joinRoomWithCode } from '@/app/actions/participant';
 import { isWellFormedMemberCode, MEMBER_CODE_LENGTH } from '@/lib/member-codes';
+import { getDeviceTag } from '@/lib/telemetry/client';
 
 export default function RosterCodeStep({
   roomPin,
@@ -46,7 +47,7 @@ export default function RosterCodeStep({
     }
     setLoading(true);
     try {
-      const res = await joinRoomWithCode(roomPin, code);
+      const res = await joinRoomWithCode(roomPin, code, getDeviceTag());
       if (res.success) {
         toast.success('Ingreso confirmado');
         router.push('/participant/vote');

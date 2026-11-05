@@ -537,6 +537,13 @@ function flatKey(type: string, key: string): string {
   return snakeCase(key);
 }
 
+/** Round of the report an event refers to: report_viewed stores it as the event round, client events in data. */
+function reportRoundOf(e: ExportEvent): Cell {
+  if (e.type === 'report_viewed') return e.round ?? '';
+  const data = e.data as Record<string, unknown> | null;
+  return data && typeof data === 'object' && typeof data.report_round === 'number' ? data.report_round : '';
+}
+
 export function eventsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
   const openTimes = ctx.rounds.map((r) => ({ round: r, at: ctx.timeline.get(r)?.openedAt ?? null }));
   const contextRound = (e: ExportEvent): number | null => {
@@ -550,6 +557,7 @@ export function eventsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
     const data = (e.data && typeof e.data === 'object' && !Array.isArray(e.data) ? e.data : {}) as Record<string, unknown>;
     const cols: Record<string, Cell> = {};
     for (const [k, v] of Object.entries(data)) {
+      if (k === 'report_round') continue; // own column
       cols[flatKey(e.type, k)] = typeof v === 'object' && v !== null ? JSON.stringify(v) : (v as Cell);
     }
     return { e, cols };
@@ -565,7 +573,7 @@ export function eventsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       isoUtc(e.created_at),
       since === null ? '' : Number(since.toFixed(3)),
       round ?? '',
-      e.type === 'report_viewed' ? e.round ?? '' : '',
+      reportRoundOf(e),
       exportEventType(e.type),
       e.actor,
       e.participant_id ? ctx.blindCode.get(e.participant_id) ?? '' : '',

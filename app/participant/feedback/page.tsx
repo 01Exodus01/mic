@@ -13,6 +13,7 @@ import RoundFeedbackReport, {
 } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
 import RetiredNotice from '@/components/RetiredNotice';
+import { useReportReadTracker } from '@/lib/telemetry/client';
 
 interface OptionItem {
   id: string;
@@ -72,6 +73,8 @@ export default function ParticipantFeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [roomData, setRoomData] = useState<FeedbackRoomData | null>(null);
   const [retired, setRetired] = useState(false);
+  // P2.1: real reading time of the report shown on this screen
+  const onReportSectionOpen = useReportReadTracker(roomData?.latestReport?.round, 'feedback', !retired);
 
   const loadData = useCallback(async () => {
     try {
@@ -315,7 +318,7 @@ export default function ParticipantFeedbackPage() {
           </p>
         </div>
         {latestReport ? (
-          <RoundFeedbackReport options={options || []} report={latestReport} />
+          <RoundFeedbackReport options={options || []} report={latestReport} onSectionOpen={onReportSectionOpen} />
         ) : (
           <p className="text-xs text-[#5A554E]">Todavía no hay resultados de esta ronda.</p>
         )}

@@ -9,6 +9,7 @@
  */
 
 import type { EventActor, Prisma, PrismaClient } from '@prisma/client';
+import { CLIENT_EVENT_TYPES } from '@/lib/telemetry/events';
 
 export const ROOM_EVENT_TYPES = [
   'room_started',
@@ -27,6 +28,10 @@ export const ROOM_EVENT_TYPES = [
   'member_removed',
   'member_code_regenerated',
   'consent_accepted',
+  // P2.4 access: a join attempt to an existing room that was refused
+  'join_failed',
+  // P2.1–P2.3 usability telemetry sent by the participant screens (lib/telemetry)
+  ...CLIENT_EVENT_TYPES,
 ] as const;
 
 export type RoomEventType = (typeof ROOM_EVENT_TYPES)[number];
@@ -41,6 +46,8 @@ export interface RoomEventInput {
   round?: number | null;
   participantId?: string | null;
   data?: RoomEventData;
+  /** Only for client telemetry sent in batches: when the event really happened */
+  createdAt?: Date;
 }
 
 type EventWriter = Pick<PrismaClient, 'roomEvent'> | Prisma.TransactionClient;
@@ -54,6 +61,7 @@ export async function recordRoomEvent(db: EventWriter, input: RoomEventInput): P
       round: input.round ?? null,
       participant_id: input.participantId ?? null,
       data: input.data ?? undefined,
+      ...(input.createdAt ? { created_at: input.createdAt } : {}),
     },
   });
 }
