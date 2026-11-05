@@ -1,8 +1,9 @@
 /**
  * __tests__/security/exportPrivacy.test.ts
- * PT-26: CSV exports with reasons, versions, events and configuration.
- * No CSV allows identifying anyone by name or roster label; reasons are
- * exported verbatim; scripts that read the old columns by name still work.
+ * PT-26, on the normalized export (/api/rooms/<id>/export/v2/<file>.csv):
+ * reasons, versions, events and configuration. No CSV allows identifying
+ * anyone by name or roster label; reasons are exported verbatim with
+ * formulas neutralized; expelled ballots are kept and marked as not counted.
  */
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -95,10 +96,10 @@ describe.skipIf(!hasTestDb)('PT-26: exportes (PostgreSQL)', () => {
     await room.expelParticipant(fx.roomId, fx.participantIds[3]);
     await room.closeRoundManually(fx.roomId);
 
-    const req = new NextRequest('http://localhost/api');
-    for (const kind of ['long', 'wide', 'reasons', 'events']) {
-      const mod = await import(`@/app/api/rooms/[id]/export/${kind}/route`);
-      const res: Response = await mod.GET(req, { params: { id: fx.roomId } });
+    const { GET } = await import('@/app/api/rooms/[id]/export/v2/[file]/route');
+    for (const kind of ['rooms', 'participants', 'votes_long', 'voter_round_metrics', 'round_metrics', 'reasons', 'events']) {
+      const req = new NextRequest(`http://localhost/api/rooms/${fx.roomId}/export/v2/${kind}.csv`);
+      const res: Response = await GET(req, { params: { id: fx.roomId, file: `${kind}.csv` } });
       expect(res.status).toBe(200);
       // text() would strip the BOM: read the bytes and decode keeping it
       const bytes = new Uint8Array(await res.arrayBuffer());
@@ -119,16 +120,20 @@ describe.skipIf(!hasTestDb)('PT-26: exportes (PostgreSQL)', () => {
     }
   });
 
-  it('el CSV largo sigue leyéndose por nombre y trae las columnas nuevas', () => {
-    const rows = csv.long;
+  it('votes_long trae cada posición con su versión; los votos del expulsado se conservan sin contar', () => {
+    const rows = csv.votes_long;
     expect(rows).toHaveLength(12);
     const p1a = rows.find((r) => r.blind_code === fx!.blindCodes[0] && r.option_id === fx!.optionIds[0])!;
-    expect(p1a).toMatchObject({ position: '1', reasons_for_count: '2', reasons_against_count: '0', vote_version: '2', joined_round: '1', excluded_from_round: 'false', tie_break_rule: 'LEXICOGRAPHIC', concordance_variant: 'WITH_TIES', round_status: 'REPORTED' });
-    expect(p1a.justification_text).toBe('');
+    expect(p1a).toMatchObject({ round: '1', position: '1', vote_version: '2' });
     expect(Number.isNaN(Date.parse(p1a.submitted_at))).toBe(false);
-    const expelled = rows.filter((r) => r.blind_code === fx!.blindCodes[3]);
-    expect(expelled).toHaveLength(3);
-    expect(expelled.every((r) => r.excluded_from_round === 'true' && r.voter_cix !== '')).toBe(true);
+    const m1 = csv.voter_round_metrics.find((r) => r.blind_code === fx!.blindCodes[0])!;
+    expect(m1).toMatchObject({ counted_in_round: 'true', reasons_for_count: '2', reasons_against_count: '2' });
+    expect(rows.filter((r) => r.blind_code === fx!.blindCodes[3])).toHaveLength(3);
+    const expelled = csv.voter_round_metrics.find((r) => r.blind_code === fx!.blindCodes[3])!;
+    expect(expelled.counted_in_round).toBe('false');
+    expect(expelled.cix).not.toBe('');
+    const p4 = csv.participants.find((r) => r.blind_code === fx!.blindCodes[3])!;
+    expect(p4).toMatchObject({ status: 'EXCLUDED', exclusion_reason: 'EXPELLED', joined_round: '1' });
   });
 
   it('el CSV de razones trae cada razón textual, con fórmulas neutralizadas', () => {
@@ -139,8 +144,9 @@ describe.skipIf(!hasTestDb)('PT-26: exportes (PostgreSQL)', () => {
     expect(csv.reasons).toHaveLength(4);
   });
 
-  it('el CSV ancho trae regla y variante; el de eventos no trae contenido de votos', () => {
-    expect(csv.wide[0]).toMatchObject({ round: '1', tie_break_rule: 'LEXICOGRAPHIC', concordance_variant: 'WITH_TIES' });
+  it('sala y ronda traen regla y variante; el de eventos no trae contenido de votos', () => {
+    expect(csv.rooms[0]).toMatchObject({ tie_break_rule: 'LEXICOGRAPHIC', concordance_variant: 'WITH_TIES' });
+    expect(csv.round_metrics[0]).toMatchObject({ round: '1', concordance_variant: 'WITH_TIES', effective_voters: '3' });
     const types = csv.events.map((e) => e.type);
     expect(types).toContain('vote_submitted');
     expect(types).toContain('participant_expelled');

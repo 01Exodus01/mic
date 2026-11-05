@@ -65,7 +65,8 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
 - La BD solo cambia con migraciones de Prisma (nunca SQL manual directo).
   Mostrar el SQL antes de aplicar. Prohibido DROP de tablas con datos.
 - Las columnas de los CSV son un contrato con R/Python. Cambiarlas exige
-  actualizar `docs/data-dictionary.md` y avisar.
+  actualizar el diccionario (`backend/src/export/dictionary.ts`, que genera el
+  README del ZIP, y `docs/data-dictionary.md`) y avisar.
 - Las rondas cerradas (informes de ronda) son inmutables.
 - Todo cambio en el cálculo (`backend/src/algorithms`, qué boletas cuentan, desempate,
   variante de concordancia) exige subir `PROCEDURE_VERSION` en
@@ -247,9 +248,10 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 - Diálogos con Radix/shadcn (role="dialog", foco atrapado, cierre con Escape).
 - Resultados: tabla densa + barra simple de nivel de acuerdo contra el requerido.
   Rangos con un decimal. Gráficos de una sola serie, sin 3D ni donut.
-- Exportaciones: botones planos (matrix_long.csv, matrix_wide_metrics.csv,
-  razones.csv, eventos.csv). Las columnas nuevas van al final, sin renombrar ni
-  reordenar las existentes.
+- Exportaciones: un ZIP con los CSV normalizados, `README_data_dictionary.md` y
+  `manifest.json`, en modo investigación o publicación. Las columnas nuevas van
+  al final, sin renombrar ni reordenar las existentes. Los CSV del formato
+  anterior (matrix_long, matrix_wide_metrics) se retiraron el 2026-11-05.
 
 ### Navegación y estados
 - Ninguna pantalla depende del botón de retroceso del navegador: botón "Volver"

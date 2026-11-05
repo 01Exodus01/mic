@@ -9,14 +9,16 @@
  *    - Round 3 with deliberative convergence (tau* >= threshold -> CONCLUDED).
  * 2. Early convergence scenario (Round 1 tau* >= threshold -> CONCLUDED immediately).
  * 3. Desertion/expulsion in Round 2: Round 1 votes retained, Round 2 active votes purged, remaining 3 continue.
- * 4. Cancellation scenario: room_status reflects CANCELLED in both CSV matrices.
+ * 4. Cancellation scenario: room_status reflects CANCELLED in the export (rooms.csv).
  * 5. Full mathematical reproducibility: CSV data enables exact recalculation of each tau*.
  */
 
 import { describe, it, expect } from 'vitest';
 import { runAggregationEngine, Ballot, WeakOrder } from '@mic/backend/algorithms/index';
 import { computeGroupConsensus, computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
-import { escapeCsvField } from '@mic/backend/shared/csv';
+import { buildExportTables } from '@mic/backend/export/tables';
+import { tableToCsv } from '@mic/backend/export/format';
+import { loadPilotDataset } from '../fixtures/pilot_R7PUEM/loadPilot';
 import { MIN_PARTICIPANTS } from '@mic/backend/shared/validations';
 
 const makeBallot = (entries: [string, number][]): Ballot => new Map(entries);
@@ -205,46 +207,16 @@ describe('CIERRE §1: Simulación Completa Multirronda y Reproducibilidad', () =
   });
 
   describe('Escenario 4: Cancelación de Actividad y Registro en CSV', () => {
-    it('distingue actividades canceladas asignando room_status = CANCELLED en las matrices', () => {
-      const roomStatus = 'CANCELLED';
-
-      // Simula generación de fila en matrix_long.csv
-      const longRow = [
-        escapeCsvField('clw8k2j1a000008l0h9x6e2qz'),
-        escapeCsvField(1),
-        escapeCsvField('BORDA'),
-        escapeCsvField('Participante 01'),
-        escapeCsvField('OPT_1'),
-        escapeCsvField(1),
-        escapeCsvField('Razón válida de más de 25 caracteres'),
-        escapeCsvField(0.8165),
-        escapeCsvField(0.9082),
-        escapeCsvField(0.75),
-        escapeCsvField(0.875),
-        escapeCsvField(1.0),
-        escapeCsvField(1.0),
-        escapeCsvField(roomStatus),
-      ].join(',');
-
-      expect(longRow).toContain('CANCELLED');
-
-      // Simula generación de fila en matrix_wide_metrics.csv
-      const wideRow = [
-        escapeCsvField('clw8k2j1a000008l0h9x6e2qz'),
-        escapeCsvField(1),
-        escapeCsvField('BORDA'),
-        escapeCsvField(3),
-        escapeCsvField(0.75),
-        escapeCsvField(0.0),
-        escapeCsvField(0.6667),
-        escapeCsvField(0.8333),
-        escapeCsvField(0.75),
-        escapeCsvField(0.875),
-        escapeCsvField('OPT_1:1.0 > OPT_2:2.0 > OPT_3:3.0'),
-        escapeCsvField(roomStatus),
-      ].join(',');
-
-      expect(wideRow).toContain('CANCELLED');
+    it('distingue actividades canceladas con room_status = CANCELLED en el export', () => {
+      const ds = loadPilotDataset();
+      ds.room.status = 'CANCELLED';
+      const tables = buildExportTables(ds);
+      const rooms = tables.find((t) => t.name === 'rooms.csv')!;
+      expect(rooms.rows[0][rooms.headers.indexOf('room_status')]).toBe('CANCELLED');
+      // the reports of the rounds closed before the cancellation are kept
+      const metrics = tables.find((t) => t.name === 'round_metrics.csv')!;
+      expect(metrics.rows.map((r) => r[0])).toEqual([1, 2]);
+      expect(tableToCsv(rooms)).toContain('CANCELLED');
     });
   });
 });

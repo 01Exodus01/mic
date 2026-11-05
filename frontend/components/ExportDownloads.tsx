@@ -3,8 +3,7 @@
 /**
  * components/ExportDownloads.tsx
  * Downloads of the room data (plan de mejora P3): the complete export as a ZIP
- * (research or anonymized for publication) and, during the transition, the
- * previous CSV files.
+ * (research or anonymized for publication).
  */
 
 import React, { useState } from 'react';
@@ -55,25 +54,6 @@ export default function ExportDownloads({ roomId }: { roomId: string }) {
           <span>Incluir el texto de las razones en la versión para publicar. Márcalo solo si su publicación fue aprobada.</span>
         </label>
       </div>
-
-      <details className="text-xs">
-        <summary className="cursor-pointer select-none min-h-[44px] flex items-center text-[#5A554E]">
-          Archivos del formato anterior
-        </summary>
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          {[
-            { path: 'long', name: 'matriz_long.csv' },
-            { path: 'wide', name: 'matriz_wide_metricas.csv' },
-            { path: 'reasons', name: 'razones.csv' },
-            { path: 'events', name: 'eventos.csv' },
-          ].map((f) => (
-            <a key={f.path} href={`/api/rooms/${roomId}/export/${f.path}`} download={f.name} className={LINK}>
-              <Download className="w-3.5 h-3.5 stroke-[1.5]" />
-              <span>{f.name}</span>
-            </a>
-          ))}
-        </div>
-      </details>
     </section>
   );
 }

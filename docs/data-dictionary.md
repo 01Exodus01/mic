@@ -2,7 +2,7 @@
 
 Este documento especifica la estructura, formato, tipos de datos, fórmulas matemáticas y semántica de las exportaciones CSV generadas por GDSS r-FAST-CR para análisis estadístico, psicométrico y de teoría de elección social en software como R, Python (Pandas/SciPy) o Julia.
 
-> **Export normalizado (ZIP).** Desde el plan de mejora de los reportes, el panel de la sala descarga un ZIP con un archivo por granularidad (`rooms`, `options`, `participants`, `rounds`, `votes_long`, `voter_round_metrics`, `option_round_scores`, `round_metrics`, `reasons`, `events`), un `README_data_dictionary.md` generado con cada columna, su tipo, unidad y rango, y un `manifest.json` con el hash SHA-256 de cada archivo, la fecha y las versiones. Hay dos modos: **investigación** (datos completos, fechas ISO 8601 en UTC) y **publicación** (sin fechas absolutas, solo segundos desde la apertura de cada ronda; sin identificadores internos ni nombre de sala; sin texto de las razones salvo que se marque que su publicación fue aprobada). La lista del curso nunca entra al ZIP. Rutas: `/api/rooms/<id>/export/v2` (ZIP, `?mode=publication`, `&include_text=1`) y `/api/rooms/<id>/export/v2/<archivo>.csv`. Los archivos descritos abajo (`matrix_long`, `matrix_wide_metrics`, `reasons`, `events`) siguen disponibles durante la transición.
+> **Export normalizado (ZIP).** Desde el plan de mejora de los reportes, el panel de la sala descarga un ZIP con un archivo por granularidad (`rooms`, `options`, `participants`, `rounds`, `votes_long`, `voter_round_metrics`, `option_round_scores`, `round_metrics`, `reasons`, `events`), un `README_data_dictionary.md` generado con cada columna, su tipo, unidad y rango, y un `manifest.json` con el hash SHA-256 de cada archivo, la fecha y las versiones. Hay dos modos: **investigación** (datos completos, fechas ISO 8601 en UTC) y **publicación** (sin fechas absolutas, solo segundos desde la apertura de cada ronda; sin identificadores internos ni nombre de sala; sin texto de las razones salvo que se marque que su publicación fue aprobada). La lista del curso nunca entra al ZIP. Rutas: `/api/rooms/<id>/export/v2` (ZIP, `?mode=publication`, `&include_text=1`) y `/api/rooms/<id>/export/v2/<archivo>.csv`. Las columnas de cada archivo (tipo, unidad y rango) están en el `README_data_dictionary.md` de cada ZIP, que se genera con las columnas que ese export realmente trae; este documento explica las métricas y los eventos. Los archivos anteriores (`matrix_long`, `matrix_wide_metrics` y las primeras versiones de `reasons` y `events`) se retiraron el 2026-11-05.
 
 ---
 
@@ -55,108 +55,9 @@ Cuando no existen empates en el orden colectivo ($t_{\text{grupo}} = 0$), las tr
 
 ---
 
-## 2. `matrix_long.csv` (Matriz Longitudinal de Votos y Argumentos)
+## 2. Eventos de uso en `events.csv` (plan de mejora P2)
 
-Formato longitudinal (*long format* o *tidy data*), donde cada fila representa la evaluación ordinal y argumentación de un participante hacia una opción específica dentro de una ronda determinada, enriquecida con sus coeficientes de concordancia individuales. Cumple estrictamente con el principio Zero-PII (sin información de identificación personal).
-
-### Columnas
-
-| Columna | Tipo de dato | Formato / Ejemplo | Descripción semántica |
-|---|---|---|---|
-| `room_id` | `CUID` (String) | `clw8k2j1a000008l0h9x6e2qz` | Identificador único global de la sala de votación (CUID alfanumérico). Permite vincular boletas con metadatos de la sesión y realizar joins relacionales con `matrix_wide_metrics.csv`. |
-| `round` | `Integer` | `1`, `2`, `3` | Número de la ronda iterativa en la que se emitió el voto ($1 \le r \le \eta$). |
-| `method` | `String` | `BORDA`, `SCHULZE`, `KEMENY_YOUNG` | Regla de elección social o método de agregación configurado en la sala. |
-| `blind_code` | `String` | `Participante 01`, `Participante 12` | Código ciego asignado aleatoriamente al participante. Reemplaza la identidad real para garantizar anonimato en investigación ciega y cumplimiento Zero-PII. |
-| `option_id` | `CUID` (String) | `clw8k2m9b000108l0b1k8g7pw` | Identificador único de la opción o alternativa evaluada en la sala. |
-| `position` | `Integer` | `1`, `2`, ..., $n$ | Posición ordinal asignada por el participante en su boleta ($1 = \text{primera preferencia}$). Admite valores secuenciales de 1 al total de opciones. |
-| `justification_text` | `String` (Texto) | `Es la alternativa más viable a corto plazo.` | Texto cualitativo de la razón o justificación argumentativa aportada por el participante para respaldar su decisión. Escapado según norma RFC 4180 con protección contra inyección de fórmulas. |
-| `voter_tau_b` | `Float` | `0.8165`, `-0.2000`, `1.0000` | Coeficiente Kendall $\tau_b$ individual del participante contra el orden del grupo en esta ronda. |
-| `voter_cix` | `Float` | `0.9082`, `0.4000`, `1.0000` | Índice de concordancia normalizado individual $CIX = (\tau_b + 1) / 2 \in [0, 1]$. |
-| `stuart_tau_c` | `Float` | `0.7500`, `-0.1875` | Coeficiente de sensibilidad Stuart Kendall $\tau_c$ individual del participante. |
-| `stuart_cix` | `Float` | `0.8750`, `0.4063` | Índice de concordancia normalizado basado en Stuart $\tau_c$. |
-| `gamma_decided_pairs` | `Float` | `1.0000`, `-0.3333` | Coeficiente de sensibilidad Gamma de Goodman-Kruskal sobre pares decididos. |
-| `gamma_cix` | `Float` | `1.0000`, `0.3333` | Índice de concordancia normalizado basado en Gamma. |
-| `room_status` | `String` | `CONCLUDED`, `CANCELLED` | Estado de la sala **en el momento de exportar**. Permite distinguir actividades completadas con éxito de aquellas canceladas por el anfitrión. Para el estado de cada ronda usar `round_status`. |
-
-#### Columnas agregadas (PT-26, al final; las 14 anteriores no cambian de nombre ni de orden)
-
-| Columna | Tipo de dato | Formato / Ejemplo | Descripción semántica |
-|---|---|---|---|
-| `reasons_for_count` | `Integer` | `0`, `2` | Cantidad de razones a favor que el participante escribió para esta opción en esta ronda (0 a 5). |
-| `reasons_against_count` | `Integer` | `0`, `1` | Cantidad de razones en contra (0 a 5). El texto está en `reasons.csv`. |
-| `vote_version` | `Integer` o vacío | `1`, `3` | Número de la última versión distinta de la boleta en la ronda (`VoteRevision`). Vacío para votos anteriores al historial. |
-| `submitted_at` | `ISO 8601` (UTC) | `2026-11-04T15:02:11.123Z` | Hora en que se guardó la versión efectiva de la boleta. |
-| `joined_round` | `Integer` | `1`, `2` | Ronda en que el participante ingresó por primera vez. Mayor que 1 solo en salas con participantes tardíos: no tiene ronda previa con la que comparar cambios. |
-| `excluded_from_round` | `true` / `false` / vacío | `false` | `true` si la boleta no entró al cálculo de su ronda (participante retirado o boleta incompleta). Vacío si la ronda no tiene informe. |
-| `tie_break_rule` | `String` | `NONE`, `LEXICOGRAPHIC`, `REASON_BALANCE` | Regla de desempate declarada por la sala. |
-| `tie_break_applied` | `true` / `false` / vacío | `false` | `true` si en esta ronda había empates y la regla los resolvió. Vacío si la ronda no tiene informe. |
-| `concordance_variant` | `String` | `WITH_TIES`, `WITHOUT_TIES` | Variante de concordancia usada: tau-b con empates o Kendall estándar sin empates (solo con regla de desempate). |
-| `round_status` | `String` | `REPORTED`, `ROUND_OPEN`, `UNREPORTED` | `REPORTED`: la ronda tiene informe inmutable. Para la ronda actual sin informe, el estado de la sala al exportar. `UNREPORTED`: ronda anterior que quedó sin informe (por ejemplo, votos insuficientes y cancelación). |
-
----
-
-## 3. `matrix_wide_metrics.csv` (Métricas de Consenso por Ronda)
-
-Formato transversal por ronda (*round-level aggregated metrics*), diseñado para análisis longitudinales de series temporales, pruebas de hipótesis pareadas y seguimiento del avance del consenso grupal entre rondas consecutivas.
-
-### Columnas
-
-| Columna | Tipo de dato | Formato / Ejemplo | Descripción semántica |
-|---|---|---|---|
-| `room_id` | `CUID` (String) | `clw8k2j1a000008l0h9x6e2qz` | Identificador único de la sala de votación. Clave foránea para vincular directamente con `matrix_long.csv`. |
-| `round` | `Integer` | `1`, `2`, `3` | Número secuencial de la ronda de votación ($1 \le r \le \eta$). |
-| `method` | `String` | `BORDA`, `SCHULZE`, `KEMENY_YOUNG` | Método de agregación utilizado para calcular el orden del grupo. |
-| `effective_voters` | `Integer` | `15` | Participantes con voto emitido y completo en esta ronda ($m_{\text{efectivo}}$). Requiere $m_{\text{efectivo}} \ge 3$ para procesar resultados. |
-| `collective_tau` | `Float` | `0.7850` | Nivel de acuerdo del grupo ($\tau^*$). Promedio de los índices de concordancia Kendall Tau-b normalizados (CIX), en escala $[0, 1]$. |
-| `delta_tau` | `Float` | `0.1250`, `-0.0400`, `0.0000` | Variación del consenso grupal respecto a la ronda inmediatamente anterior ($\Delta \tau = \tau^*_r - \tau^*_{r-1}$). En la ronda 1 su valor es `0.0000`. |
-| `stuart_tau_c` | `Float` | `0.5400` | Promedio del coeficiente Stuart Kendall $\tau_c$ del grupo ($\in [-1, 1]$) para análisis de sensibilidad. |
-| `stuart_cix` | `Float` | `0.7700` | Nivel de acuerdo grupal promedio según la métrica Stuart $\tau_c$ normalizada ($[0, 1]$). |
-| `gamma_decided_pairs` | `Float` | `0.6200` | Promedio del coeficiente Gamma de pares decididos del grupo ($\in [-1, 1]$). |
-| `gamma_cix` | `Float` | `0.8100` | Nivel de acuerdo grupal promedio según la métrica Gamma normalizada ($[0, 1]$). |
-| `collective_ranking` | `String` | `opt_A:1.0 > opt_B:2.5 > opt_C:2.5` | Orden colectivo resultante del motor de agregación. Cada elemento sigue el formato `option_id:midRank`, encadenados por el operador de preferencia `>`. Opciones con igual `midRank` representan empates en rangos medios, serializadas por ID de forma determinística. |
-| `room_status` | `String` | `CONCLUDED`, `CANCELLED` | Estado de la sala al exportar. Permite aislar analíticamente salas concluidas de canceladas. |
-
-#### Columnas agregadas (PT-26, al final)
-
-| Columna | Tipo de dato | Formato / Ejemplo | Descripción semántica |
-|---|---|---|---|
-| `tie_break_rule` | `String` | `NONE`, `LEXICOGRAPHIC`, `REASON_BALANCE` | Regla de desempate con que se calculó la ronda. |
-| `concordance_variant` | `String` | `WITH_TIES`, `WITHOUT_TIES` | Variante de concordancia de la ronda. |
-| `procedure_version` | `String` o vacío | `r-fast-cr-2` | Versión del procedimiento de cálculo guardada en el informe (PT-29). Vacía en informes anteriores a ese registro. |
-
----
-
-## 3b. `reasons.csv` (Razones textuales, PT-26)
-
-Una fila por razón, con el texto tal como lo escribió el participante (solo se recortan espacios en los extremos).
-
-| Columna | Tipo de dato | Descripción |
-|---|---|---|
-| `room_id` | `CUID` | Sala. |
-| `round` | `Integer` | Ronda. |
-| `blind_code` | `String` | Código ciego del participante (nunca nombre ni etiqueta de la lista). |
-| `option_id` | `CUID` | Opción a la que se refiere la razón. |
-| `side` | `String` | `FOR` (a favor), `AGAINST` (en contra) o `LEGACY` (razón única escrita antes de las razones a favor y en contra). |
-| `order` | `Integer` | Orden de la razón dentro de su lado, desde 0. |
-| `text` | `String` | Texto de la razón (1 a 200 caracteres). |
-
-## 3c. `events.csv` (Bitácora de la sala, PT-26)
-
-Una fila por evento. Nunca contiene el contenido de un voto.
-
-| Columna | Tipo de dato | Descripción |
-|---|---|---|
-| `room_id` | `CUID` | Sala. |
-| `created_at` | `ISO 8601` (UTC) | Hora del evento. |
-| `round` | `Integer` o vacío | Ronda en que ocurrió. |
-| `type` | `String` | `room_started`, `round_closed`, `round_processed`, `insufficient_votes`, `round_opened`, `deadline_extended`, `room_cancelled`, `pin_reset`, `participant_expelled`, `participant_joined`, `vote_submitted`, `report_viewed`, `member_added`, `member_removed`, `member_code_regenerated`, `consent_accepted`, `join_failed` y los eventos de uso de la sección 3d. |
-| `actor` | `String` | `HOST`, `PARTICIPANT` o `SYSTEM`. |
-| `blind_code` | `String` o vacío | Participante involucrado, por código ciego. |
-| `data` | `JSON` o vacío | Metadatos planos del evento (por ejemplo `{"version":2,"changed":true}` en `vote_submitted`). |
-
-### 3d. Eventos de uso (plan de mejora P2)
-
-Los envía la pantalla del participante, en lotes; cada uno guarda el momento en que ocurrió, no el de llegada. Solo llevan identificadores, conteos y duraciones: **nunca el texto escrito, el PIN ni el código personal**.
+Además de los eventos del servidor (apertura y cierre de rondas, ingresos, envíos), la pantalla del participante envía estos, en lotes; cada uno guarda el momento en que ocurrió, no el de llegada. Solo llevan identificadores, conteos y duraciones: **nunca el texto escrito, el PIN ni el código personal**.
 
 | `type` | Cuándo | Campos de `data` |
 |---|---|---|
@@ -173,15 +74,15 @@ Los envía la pantalla del participante, en lotes; cada uno guarda el momento en
 
 ---
 
-## 4. Tratamiento de Participantes Retirados y Cancelaciones
+## 3. Tratamiento de Participantes Retirados y Cancelaciones
 
-- **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Desde PT-11 **ningún voto se borra**: los de rondas cerradas siguen tal como entraron al informe, y los de la ronda activa se conservan pero quedan fuera del cálculo (`excluded_from_round = true`).
+- **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Desde PT-11 **ningún voto se borra**: los de rondas cerradas siguen tal como entraron al informe, y los de la ronda activa se conservan pero quedan fuera del cálculo (`voter_round_metrics.counted_in_round = false`; el participante aparece en `participants.csv` con `status = EXCLUDED`).
 - **Lista del curso:** la etiqueta de cada persona (matrícula o usuario) vive solo en la base de datos y nunca aparece en ningún CSV.
-- **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus votos emitidos se conservan. El estado `CANCELLED` se refleja explícitamente en la columna `room_status` de ambos archivos CSV.
+- **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus votos emitidos se conservan. El estado `CANCELLED` se refleja en la columna `room_status` de `rooms.csv`.
 
 ---
 
-## 5. Consideraciones Técnicas
+## 4. Consideraciones Técnicas
 
 - **Codificación:** UTF-8 con BOM antepuesto (`\uFEFF`) para compatibilidad directa con Excel en macOS/Windows, y terminador de línea CRLF (`\r\n`).
 - **Separador:** Coma (`,`).

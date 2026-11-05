@@ -5,7 +5,6 @@
  * One file of the normalized export (plan de mejora de los reportes), e.g.
  * /api/rooms/<id>/export/v2/round_metrics.csv. Host of the room only.
  * Accepts the same ?mode / ?include_text as the ZIP (lib/export/request.ts).
- * The legacy matrix_long / matrix_wide_metrics exports remain during the transition.
  */
 
 import type { RequestContext, ServiceResponse } from '../context';

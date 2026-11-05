@@ -64,8 +64,8 @@ describe.skipIf(!hasTestDb)('PT-30: paridad de métricas por votante (PostgreSQL
       const votes = await prisma.vote.findMany({ where: { participant_id: row.participant_id, round: 1 } });
       const recomputed = computeVoterCIX(new Map(votes.map((v) => [v.option_id, v.position])), report.collective_ranking as unknown as WeakOrder[], row.participant_id);
       // DOUBLE PRECISION round trip through Prisma can differ in the last bit
-      // (e.g. 0.16666666666666669 vs 0.1666666666666667): compare to 1e-12. The CSVs
-      // round to 4 decimals and are byte-identical (next test).
+      // (e.g. 0.16666666666666669 vs 0.1666666666666667): compare to 1e-12. The CSV
+      // rounds to 4 decimals and is byte-identical (next test).
       const pairs: Array<[number, number | undefined]> = [
         [row.tau_b, recomputed.tauB], [row.cix, recomputed.cix], [row.stuart_tau_c, recomputed.stuartTauC],
         [row.stuart_cix, recomputed.stuartCix], [row.gamma, recomputed.gamma], [row.gamma_cix, recomputed.gammaCix],
@@ -79,13 +79,14 @@ describe.skipIf(!hasTestDb)('PT-30: paridad de métricas por votante (PostgreSQL
     expect(rows.map((r) => r.participant_id)).not.toContain(fx!.participantIds[5]);
   });
 
-  it('el CSV largo es idéntico leyendo la tabla o recalculando', async () => {
-    const longRoute = await import('@/app/api/rooms/[id]/export/long/route');
-    const req = new NextRequest('http://localhost/api');
-    const withTable = await (await longRoute.GET(req, { params: { id: fx!.roomId } })).text();
+  it('voter_round_metrics.csv es idéntico leyendo la tabla o recalculando', async () => {
+    const { GET } = await import('@/app/api/rooms/[id]/export/v2/[file]/route');
+    const file = 'voter_round_metrics.csv';
+    const req = new NextRequest(`http://localhost/api/rooms/${fx!.roomId}/export/v2/${file}`);
+    const withTable = await (await GET(req, { params: { id: fx!.roomId, file } })).text();
     await prisma.roundVoterMetric.deleteMany({ where: { room_id: fx!.roomId } });
-    const recomputed = await (await longRoute.GET(req, { params: { id: fx!.roomId } })).text();
-    // submitted_at and every other column must match byte for byte
+    const recomputed = await (await GET(req, { params: { id: fx!.roomId, file } })).text();
+    // every column must match byte for byte
     expect(withTable).toBe(recomputed);
   });
 

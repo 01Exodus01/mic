@@ -125,14 +125,14 @@ describe.skipIf(!hasTestDb)('PT-13: razones guardadas (PostgreSQL)', () => {
     const { processRoundConsensus } = await import('@mic/backend/round-processor');
     await processRoundConsensus(fx!.roomId);
 
-    const longRoute = await import('@/app/api/rooms/[id]/export/long/route');
-    const wideRoute = await import('@/app/api/rooms/[id]/export/wide/route');
-    const req = new NextRequest('http://localhost/api');
-    const longRes = await longRoute.GET(req, { params: { id: fx!.roomId } });
-    const wideRes = await wideRoute.GET(req, { params: { id: fx!.roomId } });
-    expect(longRes.status).toBe(200);
-    expect(wideRes.status).toBe(200);
-    const longCsv = await longRes.text();
-    expect(longCsv.split('\r\n')).toHaveLength(1 + 9);
+    const { GET } = await import('@/app/api/rooms/[id]/export/v2/[file]/route');
+    const get = (file: string) =>
+      GET(new NextRequest(`http://localhost/api/rooms/${fx!.roomId}/export/v2/${file}`), { params: { id: fx!.roomId, file } });
+    const votesRes = await get('votes_long.csv');
+    const metricsRes = await get('round_metrics.csv');
+    expect(votesRes.status).toBe(200);
+    expect(metricsRes.status).toBe(200);
+    const votesCsv = await votesRes.text();
+    expect(votesCsv.split('\r\n')).toHaveLength(1 + 9);
   });
 });
