@@ -321,20 +321,27 @@ export interface VoterRoundMetric {
   tauC: number;
   gamma: number;
   counted: boolean;
+  /** tau-b against the order before the tie-break rule (P1.6); null when the room has no rule */
+  tauBWeak: number | null;
 }
 
 /** Stored metrics (RoundVoterMetric) first; otherwise recomputed against the report's ranking. */
 export function voterMetricsOf(ds: ExportDataset, ctx: Ctx): VoterRoundMetric[] {
   const stored = new Map(ds.voterMetrics.map((m) => [`${m.round}:${m.participant_id}`, m]));
+  const hasRule = ds.room.tie_break_rule !== 'NONE';
   const out: VoterRoundMetric[] = [];
   for (const r of ctx.rounds) {
     const report = ctx.reportByRound.get(r);
     if (!report) continue;
     const counted = extras(report).countedVoters;
+    const weak = hasRule
+      ? weakOrderOf(report).map((w) => ({ id: w.id, midRank: w.midRank, score: 0 }))
+      : null;
     for (const [pid, ballot] of ctx.ballots.get(r) ?? []) {
+      const tauBWeak = weak ? computeVoterCIX(ballot, weak, pid).tauB ?? 0 : null;
       const s = stored.get(`${r}:${pid}`);
       if (s) {
-        out.push({ participantId: pid, round: r, tauB: s.tau_b, cix: s.cix, tauC: s.stuart_tau_c, gamma: s.gamma, counted: true });
+        out.push({ participantId: pid, round: r, tauB: s.tau_b, cix: s.cix, tauC: s.stuart_tau_c, gamma: s.gamma, counted: true, tauBWeak });
         continue;
       }
       const m = computeVoterCIX(ballot, finalRanking(report), pid);
@@ -346,6 +353,7 @@ export function voterMetricsOf(ds: ExportDataset, ctx: Ctx): VoterRoundMetric[] 
         tauC: m.stuartTauC ?? 0,
         gamma: m.gamma ?? 0,
         counted: counted.has(pid),
+        tauBWeak,
       });
     }
   }
@@ -354,6 +362,7 @@ export function voterMetricsOf(ds: ExportDataset, ctx: Ctx): VoterRoundMetric[] 
 
 export function voterRoundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
   const withTies = ds.room.concordance_variant === 'WITH_TIES';
+  const hasRule = ds.room.tie_break_rule !== 'NONE';
   const reasonCount = new Map<string, { for: number; against: number }>();
   for (const v of ds.votes) {
     const key = `${v.round}:${v.participant_id}`;
@@ -363,6 +372,8 @@ export function voterRoundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
   }
   const headers = ['blind_code', 'round', 'counted_in_round', 'tau_b', 'cix'];
   if (withTies) headers.push('tau_c', 'gamma');
+  // P1.6: with a tie-break rule, also the variant against the order with ties
+  if (hasRule) headers.push('tau_b_weak_order', 'cix_weak_order');
   headers.push('kendall_distance_to_prev_round', 'reasons_for_count', 'reasons_against_count');
 
   const rows = voterMetricsOf(ds, ctx)
@@ -373,6 +384,7 @@ export function voterRoundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       const c = reasonCount.get(`${m.round}:${m.participantId}`) ?? { for: 0, against: 0 };
       const row: Cell[] = [ctx.blindCode.get(m.participantId) ?? '', m.round, bool(m.counted), metric(m.tauB), metric(m.cix)];
       if (withTies) row.push(metric(m.tauC), metric(m.gamma));
+      if (hasRule) row.push(metric(m.tauBWeak), metric(m.tauBWeak === null ? null : (m.tauBWeak + 1) / 2));
       row.push(now && prev ? kendallDistance(now, prev) : '', c.for, c.against);
       return row;
     });
@@ -429,6 +441,7 @@ function tieResolvedBy(ds: ExportDataset, report: ExportReport): string {
 
 export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
   const metrics = voterMetricsOf(ds, ctx);
+  const hasRule = ds.room.tie_break_rule !== 'NONE';
   const rows: Cell[][] = [];
   let prevCix: number | null = null;
   for (const r of ctx.rounds) {
@@ -436,12 +449,14 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
     if (!report) {
       const stop = ds.room.status === 'CANCELLED' && r === ds.room.current_round ? 'CANCELLED' : 'INSUFFICIENT_VOTES';
       const pending = r === ds.room.current_round && ['ROUND_OPEN', 'DRAFT', 'PROCESSING'].includes(ds.room.status);
-      rows.push([r, '', '', '', '', '', '', '', '', '', pending ? '' : stop, '', '']);
+      rows.push([r, '', '', '', '', '', '', '', '', '', pending ? '' : stop, '', '', ...(hasRule ? ['', ''] : [])]);
       continue;
     }
     const ex = extras(report);
     const counted = metrics.filter((m) => m.round === r && m.counted);
     const meanTau = counted.length ? counted.reduce((s, m) => s + m.tauB, 0) / counted.length : null;
+    const meanTauWeak =
+      hasRule && counted.length ? counted.reduce((s, m) => s + (m.tauBWeak ?? 0), 0) / counted.length : null;
     const cix = report.obtained_tau;
     const threshold = ex.procedure?.tauThreshold ?? ds.room.tau_threshold;
     const maxRounds = ex.procedure?.maxRounds ?? ds.room.max_rounds;
@@ -465,6 +480,7 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       stop,
       procedureVersionOf(report),
       ex.variant ?? ds.room.concordance_variant,
+      ...(hasRule ? [metric(meanTauWeak), metric(meanTauWeak === null ? null : (meanTauWeak + 1) / 2)] : []),
     ]);
     prevCix = cix;
   }
@@ -474,6 +490,7 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       'round', 'effective_voters', 'mean_tau', 'collective_cix', 'delta_cix', 'collective_ranking',
       'tie_detected', 'tie_resolved_by', 'tie_seed', 'consensus_reached', 'stop_reason',
       'procedure_version', 'concordance_variant',
+      ...(hasRule ? ['mean_tau_weak_order', 'collective_cix_weak_order'] : []),
     ],
     rows,
   };

@@ -7,7 +7,7 @@
  */
 
 import packageJson from '../../package.json';
-import { buildCsv } from '@/lib/csv';
+import { escapeCsvField } from '@/lib/csv';
 
 export const APP_VERSION: string = packageJson.version;
 export const EXPORT_TIMEZONE = 'UTC';
@@ -45,6 +45,16 @@ export interface CsvTable {
 
 /** CSV text for a table: BOM, CRLF, RFC 4180 escaping and formula-injection defense. */
 export function tableToCsv(table: CsvTable): string {
-  const toField = (v: Cell): string | number | null | undefined => (typeof v === 'boolean' ? (v ? 'true' : 'false') : v);
-  return buildCsv(table.headers, table.rows.map((r) => r.map(toField)));
+  const field = (v: Cell): string => {
+    if (typeof v === 'boolean') return v ? 'true' : 'false';
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) return '';
+      // P0.2: every non-integer number with exactly 4 decimals (0.5 → 0.5000). Numbers only
+      // hold digits, sign and point, so they are written as is (no formula escaping).
+      return Number.isInteger(v) ? String(v) : v.toFixed(METRIC_DECIMALS);
+    }
+    return escapeCsvField(v);
+  };
+  const lines = [table.headers.join(','), ...table.rows.map((r) => r.map(field).join(','))];
+  return '\uFEFF' + lines.join('\r\n');
 }

@@ -35,16 +35,19 @@ describe('Piloto R7PUEM: valores de referencia', () => {
   });
 
   it('P0.2: redondeo único de 4 decimales, ningún valor a 3 decimales', () => {
-    for (const name of ['round_metrics.csv', 'voter_round_metrics.csv', 'option_round_scores.csv']) {
-      for (const row of table(name).rows) {
-        for (const cell of row) {
-          if (typeof cell === 'number' && !Number.isInteger(cell)) {
-            const decimals = String(cell).split('.')[1]?.length ?? 0;
-            expect(decimals, `${name}: ${cell}`).toBe(4);
-          }
+    for (const name of ['round_metrics.csv', 'voter_round_metrics.csv', 'option_round_scores.csv', 'rooms.csv']) {
+      const csv = tableToCsv(table(name));
+      for (const line of csv.split('\r\n').slice(1)) {
+        for (const cell of line.split(',')) {
+          if (/^-?\d+\.\d+$/.test(cell)) expect(cell.split('.')[1].length, `${name}: ${cell}`).toBe(4);
         }
       }
     }
+    // delta of round 2 printed with 4 decimals; exact values keep 4 decimals too
+    expect(tableToCsv(table('round_metrics.csv'))).toContain(',0.1111,');
+    expect(tableToCsv(table('voter_round_metrics.csv'))).toContain(',0.5000,');
+    expect(tableToCsv(table('voter_round_metrics.csv'))).toContain('-0.3333');
+    expect(tableToCsv(table('voter_round_metrics.csv'))).not.toContain("'-0.3333");
   });
 
   it('P0.3: Borda 3-3-3 en la ronda 1, empate detectado y regla que lo resolvió', () => {
@@ -202,5 +205,18 @@ describe('Invariantes del export (piloto)', () => {
       expect(m.tauB).toBeCloseTo(m.stuartTauC!, 12);
       expect(m.tauB).toBeCloseTo(m.gamma!, 12);
     }
+  });
+});
+
+describe('P1.6: ambas variantes con regla de desempate (piloto)', () => {
+  it('exporta tau-b contra el orden con empates además del oficial sin empates', () => {
+    const vm = rowsOf('voter_round_metrics.csv');
+    expect(table('voter_round_metrics.csv').headers).toEqual(expect.arrayContaining(['tau_b_weak_order', 'cix_weak_order']));
+    // Round 1 was a total tie before the rule: tau-b against it is 0 (CIX 0.5) for everybody
+    expect(vm.filter((r) => r.round === 1).map((r) => [r.tau_b_weak_order, r.cix_weak_order])).toEqual([[0, 0.5], [0, 0.5], [0, 0.5]]);
+    // Round 2 had no ties: both variants coincide
+    for (const r of vm.filter((x) => x.round === 2)) expect(r.tau_b_weak_order).toBe(r.tau_b);
+    const rm = rowsOf('round_metrics.csv');
+    expect(rm.map((r) => [r.mean_tau_weak_order, r.collective_cix_weak_order])).toEqual([[0, 0.5], [0.3333, 0.6667]]);
   });
 });
