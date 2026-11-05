@@ -8,7 +8,6 @@ import { CheckCircle2, Clock, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import RoundFeedbackReport, {
   formatParticipantSignature,
-  formatRankPosition,
   type FeedbackReportData,
 } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
@@ -138,23 +137,8 @@ export default function ParticipantFeedbackPage() {
 
   const { sala, options, latestReport } = roomData;
   const isConcluded = sala.status === 'CONCLUDED';
-  const collectiveRanking: CollectiveRankingItem[] =
-    latestReport?.collective_ranking || [];
-
-  // Ordenar opciones según el midRank del orden colectivo
-  const sortedOptions = [...(options || [])].sort((a, b) => {
-    const rA = collectiveRanking.find((r) => r.id === a.id)?.midRank ?? 99;
-    const rB = collectiveRanking.find((r) => r.id === b.id)?.midRank ?? 99;
-    return rA - rB;
-  });
-
-
-  // Métricas de acuerdo en %
-  const tauRaw = latestReport?.obtained_tau ?? 0;
-  const tauPct = Math.round(tauRaw * 100);
-  const requiredPct = Math.round((sala.tauThreshold || 0.8) * 100);
-  const agreementMet = tauPct >= requiredPct;
-
+  // The group's level of agreement and its full order are not shown to
+  // participants between rounds, so as not to bias their next selection.
 
   return (
     <main className="flex-1 max-w-[760px] w-full mx-auto px-4 py-8 pb-16">
@@ -209,103 +193,6 @@ export default function ParticipantFeedbackPage() {
           </div>
         )}
       </div>
-
-      {/* Nivel de acuerdo en % con barra simple contra el requerido */}
-      <section className="mb-8 p-5 rounded-[6px] border border-[#D9D5CC] bg-white">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 mb-3">
-          <div>
-            <h2 className="font-heading text-lg font-bold text-[#14171A]">
-              Nivel de acuerdo
-            </h2>
-            <p className="text-xs text-[#5A554E] mt-0.5">
-              Acuerdo colectivo alcanzado en esta ronda.
-            </p>
-          </div>
-
-          <div className="flex items-baseline gap-2 font-mono">
-            <span className="text-3xl font-bold text-[#14171A]">
-              {tauPct}%
-            </span>
-            <span className="text-xs text-[#5A554E]">
-              (requerido: {requiredPct}%)
-            </span>
-          </div>
-        </div>
-
-        {/* Barra simple de una sola serie, sin gradientes ni 3D */}
-        <div className="space-y-1.5">
-          <div className="h-3 w-full bg-[#EBE7DF] rounded-[6px] overflow-hidden relative border border-[#D9D5CC]">
-            <div
-              className={`h-full transition-all duration-300 ${
-                agreementMet ? 'bg-[#2F7D4F]' : 'bg-[#E4572E]'
-              }`}
-              style={{ width: `${Math.min(100, Math.max(0, tauPct))}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-[11px] font-mono text-[#5A554E]">
-            <span>0%</span>
-            <span>Meta: {requiredPct}%</span>
-            <span>100%</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Tabla del orden del grupo con empates explícitos y rangos con un decimal */}
-      <section className="mb-8">
-        <div className="mb-3">
-          <h2 className="font-heading text-lg font-bold text-[#14171A]">
-            Orden del grupo
-          </h2>
-          <p className="text-xs text-[#5A554E] mt-0.5">
-            Posiciones agregadas según los votos recibidos.
-          </p>
-        </div>
-
-        <div className="border border-[#D9D5CC] rounded-[6px] bg-white overflow-hidden">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF] text-[#5A554E] font-mono">
-                <th className="py-2.5 px-4 font-medium w-40">Posición</th>
-                <th className="py-2.5 px-3 font-medium w-24">Rango</th>
-                <th className="py-2.5 px-4 font-medium">Opción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#D9D5CC]">
-              {sortedOptions.map((option) => {
-                const rankInfo = collectiveRanking.find((r) => r.id === option.id);
-                const midRankNum = rankInfo?.midRank ?? 0;
-                const { label: positionLabel, isTied } = formatRankPosition(
-                  midRankNum,
-                  collectiveRanking
-                );
-                const optTitle = option.title;
-                const optDesc = option.description;
-
-                return (
-                  <tr key={option.id} className="hover:bg-[#F6F4EF]/50 transition-colors">
-                    <td className="py-3 px-4 font-sans font-medium text-[#14171A]">
-                      <span className={isTied ? 'font-semibold text-[#14171A]' : 'text-[#14171A]'}>
-                        {positionLabel}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-mono font-medium text-[#5A554E]">
-                      {midRankNum.toFixed(1)}
-                    </td>
-                    <td className="py-3 px-4 font-sans text-[#14171A]">
-                      <span className="font-semibold">{optTitle}</span>
-                      {optDesc && (
-                        <p className="text-[#5A554E] text-[11px] mt-0.5 line-clamp-1">
-                          {optDesc}
-                        </p>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       {/* PT-19: tu concordancia y, por opción, tu posición, la del grupo y todas las razones */}
       <section>
