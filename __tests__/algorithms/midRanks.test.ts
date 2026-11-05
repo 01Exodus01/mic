@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { assignMidRanks } from '../../lib/algorithms/midRanks';
+import { assignMidRanks } from '@mic/backend/algorithms/midRanks';
 
 describe('assignMidRanks', () => {
   it('assigns rank 1 to a single item', () => {

@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { bordaCount } from '../../lib/algorithms/borda';
-import type { Ballot } from '../../lib/algorithms/types';
+import { bordaCount } from '@mic/backend/algorithms/borda';
+import type { Ballot } from '@mic/backend/algorithms/types';
 
 // Helpers
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);

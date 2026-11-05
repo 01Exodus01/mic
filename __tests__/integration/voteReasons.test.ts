@@ -24,7 +24,7 @@ vi.mock('@/lib/participant-session', () => ({
   createParticipantSession: async () => undefined,
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -122,7 +122,7 @@ describe.skipIf(!hasTestDb)('PT-13: razones guardadas (PostgreSQL)', () => {
       state.session = { participantId: fx!.participantIds[i], roomId: fx!.roomId, nickname: `Persona ${i + 1}`, blindCode: fx!.blindCodes[i] };
       await submitVote(fx!.optionIds.map((optionId, k) => ({ optionId, position: ((k + i) % 3) + 1, reasonsFor: ['Una razón'] })));
     }
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     await processRoundConsensus(fx!.roomId);
 
     const longRoute = await import('@/app/api/rooms/[id]/export/long/route');

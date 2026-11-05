@@ -12,12 +12,12 @@ const created: Array<{ email: string }> = [];
 
 vi.mock('next/headers', () => ({ headers: () => new Headers() }));
 
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   getClientIp: () => '127.0.0.1',
 }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@mic/backend/db', () => ({
   default: {
     user: {
       findUnique: async () => null,

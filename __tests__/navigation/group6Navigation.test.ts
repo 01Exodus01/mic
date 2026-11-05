@@ -6,8 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { MIN_PARTICIPANTS } from '@/lib/validations';
-import { buildCountableBallots } from '@/lib/round-processor';
+import { MIN_PARTICIPANTS } from '@mic/backend/shared/validations';
+import { buildCountableBallots } from '@mic/backend/round-processor';
 
 describe('Grupo 6: Participantes, expulsión y navegación', () => {
   describe('AUD-13 & D2: Expulsión lógica (PT-11: votos conservados y excluidos del cálculo)', () => {

@@ -10,7 +10,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { RoomSettingsSchema } from '@/lib/validations';
+import { RoomSettingsSchema } from '@mic/backend/shared/validations';
 import RoomAdvancedSettings, { RoomSettingsSummary, DEFAULT_ROOM_SETTINGS } from '@/components/RoomAdvancedSettings';
 import { TEST_DB_URL, hasTestDb } from '../helpers/dbFixtures';
 

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { SingleVoteEntrySchema, MAX_REASONS_PER_SIDE, REASON_MAX_LENGTH } from '@/lib/validations';
+import { SingleVoteEntrySchema, MAX_REASONS_PER_SIDE, REASON_MAX_LENGTH } from '@mic/backend/shared/validations';
 
 const base = { optionId: 'opt-1', position: 1 };
 

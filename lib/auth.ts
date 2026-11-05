@@ -7,10 +7,10 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import prisma from './prisma';
-import { checkLockout, recordFailedAttempt, resetFailedAttempts } from './rate-limit';
+import prisma from '@mic/backend/db';
+import { checkLockout, recordFailedAttempt, resetFailedAttempts } from '@mic/backend/rate-limit';
 
-import { env } from './env';
+import { env } from '@mic/backend/env';
 
 const isHttps = process.env.NEXTAUTH_URL?.startsWith('https://') ?? false;
 const useSecure = isHttps;
@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const { headers } = await import('next/headers');
           const hdrs = await headers();
-          const { getClientIp } = await import('./rate-limit');
+          const { getClientIp } = await import('@mic/backend/rate-limit');
           clientIp = getClientIp(hdrs);
         } catch {
           // Fallback if headers context is unavailable

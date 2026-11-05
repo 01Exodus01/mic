@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { NextRequest } from 'next/server';
-import { generateMemberCode, hashMemberCode } from '@/lib/member-codes';
+import { generateMemberCode, hashMemberCode } from '@mic/backend/shared/member-codes';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 import { readZip } from '../helpers/readZip';
 
@@ -32,7 +32,7 @@ vi.mock('@/lib/participant-session', () => ({
   },
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -74,7 +74,7 @@ describe.skipIf(!hasTestDb)('P3.4: la lista del curso nunca llega al ZIP (Postgr
     const orders = [[a, b, c], [b, a, c], [c, a, b]];
     for (let i = 0; i < LABELS.length; i++) {
       expect((await p.joinRoomWithCode(fx.pin, codes[i], '00000000000' + i)).success).toBe(true);
-      const { recordClientEvents } = await import('@/lib/telemetry/record');
+      const { recordClientEvents } = await import('@mic/backend/telemetry/record');
       await recordClientEvents(prisma, state.session, {
         events: [{ type: 'ranking_reordered', method: 'drag', option_id: orders[i][0], from_position: 3, to_position: 1, reorder_index: 1 }],
       });

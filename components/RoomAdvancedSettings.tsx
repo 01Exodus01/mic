@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import type { RoomSettings } from '@/lib/validations';
+import type { RoomSettings } from '@mic/backend/shared/validations';
 
 export type RoomSettingsValue = RoomSettings;
 

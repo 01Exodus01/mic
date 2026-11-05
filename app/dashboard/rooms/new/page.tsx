@@ -10,7 +10,7 @@ import {
   RoomSettingsSchema,
   sanitizeText,
   collapseWhitespace,
-} from '@/lib/validations';
+} from '@mic/backend/shared/validations';
 import { Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import RoomAdvancedSettings, { DEFAULT_ROOM_SETTINGS, type RoomSettingsValue } from '@/components/RoomAdvancedSettings';
 import RoomConsentSettings from '@/components/RoomConsentSettings';

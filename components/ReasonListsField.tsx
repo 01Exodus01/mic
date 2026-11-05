@@ -14,7 +14,7 @@ import {
   REASON_MAX_LENGTH,
   getUnicodeLength,
   sanitizeText,
-} from '@/lib/validations';
+} from '@mic/backend/shared/validations';
 
 export type ReasonSideKey = 'for' | 'against';
 

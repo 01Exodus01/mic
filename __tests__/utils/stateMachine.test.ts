@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidTransition, getValidTransitions, isTerminalState, isVotingOpen } from '../../lib/state-machine';
+import { isValidTransition, getValidTransitions, isTerminalState, isVotingOpen } from '@mic/backend/state-machine';
 import { RoomStatus } from '@prisma/client';
 
 describe('State Machine transitions', () => {

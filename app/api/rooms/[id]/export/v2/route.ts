@@ -8,10 +8,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { loadExportDataset } from '@/lib/export/dataset';
-import { buildExportZip } from '@/lib/export/bundle';
-import { exportOptionsFrom } from '@/lib/export/request';
+import prisma from '@mic/backend/db';
+import { loadExportDataset } from '@mic/backend/export/dataset';
+import { buildExportZip } from '@mic/backend/export/bundle';
+import { exportOptionsFrom } from '@mic/backend/export/request';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {

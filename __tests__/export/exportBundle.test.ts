@@ -10,10 +10,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'crypto';
-import { buildExportZip, exportTables, type ExportManifest } from '@/lib/export/bundle';
-import { undocumentedColumns } from '@/lib/export/dictionary';
-import { exportOptionsFrom } from '@/lib/export/request';
-import type { ExportDataset } from '@/lib/export/dataset';
+import { buildExportZip, exportTables, type ExportManifest } from '@mic/backend/export/bundle';
+import { undocumentedColumns } from '@mic/backend/export/dictionary';
+import { exportOptionsFrom } from '@mic/backend/export/request';
+import type { ExportDataset } from '@mic/backend/export/dataset';
 import { loadPilotDataset } from '../fixtures/pilot_R7PUEM/loadPilot';
 import { readZip } from '../helpers/readZip';
 

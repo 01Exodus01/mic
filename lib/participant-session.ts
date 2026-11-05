@@ -15,7 +15,7 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import { env } from './env';
+import { env } from '@mic/backend/env';
 
 const COOKIE_NAME = 'gdss_participant_session';
 const LEGACY_COOKIE_NAME = 'gdss_student_session';

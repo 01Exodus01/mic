@@ -9,7 +9,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import DurationPicker, { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
-import { MAX_ROUND_MINUTES, RoundDurationSchema } from '@/lib/validations';
+import { MAX_ROUND_MINUTES, RoundDurationSchema } from '@mic/backend/shared/validations';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -84,7 +84,7 @@ describe.skipIf(!hasTestDb)('PT-28: ronda de 14 días (PostgreSQL)', () => {
 
     // Simulate the deadline passing: the worker/lazy check closes the round
     await prisma.room.update({ where: { id: fx!.roomId }, data: { deadline: new Date(Date.now() - 1000) } });
-    const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
+    const { checkAndProcessExpiredDeadline } = await import('@mic/backend/round-processor');
     expect(await checkAndProcessExpiredDeadline(fx!.roomId)).toBe(true);
     r = await prisma.room.findUniqueOrThrow({ where: { id: fx!.roomId } });
     expect(r.status).toBe('INSUFFICIENT_VOTES');

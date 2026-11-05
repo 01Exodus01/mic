@@ -15,7 +15,7 @@ import {
   isWellFormedMemberCode,
   parseRosterText,
   MEMBER_CODE_LENGTH,
-} from '@/lib/member-codes';
+} from '@mic/backend/shared/member-codes';
 import { buildCodesCsv } from '@/components/RoomRosterManager';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 

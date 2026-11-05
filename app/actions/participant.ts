@@ -10,33 +10,33 @@
 'use server';
 
 import { createHash } from 'crypto';
-import prisma from '@/lib/prisma';
+import prisma from '@mic/backend/db';
 import { Prisma, AggregationMethod, RoomStatus } from '@prisma/client';
 import {
   hashParticipantPin,
   verifyParticipantPin,
   generateBlindCode,
-} from '@/lib/pin';
+} from '@mic/backend/pin';
 import {
   createParticipantSession,
   getParticipantSession,
   clearParticipantSession,
 } from '@/lib/participant-session';
-import { checkRateLimit, checkLockout, recordFailedAttempt, resetFailedAttempts, getClientIp } from '@/lib/rate-limit';
-import { AppError, Errors, toApiError } from '@/lib/errors';
-import { isVotingOpen } from '@/lib/state-machine';
+import { checkRateLimit, checkLockout, recordFailedAttempt, resetFailedAttempts, getClientIp } from '@mic/backend/rate-limit';
+import { AppError, Errors, toApiError } from '@mic/backend/errors';
+import { isVotingOpen } from '@mic/backend/state-machine';
 import {
   ParticipantJoinSchema,
   RoomPinSchema,
   ParticipantNicknameSchema,
   SingleVoteEntrySchema,
   sanitizeText,
-} from '@/lib/validations';
-import type { ActionResult } from '@/types/actions';
-import { buildVoteSnapshot, isSameSnapshot } from '@/lib/vote-revision';
-import { recordRoomEvent } from '@/lib/room-events';
-import { hashMemberCode, isWellFormedMemberCode } from '@/lib/member-codes';
-import { displayOrderFor, displayedPositions } from '@/lib/option-order';
+} from '@mic/backend/shared/validations';
+import type { ActionResult } from '@mic/backend/shared/actions';
+import { buildVoteSnapshot, isSameSnapshot } from '@mic/backend/vote-revision';
+import { recordRoomEvent } from '@mic/backend/room-events';
+import { hashMemberCode, isWellFormedMemberCode } from '@mic/backend/shared/member-codes';
+import { displayOrderFor, displayedPositions } from '@mic/backend/option-order';
 import type { ParticipantSessionPayload } from '@/lib/participant-session';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -583,7 +583,7 @@ export async function joinRoom(
     }
 
     const pinHash = await hashParticipantPin(validPin4);
-    const { generateRandomBlindCode } = await import('@/lib/pin');
+    const { generateRandomBlindCode } = await import('@mic/backend/pin');
 
     const participant = await prisma.$transaction(async (tx) => {
       const existing = await tx.participant.findMany({
@@ -714,7 +714,7 @@ export async function joinRoomWithCode(
       if (room!.current_round > 1 && !room!.allow_late_join) return { refused: 'late_join_closed' as const, participantId: undefined };
 
       const taken = await tx.participant.findMany({ where: { room_id: room!.id }, select: { blind_code: true } });
-      const { generateRandomBlindCode } = await import('@/lib/pin');
+      const { generateRandomBlindCode } = await import('@mic/backend/pin');
       const created = await tx.participant.create({
         data: {
           room_id: room!.id,
@@ -784,7 +784,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
     if (participant.is_retired) throw Errors.RETIRED();
     if (participant.session_version !== (session.sessionVersion ?? 0)) throw Errors.SESSION_EXPIRED();
 
-    const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
+    const { checkAndProcessExpiredDeadline } = await import('@mic/backend/round-processor');
     await checkAndProcessExpiredDeadline(targetRoomId);
 
     // Rate limit per participant
@@ -963,7 +963,7 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
     ));
 
     // PT-27: after the ballot is committed, close the round if everybody voted
-    const { closeRoundIfAllVoted } = await import('@/lib/round-processor');
+    const { closeRoundIfAllVoted } = await import('@mic/backend/round-processor');
     await closeRoundIfAllVoted(targetRoomId);
 
     return { success: true };
@@ -992,7 +992,7 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
     if (participant.is_retired) throw Errors.RETIRED();
     if (participant.session_version !== (session.sessionVersion ?? 0)) throw Errors.SESSION_EXPIRED();
 
-    const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
+    const { checkAndProcessExpiredDeadline } = await import('@mic/backend/round-processor');
     await checkAndProcessExpiredDeadline(targetRoomId);
 
     const room = await prisma.room.findUnique({

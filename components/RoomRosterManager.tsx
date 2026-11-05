@@ -19,7 +19,7 @@ import {
   type IssuedMemberCode,
   type RoomMemberItem,
 } from '@/app/actions/room';
-import { escapeCsvField } from '@/lib/csv';
+import { escapeCsvField } from '@mic/backend/shared/csv';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 
 /** CSV with label and code, BOM and formula-injection protection. */

@@ -12,13 +12,13 @@
  */
 
 import { randomInt } from 'crypto';
-import prisma from './prisma';
+import prisma from './db';
 import { runAggregationEngine, Ballot, AggregationMethod, WeakOrder } from './algorithms';
 import { RoomStatus, Prisma } from '@prisma/client';
 import type { EventActor } from '@prisma/client';
 import { recordRoomEvent } from './room-events';
-import { MIN_PARTICIPANTS } from './validations';
-import type { RankingEntry, BlindArgumentEntry, BlindArgumentsMap, ReportReasonsMap, ReportReasonEntry } from '@/types/report';
+import { MIN_PARTICIPANTS } from './shared/validations';
+import type { RankingEntry, BlindArgumentEntry, BlindArgumentsMap, ReportReasonsMap, ReportReasonEntry } from '@mic/backend/shared/report';
 
 export type EstadoSala = RoomStatus;
 

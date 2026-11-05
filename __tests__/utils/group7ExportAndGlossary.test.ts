@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { escapeCsvField } from '@/lib/csv';
+import { escapeCsvField } from '@mic/backend/shared/csv';
 
 describe('Grupo 7: Exportación CSV, ciencia y glosario', () => {
   describe('AUD-16: Prevención de inyección de fórmulas CSV (CWE-1236)', () => {

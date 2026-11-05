@@ -9,10 +9,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildExportTables } from '@/lib/export/tables';
-import { tableToCsv, type CsvTable } from '@/lib/export/format';
-import { runAggregationEngine } from '@/lib/algorithms/engine';
-import { computeVoterCIX } from '@/lib/algorithms/kendallTau';
+import { buildExportTables } from '@mic/backend/export/tables';
+import { tableToCsv, type CsvTable } from '@mic/backend/export/format';
+import { runAggregationEngine } from '@mic/backend/algorithms/engine';
+import { computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
 import { loadPilotDataset, PILOT_OPTIONS } from '../fixtures/pilot_R7PUEM/loadPilot';
 
 const [O2, O3, O4] = PILOT_OPTIONS;

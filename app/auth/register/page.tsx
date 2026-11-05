@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { registerHost } from '@/app/actions/auth';
-import { HostRegisterSchema, HostInviteCodeSchema } from '@/lib/validations';
+import { HostRegisterSchema, HostInviteCodeSchema } from '@mic/backend/shared/validations';
 import { AlertCircle } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';
 

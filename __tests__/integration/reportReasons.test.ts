@@ -7,8 +7,8 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { buildReasonsByOption } from '@/lib/round-processor';
-import type { ReportReasonsMap } from '@/types/report';
+import { buildReasonsByOption } from '@mic/backend/round-processor';
+import type { ReportReasonsMap } from '@mic/backend/shared/report';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 // Runs before the static imports: the Prisma client of lib/prisma must use the test DB
@@ -27,7 +27,7 @@ vi.mock('@/lib/participant-session', () => ({
   createParticipantSession: async () => undefined,
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -72,7 +72,7 @@ describe.skipIf(!hasTestDb)('PT-15: razones en el informe de ronda (PostgreSQL)'
   it('el número y el texto de las razones del informe coinciden con lo enviado', async () => {
     fx = await createRoomFixture(prisma, { participants: 3, room: { tau_threshold: 0.99 } });
     const { submitVote } = await import('@/app/actions/participant');
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     const [a, b, c] = fx.optionIds;
     const ballots = [
       [

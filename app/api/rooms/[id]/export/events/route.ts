@@ -11,8 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { buildCsv, csvResponseHeaders } from '@/lib/csv';
+import prisma from '@mic/backend/db';
+import { buildCsv, csvResponseHeaders } from '@mic/backend/shared/csv';
 
 const EVENTS_CSV_HEADERS = ['room_id', 'created_at', 'round', 'type', 'actor', 'blind_code', 'data'];
 

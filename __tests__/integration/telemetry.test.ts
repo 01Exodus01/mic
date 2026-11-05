@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { ClientEventBatchSchema } from '@/lib/telemetry/events';
+import { ClientEventBatchSchema } from '@mic/backend/shared/telemetry-events';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 const state = vi.hoisted(() => ({
@@ -25,7 +25,7 @@ vi.mock('@/lib/participant-session', () => ({
   },
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -77,7 +77,7 @@ describe.skipIf(!hasTestDb)('P2: telemetría registrada (PostgreSQL)', () => {
   it('guarda los eventos con la ronda actual y report_round va a su propia columna del export', async () => {
     const fx = await room({ participants: 2, status: 'ROUND_OPEN', room: { current_round: 2 } });
     const p = { id: fx.participantIds[0] };
-    const { recordClientEvents } = await import('@/lib/telemetry/record');
+    const { recordClientEvents } = await import('@mic/backend/telemetry/record');
     const outcome = await recordClientEvents(prisma, { participantId: p.id, roomId: fx.roomId }, {
       events: [
         { type: 'ballot_viewed', editing: false },
@@ -100,8 +100,8 @@ describe.skipIf(!hasTestDb)('P2: telemetría registrada (PostgreSQL)', () => {
     ]);
     expect(events.every((e) => e.round === 2 && e.participant_id === p.id && e.actor === 'PARTICIPANT')).toBe(true);
 
-    const { loadExportDataset } = await import('@/lib/export/dataset');
-    const { buildExportTables } = await import('@/lib/export/tables');
+    const { loadExportDataset } = await import('@mic/backend/export/dataset');
+    const { buildExportTables } = await import('@mic/backend/export/tables');
     const ds = await loadExportDataset(prisma, fx.roomId);
     const csv = buildExportTables(ds!).find((t) => t.name === 'events.csv')!;
     const col = (name: string) => csv.headers.indexOf(name);
@@ -114,7 +114,7 @@ describe.skipIf(!hasTestDb)('P2: telemetría registrada (PostgreSQL)', () => {
 
   it('un lote enviado tarde conserva el momento en que ocurrió cada evento', async () => {
     const fx = await room({ participants: 1, status: 'ROUND_OPEN' });
-    const { recordClientEvents } = await import('@/lib/telemetry/record');
+    const { recordClientEvents } = await import('@mic/backend/telemetry/record');
     const before = Date.now();
     const outcome = await recordClientEvents(prisma, { participantId: fx.participantIds[0], roomId: fx.roomId }, {
       events: [
@@ -140,7 +140,7 @@ describe.skipIf(!hasTestDb)('P2: telemetría registrada (PostgreSQL)', () => {
   it('no acepta eventos sin sesión, con sesión vencida o de un participante retirado', async () => {
     const fx = await room({ participants: 2, status: 'ROUND_OPEN' });
     const [p, q] = fx.participantIds.map((id) => ({ id }));
-    const { recordClientEvents } = await import('@/lib/telemetry/record');
+    const { recordClientEvents } = await import('@mic/backend/telemetry/record');
     const batch = { events: [{ type: 'ballot_viewed', editing: false }] };
     expect(await recordClientEvents(prisma, null, batch)).toBe('unauthorized');
     await prisma.participant.update({ where: { id: p.id }, data: { session_version: 1 } });
@@ -172,7 +172,7 @@ describe.skipIf(!hasTestDb)('P2: telemetría registrada (PostgreSQL)', () => {
   it('un código de lista inválido queda como join_failed con la etiqueta del dispositivo, sin el código', async () => {
     const fx = await room({ participants: 0, status: 'ROUND_OPEN', room: { access_mode: 'ROSTER' } });
     const { joinRoomWithCode } = await import('@/app/actions/participant');
-    const { generateMemberCode } = await import('@/lib/member-codes');
+    const { generateMemberCode } = await import('@mic/backend/shared/member-codes');
     const code = generateMemberCode();
     expect((await joinRoomWithCode(fx.pin, code, '0123456789ab')).success).toBe(false);
     expect((await joinRoomWithCode(fx.pin, 'corto', 'no-es-una-etiqueta')).success).toBe(false);

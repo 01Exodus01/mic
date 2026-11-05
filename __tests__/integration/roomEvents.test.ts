@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { ROOM_EVENT_TYPES } from '@/lib/room-events';
+import { ROOM_EVENT_TYPES } from '@mic/backend/room-events';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 const state = vi.hoisted(() => ({
@@ -27,7 +27,7 @@ vi.mock('@/lib/participant-session', () => ({
   },
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -169,7 +169,7 @@ describe.skipIf(!hasTestDb)('PT-10: bitácora de la sala (PostgreSQL)', () => {
   it('el cierre por plazo queda registrado como del sistema', async () => {
     const fx = await createRoomFixture(prisma, { participants: 3, status: 'ROUND_OPEN', room: { deadline: new Date(Date.now() - 1000) } });
     fixtures.push(fx);
-    const { checkAndProcessExpiredDeadline } = await import('@/lib/round-processor');
+    const { checkAndProcessExpiredDeadline } = await import('@mic/backend/round-processor');
     await checkAndProcessExpiredDeadline(fx.roomId);
     const events = await eventsOf(fx.roomId);
     expect(events.map((e) => [e.type, e.actor])).toEqual([
@@ -179,7 +179,7 @@ describe.skipIf(!hasTestDb)('PT-10: bitácora de la sala (PostgreSQL)', () => {
   });
 
   it('round_closed guarda el motivo: HOST, TIMEOUT o ALL_VOTED', async () => {
-    const { processRoundConsensus, checkAndProcessExpiredDeadline, closeRoundIfAllVoted } = await import('@/lib/round-processor');
+    const { processRoundConsensus, checkAndProcessExpiredDeadline, closeRoundIfAllVoted } = await import('@mic/backend/round-processor');
     const reasonOf = async (roomId: string) =>
       (await prisma.roomEvent.findFirstOrThrow({ where: { room_id: roomId, type: 'round_closed' } })).data;
 

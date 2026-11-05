@@ -7,12 +7,12 @@
 
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import prisma from '@/lib/prisma';
-import { RegisterHostSchema, HostInviteCodeSchema } from '@/lib/validations';
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
-import { getHostInviteCode } from '@/lib/env';
+import prisma from '@mic/backend/db';
+import { RegisterHostSchema, HostInviteCodeSchema } from '@mic/backend/shared/validations';
+import { checkRateLimit, getClientIp } from '@mic/backend/rate-limit';
+import { getHostInviteCode } from '@mic/backend/env';
 import { headers } from 'next/headers';
-import type { ActionResult } from '@/types/actions';
+import type { ActionResult } from '@mic/backend/shared/actions';
 
 export type RegisterResult = ActionResult;
 

@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { kemenyYoung } from '../../lib/algorithms/kemenyYoung';
-import type { Ballot } from '../../lib/algorithms/types';
+import { kemenyYoung } from '@mic/backend/algorithms/kemenyYoung';
+import type { Ballot } from '@mic/backend/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
 

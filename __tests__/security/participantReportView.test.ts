@@ -67,11 +67,11 @@ vi.mock('@/lib/participant-session', () => ({
   clearParticipantSession: async () => undefined,
 }));
 
-vi.mock('@/lib/round-processor', () => ({
+vi.mock('@mic/backend/round-processor', () => ({
   checkAndProcessExpiredDeadline: async () => undefined,
 }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@mic/backend/db', () => ({
   default: {
     participant: {
       findFirst: async ({ where }: { where: { id: string; room_id: string } }) =>

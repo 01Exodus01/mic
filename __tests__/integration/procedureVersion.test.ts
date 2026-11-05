@@ -9,7 +9,7 @@ import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
-import { PROCEDURE_VERSION } from '@/lib/round-processor';
+import { PROCEDURE_VERSION } from '@mic/backend/round-processor';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -17,8 +17,8 @@ vi.hoisted(() => {
 });
 
 /**
- * Fingerprints of lib/algorithms/*.ts for each procedure version, oldest first.
- * If this test fails, lib/algorithms changed: if the computation changed, raise
+ * Fingerprints of backend/src/algorithms/*.ts for each procedure version, oldest first.
+ * If this test fails, backend/src/algorithms changed: if the computation changed, raise
  * PROCEDURE_VERSION (AGENTS.md); only for a change that provably does not alter
  * results (e.g. removing a re-export) append a fingerprint with the reason.
  */
@@ -35,7 +35,7 @@ const ALGORITHMS_FINGERPRINTS: Record<string, string[]> = {
 };
 
 function algorithmsFingerprint(): string {
-  const dir = path.resolve(__dirname, '../../lib/algorithms');
+  const dir = path.resolve(__dirname, '../../backend/src/algorithms');
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).sort();
   const hash = createHash('sha256');
   for (const f of files) hash.update(fs.readFileSync(path.join(dir, f)));
@@ -43,7 +43,7 @@ function algorithmsFingerprint(): string {
 }
 
 describe('PT-29: versión del procedimiento', () => {
-  it('lib/algorithms coincide con la huella de la versión actual', () => {
+  it('backend/src/algorithms coincide con la huella de la versión actual', () => {
     const current = algorithmsFingerprint();
     const known = ALGORITHMS_FINGERPRINTS[PROCEDURE_VERSION] ?? [];
     // The newest entry must be the current code; older entries document history
@@ -75,7 +75,7 @@ describe.skipIf(!hasTestDb)('PT-29: el informe guarda la configuración usada (P
   });
 
   it('dos exportes de la misma ronda indican la misma versión y configuración', async () => {
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     expect((await processRoundConsensus(fx!.roomId)).success).toBe(true);
     const report = await prisma.roundReport.findUniqueOrThrow({ where: { room_id_round: { room_id: fx!.roomId, round: 1 } } });
     const procedure = (report.arguments_json as unknown as { __procedure: Record<string, unknown> }).__procedure;

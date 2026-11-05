@@ -7,11 +7,11 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { computeVoterCIX, computeGroupConsensus } from '@/lib/algorithms/kendallTau';
-import { bordaCount } from '@/lib/algorithms/borda';
-import { schulzeMethod } from '@/lib/algorithms/schulze';
-import { assignMidRanks } from '@/lib/algorithms/midRanks';
-import type { Ballot, WeakOrder } from '@/lib/algorithms/types';
+import { computeVoterCIX, computeGroupConsensus } from '@mic/backend/algorithms/kendallTau';
+import { bordaCount } from '@mic/backend/algorithms/borda';
+import { schulzeMethod } from '@mic/backend/algorithms/schulze';
+import { assignMidRanks } from '@mic/backend/algorithms/midRanks';
+import type { Ballot, WeakOrder } from '@mic/backend/algorithms/types';
 
 describe('Grupo 4: Métrica y algoritmos (D1, AUD-10, AUD-24)', () => {
   describe('D1: Comparación contra SciPy (500 casos con y sin empates)', () => {
@@ -247,9 +247,9 @@ import {
   computeVoterCIX as cixOf,
   computeGroupConsensusForVariant,
   isStrictRanking,
-} from '../../lib/algorithms/kendallTau';
-import { runAggregationEngine as engineRun } from '../../lib/algorithms/engine';
-import { RoomAnalysisSchema } from '../../lib/validations';
+} from '@mic/backend/algorithms/kendallTau';
+import { runAggregationEngine as engineRun } from '@mic/backend/algorithms/engine';
+import { RoomAnalysisSchema } from '@mic/backend/shared/validations';
 
 function strictOrder(ids: string[]) {
   return ids.map((id, i) => ({ id, midRank: i + 1, score: 0 }));

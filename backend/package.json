@@ -1,0 +1,24 @@
+{
+  "name": "@mic/backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "r-FAST-CR backend: aggregation engine, data access (Prisma), business services, export and background worker. No Next.js or React.",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "worker": "node worker.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.21.1",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "prisma": "^5.21.1"
+  }
+}

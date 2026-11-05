@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { reasonBalanceOf } from '@/lib/round-processor';
+import { reasonBalanceOf } from '@mic/backend/round-processor';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -47,7 +47,7 @@ describe.skipIf(!hasTestDb)('PT-16: regla de desempate en el informe (PostgreSQL
     const fx = await createRoomFixture(prisma, { participants: 3, room: { tie_break_rule: 'LEXICOGRAPHIC' } });
     fixtures.push(fx);
     await cyclicVotes(fx);
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     expect((await processRoundConsensus(fx.roomId)).success).toBe(true);
     const report = await prisma.roundReport.findUnique({ where: { room_id_round: { room_id: fx.roomId, round: 1 } } });
     const ranking = report!.collective_ranking as Array<{ id: string; midRank: number }>;
@@ -60,7 +60,7 @@ describe.skipIf(!hasTestDb)('PT-16: regla de desempate en el informe (PostgreSQL
     const fx = await createRoomFixture(prisma, { participants: 3 });
     fixtures.push(fx);
     await cyclicVotes(fx);
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     await processRoundConsensus(fx.roomId);
     const report = await prisma.roundReport.findUnique({ where: { room_id_round: { room_id: fx.roomId, round: 1 } } });
     const ranking = report!.collective_ranking as Array<{ midRank: number }>;

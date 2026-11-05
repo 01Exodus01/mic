@@ -9,7 +9,7 @@
  */
 
 import type { EventActor, Prisma, PrismaClient } from '@prisma/client';
-import { CLIENT_EVENT_TYPES } from '@/lib/telemetry/events';
+import { CLIENT_EVENT_TYPES } from '@mic/backend/shared/telemetry-events';
 
 export const ROOM_EVENT_TYPES = [
   'room_started',

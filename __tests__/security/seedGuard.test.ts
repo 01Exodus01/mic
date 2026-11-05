@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 
 const require = createRequire(import.meta.url);
-const seedPath = path.resolve(__dirname, '../../prisma/seed.js');
+const seedPath = path.resolve(__dirname, '../../backend/prisma/seed.js');
 const seed = require(seedPath) as {
   assertSeedAllowed: (env: Record<string, string | undefined>) => void;
   readSeedHostConfig: (env: Record<string, string | undefined>) => { email: string; password: string; name: string };

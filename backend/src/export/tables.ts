@@ -7,9 +7,9 @@
  * The builders are pure functions of an ExportDataset.
  */
 
-import { computeVoterCIX } from '@/lib/algorithms/kendallTau';
-import type { WeakOrder } from '@/lib/algorithms/types';
-import { PROCEDURE_VERSION } from '@/lib/round-processor';
+import { computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
+import type { WeakOrder } from '@mic/backend/algorithms/types';
+import { PROCEDURE_VERSION } from '@mic/backend/round-processor';
 import { APP_VERSION, EXPORT_TIMEZONE, bool, isoUtc, metric, snakeCase, type Cell, type CsvTable } from './format';
 import type { ExportDataset, ExportEvent, ExportReport } from './dataset';
 

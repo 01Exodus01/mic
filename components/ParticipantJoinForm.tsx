@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { joinRoom, verifyRoomPin, checkNicknameInRoom } from '@/app/actions/participant';
-import { RoomPinSchema, ParticipantNicknameSchema, PersonalPinSchema } from '@/lib/validations';
+import { RoomPinSchema, ParticipantNicknameSchema, PersonalPinSchema } from '@mic/backend/shared/validations';
 import { toast } from 'sonner';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';

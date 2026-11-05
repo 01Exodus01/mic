@@ -6,9 +6,9 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { displayOrderFor, displayedPositions } from '@/lib/option-order';
-import { loadExportDataset } from '@/lib/export/dataset';
-import { buildExportTables } from '@/lib/export/tables';
+import { displayOrderFor, displayedPositions } from '@mic/backend/option-order';
+import { loadExportDataset } from '@mic/backend/export/dataset';
+import { buildExportTables } from '@mic/backend/export/tables';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -25,7 +25,7 @@ vi.mock('@/lib/participant-session', () => ({
   createParticipantSession: async () => undefined,
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),

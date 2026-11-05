@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { generateMemberCode, hashMemberCode } from '@/lib/member-codes';
+import { generateMemberCode, hashMemberCode } from '@mic/backend/shared/member-codes';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {

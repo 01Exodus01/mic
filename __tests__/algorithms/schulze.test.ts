@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { schulzeMethod } from '../../lib/algorithms/schulze';
-import type { Ballot } from '../../lib/algorithms/types';
+import { schulzeMethod } from '@mic/backend/algorithms/schulze';
+import type { Ballot } from '@mic/backend/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
 

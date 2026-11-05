@@ -15,10 +15,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { escapeCsvField } from '@/lib/csv';
-import { computeVoterCIX } from '@/lib/algorithms/kendallTau';
-import type { Ballot, WeakOrder, VoterCIX } from '@/lib/algorithms/types';
+import prisma from '@mic/backend/db';
+import { escapeCsvField } from '@mic/backend/shared/csv';
+import { computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
+import type { Ballot, WeakOrder, VoterCIX } from '@mic/backend/algorithms/types';
 
 /** Report fields written by round-processor (PT-11, PT-16, PT-17). */
 function reportExtras(argumentsJson: unknown): {

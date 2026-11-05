@@ -7,8 +7,8 @@ import {
   generateBlindCode,
   generateRandomBlindCode,
   sanitizeNickname,
-} from '../../lib/pin';
-import { checkRateLimit, extractClientIp } from '../../lib/rate-limit';
+} from '@mic/backend/pin';
+import { checkRateLimit, extractClientIp } from '@mic/backend/rate-limit';
 
 describe('PIN Generation and Verification', () => {
   it('generates a 6-character uppercase alphanumeric room PIN', () => {

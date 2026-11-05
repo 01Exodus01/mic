@@ -37,8 +37,8 @@ import {
   ArrowLeft,
   AlertCircle,
 } from 'lucide-react';
-import { PersonalPinSchema, MIN_PARTICIPANTS, MAX_ROUND_MINUTES } from '@/lib/validations';
-import type { RankingEntry } from '@/types/report';
+import { PersonalPinSchema, MIN_PARTICIPANTS, MAX_ROUND_MINUTES } from '@mic/backend/shared/validations';
+import type { RankingEntry } from '@mic/backend/shared/report';
 
 interface ProjectItem {
   id: string;

@@ -13,8 +13,8 @@
 
 import { describe, it, expect } from 'vitest';
 // PT-33: kendallTauC.ts was only a re-export of kendallTau.ts and has been removed
-import { computeVoterCIX, computeGroupConsensus } from '../../lib/algorithms/kendallTau';
-import type { Ballot, WeakOrder } from '../../lib/algorithms/types';
+import { computeVoterCIX, computeGroupConsensus } from '@mic/backend/algorithms/kendallTau';
+import type { Ballot, WeakOrder } from '@mic/backend/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
 

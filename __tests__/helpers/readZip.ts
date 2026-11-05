@@ -5,7 +5,7 @@
  */
 
 import { inflateRawSync } from 'zlib';
-import { crc32 } from '@/lib/export/zip';
+import { crc32 } from '@mic/backend/export/zip';
 
 export function readZip(zip: Buffer): Map<string, Buffer> {
   const eocd = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));

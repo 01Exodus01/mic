@@ -11,14 +11,14 @@
 import { getServerSession } from 'next-auth';
 import { revalidatePath } from 'next/cache';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { generateRoomPin } from '@/lib/pin';
-import { isValidTransition, isTerminalState } from '@/lib/state-machine';
-import { Errors, toApiError } from '@/lib/errors';
+import prisma from '@mic/backend/db';
+import { generateRoomPin } from '@mic/backend/pin';
+import { isValidTransition, isTerminalState } from '@mic/backend/state-machine';
+import { Errors, toApiError } from '@mic/backend/errors';
 import { AggregationMethod, RoomStatus } from '@prisma/client';
-import { processRoundConsensus, checkAndProcessExpiredDeadline } from '@/lib/round-processor';
-import { recordRoomEvent } from '@/lib/room-events';
-import { generateMemberCode, hashMemberCode, parseRosterText } from '@/lib/member-codes';
+import { processRoundConsensus, checkAndProcessExpiredDeadline } from '@mic/backend/round-processor';
+import { recordRoomEvent } from '@mic/backend/room-events';
+import { generateMemberCode, hashMemberCode, parseRosterText } from '@mic/backend/shared/member-codes';
 
 import {
   CreateRoomSchema,
@@ -28,9 +28,9 @@ import {
   RoomSettingsSchema,
   RoomMemberLabelSchema,
   type RoomSettingsInput,
-} from '@/lib/validations';
-import type { ActionResult } from '@/types/actions';
-import type { RankingEntry } from '@/types/report';
+} from '@mic/backend/shared/validations';
+import type { ActionResult } from '@mic/backend/shared/actions';
+import type { RankingEntry } from '@mic/backend/shared/report';
 
 export type { ActionResult };
 export type EstadoSala = RoomStatus;
@@ -544,7 +544,7 @@ export async function resetParticipantPin(
     });
     if (!participant) throw Errors.PARTICIPANT_NOT_FOUND();
 
-    const { hashParticipantPin } = await import('@/lib/pin');
+    const { hashParticipantPin } = await import('@mic/backend/pin');
     const pinHash = await hashParticipantPin(pinVal.data.newPin);
     await prisma.$transaction(async (tx) => {
       await tx.participant.update({

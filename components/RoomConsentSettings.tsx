@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { CONSENT_TEXT_MAX, getUnicodeLength } from '@/lib/validations';
+import { CONSENT_TEXT_MAX, getUnicodeLength } from '@mic/backend/shared/validations';
 
 export default function RoomConsentSettings({
   required,

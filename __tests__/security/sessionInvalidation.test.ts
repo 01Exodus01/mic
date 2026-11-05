@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { NextRequest } from 'next/server';
-import { generateMemberCode, hashMemberCode } from '@/lib/member-codes';
+import { generateMemberCode, hashMemberCode } from '@mic/backend/shared/member-codes';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -28,7 +28,7 @@ vi.mock('@/lib/participant-session', () => ({
   },
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),

@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { runAggregationEngine, type AggregationMethod } from '../../lib/algorithms/engine';
-import { applyTieBreak, findTiedGroups } from '../../lib/algorithms/tieBreak';
-import type { Ballot } from '../../lib/algorithms/types';
+import { runAggregationEngine, type AggregationMethod } from '@mic/backend/algorithms/engine';
+import { applyTieBreak, findTiedGroups } from '@mic/backend/algorithms/tieBreak';
+import type { Ballot } from '@mic/backend/algorithms/types';
 
 const ballot = (order: string[]): Ballot => new Map(order.map((id, i) => [id, i + 1]));
 const METHODS: AggregationMethod[] = ['BORDA', 'SCHULZE', 'KEMENY_YOUNG'];

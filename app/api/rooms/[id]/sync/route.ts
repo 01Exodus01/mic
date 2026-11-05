@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import prisma from '@mic/backend/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getParticipantSession } from '@/lib/participant-session';

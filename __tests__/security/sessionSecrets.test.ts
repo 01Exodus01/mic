@@ -48,7 +48,7 @@ describe('PT-06: secretos separados', () => {
   });
 
   it('el arranque falla sin el secreto, si es corto o si es igual a NEXTAUTH_SECRET', async () => {
-    const { getValidatedEnv } = await import('@/lib/env');
+    const { getValidatedEnv } = await import('@mic/backend/env');
     const original = process.env.PARTICIPANT_SESSION_SECRET;
     try {
       process.env.PARTICIPANT_SESSION_SECRET = 'corto';

@@ -7,9 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
-import { processRoundConsensus } from '@/lib/round-processor';
-import { env } from '@/lib/env';
+import prisma from '@mic/backend/db';
+import { processRoundConsensus } from '@mic/backend/round-processor';
+import { env } from '@mic/backend/env';
 
 const ProcessDeadlineSchema = z.object({
   roomId: z.string().min(1, 'El identificador de sala es obligatorio.'),

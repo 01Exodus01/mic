@@ -8,8 +8,8 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { NextRequest } from 'next/server';
-import { computeVoterCIX } from '@/lib/algorithms/kendallTau';
-import type { WeakOrder } from '@/lib/algorithms/types';
+import { computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
+import type { WeakOrder } from '@mic/backend/algorithms/types';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -46,7 +46,7 @@ describe.skipIf(!hasTestDb)('PT-30: paridad de métricas por votante (PostgreSQL
     }
     // An expelled voter: kept, not counted, still recomputed in the long export
     await prisma.participant.update({ where: { id: fx.participantIds[5] }, data: { is_retired: true } });
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     expect((await processRoundConsensus(fx.roomId)).success).toBe(true);
   });
 
@@ -90,7 +90,7 @@ describe.skipIf(!hasTestDb)('PT-30: paridad de métricas por votante (PostgreSQL
   });
 
   it('la vista del participante da su propio cix desde la tabla', async () => {
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     void processRoundConsensus;
     const report = await prisma.roundReport.findUniqueOrThrow({ where: { room_id_round: { room_id: fx!.roomId, round: 1 } } });
     await prisma.roundVoterMetric.create({

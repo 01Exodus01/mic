@@ -1,5 +1,5 @@
 /**
- * scripts/worker.js
+ * backend/worker.js
  * Background worker process that runs every BACKGROUND_WORKER_INTERVAL_SEC (default 60s).
  *
  * Discovers any room where:

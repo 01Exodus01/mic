@@ -9,12 +9,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { csvResponseHeaders } from '@/lib/csv';
-import { loadExportDataset } from '@/lib/export/dataset';
-import { exportTables } from '@/lib/export/bundle';
-import { tableToCsv } from '@/lib/export/format';
-import { exportOptionsFrom } from '@/lib/export/request';
+import prisma from '@mic/backend/db';
+import { csvResponseHeaders } from '@mic/backend/shared/csv';
+import { loadExportDataset } from '@mic/backend/export/dataset';
+import { exportTables } from '@mic/backend/export/bundle';
+import { tableToCsv } from '@mic/backend/export/format';
+import { exportOptionsFrom } from '@mic/backend/export/request';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string; file: string } }) {
   try {

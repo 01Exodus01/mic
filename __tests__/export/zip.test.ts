@@ -9,7 +9,7 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { createZip, crc32 } from '@/lib/export/zip';
+import { createZip, crc32 } from '@mic/backend/export/zip';
 import { readZip } from '../helpers/readZip';
 
 const hasUnzip = (() => {

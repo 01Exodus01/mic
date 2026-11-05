@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import prisma from '@mic/backend/db';
 import { getParticipantSession } from '@/lib/participant-session';
-import { recordClientEvents } from '@/lib/telemetry/record';
+import { recordClientEvents } from '@mic/backend/telemetry/record';
 
 const STATUS = { ok: 204, invalid: 400, unauthorized: 401, rate_limited: 429 } as const;
 const MAX_BODY_BYTES = 16 * 1024;

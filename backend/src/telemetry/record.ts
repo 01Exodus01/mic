@@ -5,9 +5,9 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import { recordRoomEvent, type RoomEventData } from '@/lib/room-events';
-import { checkRateLimit } from '@/lib/rate-limit';
-import { ClientEventBatchSchema, MAX_EVENT_AGE_MS } from './events';
+import { recordRoomEvent, type RoomEventData } from '@mic/backend/room-events';
+import { checkRateLimit } from '@mic/backend/rate-limit';
+import { ClientEventBatchSchema, MAX_EVENT_AGE_MS } from '../shared/telemetry-events';
 
 export type TelemetryOutcome = 'ok' | 'invalid' | 'unauthorized' | 'rate_limited';
 

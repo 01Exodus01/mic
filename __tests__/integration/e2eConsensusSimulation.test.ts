@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { runAggregationEngine, Ballot, WeakOrder } from '../../lib/algorithms';
+import { runAggregationEngine, Ballot, WeakOrder } from '@mic/backend/algorithms/index';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
 

@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { MAX_EVENTS_PER_BATCH, type ClientEvent } from './events';
+import { MAX_EVENTS_PER_BATCH, type ClientEvent } from '@mic/backend/shared/telemetry-events';
 
 const ENDPOINT = '/api/participant/telemetry';
 const FLUSH_DELAY_MS = 2000;

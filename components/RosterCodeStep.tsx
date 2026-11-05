@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import PasswordInput from '@/components/ui/PasswordInput';
 import { joinRoomWithCode } from '@/app/actions/participant';
-import { isWellFormedMemberCode, MEMBER_CODE_LENGTH } from '@/lib/member-codes';
+import { isWellFormedMemberCode, MEMBER_CODE_LENGTH } from '@mic/backend/shared/member-codes';
 import { getDeviceTag } from '@/lib/telemetry/client';
 
 export default function RosterCodeStep({

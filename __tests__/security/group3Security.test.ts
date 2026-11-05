@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { generateRandomBlindCode } from '@/lib/pin';
-import { extractClientIp } from '@/lib/rate-limit';
+import { generateRandomBlindCode } from '@mic/backend/pin';
+import { extractClientIp } from '@mic/backend/rate-limit';
 
 describe('Grupo 3: Seguridad y sesiones', () => {
   describe('AUD-02: Anonimato y asignación aleatoria de código ciego', () => {
@@ -120,7 +120,7 @@ describe('Grupo 3: Seguridad y sesiones', () => {
     });
 
     it('Errors.CANNOT_JOIN produce respuesta tipada en toApiError con código y mensaje exacto', async () => {
-      const { Errors, toApiError } = await import('@/lib/errors');
+      const { Errors, toApiError } = await import('@mic/backend/errors');
       const err = Errors.CANNOT_JOIN();
       const apiResponse = toApiError(err);
 
@@ -154,7 +154,7 @@ import fsPt31 from 'fs';
 import pathPt31 from 'path';
 describe('PT-31: límite de intentos en memoria', () => {
   it('la limitación (reinicio y varias instancias) está documentada y el despliegue usa una sola instancia', () => {
-    const src = fsPt31.readFileSync(pathPt31.resolve(__dirname, '../../lib/rate-limit.ts'), 'utf8');
+    const src = fsPt31.readFileSync(pathPt31.resolve(__dirname, '../../backend/src/rate-limit.ts'), 'utf8');
     expect(src).toMatch(/Known limitation \(PT-31/);
     const compose = fsPt31.readFileSync(pathPt31.resolve(__dirname, '../../docker-compose.yml'), 'utf8');
     expect(compose).not.toMatch(/replicas:/);

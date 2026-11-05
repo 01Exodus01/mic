@@ -14,10 +14,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { runAggregationEngine, Ballot, WeakOrder } from '@/lib/algorithms';
-import { computeGroupConsensus, computeVoterCIX } from '@/lib/algorithms/kendallTau';
-import { escapeCsvField } from '@/lib/csv';
-import { MIN_PARTICIPANTS } from '@/lib/validations';
+import { runAggregationEngine, Ballot, WeakOrder } from '@mic/backend/algorithms/index';
+import { computeGroupConsensus, computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
+import { escapeCsvField } from '@mic/backend/shared/csv';
+import { MIN_PARTICIPANTS } from '@mic/backend/shared/validations';
 
 const makeBallot = (entries: [string, number][]): Ballot => new Map(entries);
 

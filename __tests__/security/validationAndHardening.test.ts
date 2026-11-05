@@ -22,13 +22,13 @@ import {
   sanitizeText,
   sanitizeNickname,
   getUnicodeLength,
-} from '../../lib/validations';
-import { escapeCsvField } from '../../lib/csv';
+} from '@mic/backend/shared/validations';
+import { escapeCsvField } from '@mic/backend/shared/csv';
 import {
   checkLockout,
   recordFailedAttempt,
   resetFailedAttempts,
-} from '../../lib/rate-limit';
+} from '@mic/backend/rate-limit';
 
 // PT-13: las razones pasaron a ser opcionales y sin mínimo (enmienda E-6 de AGENTS.md).
 // Antes este bloque exigía 25 caracteres; ahora comprueba que no hay mínimo y que

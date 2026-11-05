@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { runAggregationEngine } from '../../lib/algorithms/engine';
-import type { Ballot } from '../../lib/algorithms/types';
+import { runAggregationEngine } from '@mic/backend/algorithms/engine';
+import type { Ballot } from '@mic/backend/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
 

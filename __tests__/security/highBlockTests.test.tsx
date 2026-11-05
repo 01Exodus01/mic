@@ -13,9 +13,9 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
 import PasswordInput from '../../components/ui/PasswordInput';
-import { CreateRoomSchema, HostRegisterSchema } from '../../lib/validations';
-import { escapeCsvField } from '../../lib/csv';
-import { extractClientIp, getClientIp } from '../../lib/rate-limit';
+import { CreateRoomSchema, HostRegisterSchema } from '@mic/backend/shared/validations';
+import { escapeCsvField } from '@mic/backend/shared/csv';
+import { extractClientIp, getClientIp } from '@mic/backend/rate-limit';
 
 describe('HIGH-06: PasswordInput Accessible Component', () => {
   it('renders standard password input with accessible toggle button', () => {

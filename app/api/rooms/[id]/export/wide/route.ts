@@ -13,10 +13,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { escapeCsvField } from '@/lib/csv';
-import { computeGroupConsensus } from '@/lib/algorithms/kendallTau';
-import type { Ballot, WeakOrder } from '@/lib/algorithms/types';
+import prisma from '@mic/backend/db';
+import { escapeCsvField } from '@mic/backend/shared/csv';
+import { computeGroupConsensus } from '@mic/backend/algorithms/kendallTau';
+import type { Ballot, WeakOrder } from '@mic/backend/algorithms/types';
 
 export async function GET(
   req: NextRequest,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useId } from 'react';
-import { RoundDurationSchema, MAX_ROUND_MINUTES } from '@/lib/validations';
+import { RoundDurationSchema, MAX_ROUND_MINUTES } from '@mic/backend/shared/validations';
 import { Clock } from 'lucide-react';
 
 interface DurationPickerProps {

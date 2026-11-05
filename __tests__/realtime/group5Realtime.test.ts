@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { RoundDurationSchema } from '@/lib/validations';
+import { RoundDurationSchema } from '@mic/backend/shared/validations';
 import { GET as syncHandler } from '@/app/api/rooms/[id]/sync/route';
 import { NextRequest } from 'next/server';
 

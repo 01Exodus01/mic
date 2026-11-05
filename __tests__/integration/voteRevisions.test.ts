@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { buildVoteSnapshot, isSameSnapshot } from '@/lib/vote-revision';
+import { buildVoteSnapshot, isSameSnapshot } from '@mic/backend/vote-revision';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 const state = vi.hoisted(() => ({
@@ -20,7 +20,7 @@ vi.mock('@/lib/participant-session', () => ({
   createParticipantSession: async () => undefined,
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -115,7 +115,7 @@ describe.skipIf(!hasTestDb)('PT-09: historial de votos (PostgreSQL)', () => {
 
   it('el informe de la ronda se calcula con los votos efectivos', async () => {
     const { submitVote } = await import('@/app/actions/participant');
-    const { processRoundConsensus } = await import('@/lib/round-processor');
+    const { processRoundConsensus } = await import('@mic/backend/round-processor');
     as(0);
     await submitVote(ballot([2, 1, 0], 'Borrador'));
     await submitVote(ballot([0, 1, 2], 'Final'));

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isValidTransition, isTerminalState, ROOM_STATUS_LABELS } from '@/lib/state-machine';
+import { isValidTransition, isTerminalState, ROOM_STATUS_LABELS } from '@mic/backend/state-machine';
 
 describe('Grupo 2: Concurrencia y consistencia', () => {
   describe('AUD-09b: Estado CANCELLED y máquina de estados', () => {
@@ -170,7 +170,7 @@ viPt27.mock('@/lib/participant-session', () => ({
   createParticipantSession: async () => undefined,
   clearParticipantSession: async () => undefined,
 }));
-viPt27.mock('@/lib/rate-limit', () => ({
+viPt27.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),
@@ -253,7 +253,7 @@ describe.skipIf(!hasTestDb)('PT-27: cerrar cuando voten todos (PostgreSQL)', () 
     for (let i = 0; i < 3; i++) await voteAs(fx, i);
     expect(await status(fx)).toBe('ROUND_OPEN');
     await prisma.roomMember.update({ where: { id: pending.id }, data: { is_removed: true } });
-    const { closeRoundIfAllVoted } = await import('@/lib/round-processor');
+    const { closeRoundIfAllVoted } = await import('@mic/backend/round-processor');
     expect(await closeRoundIfAllVoted(fx.roomId)).toBe(true);
     expect(await status(fx)).toBe('ROUND_FEEDBACK');
   });

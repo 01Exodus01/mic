@@ -14,9 +14,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import { computeVoterCIX } from '@/lib/algorithms/kendallTau';
-import type { WeakOrder } from '@/lib/algorithms/types';
-import type { ExportDataset } from '@/lib/export/dataset';
+import { computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
+import type { WeakOrder } from '@mic/backend/algorithms/types';
+import type { ExportDataset } from '@mic/backend/export/dataset';
 
 function parseCsv(file: string): Array<Record<string, string>> {
   const text = fs.readFileSync(path.join(__dirname, file), 'utf8').replace(/^﻿/, '');

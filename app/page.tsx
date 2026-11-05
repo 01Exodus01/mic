@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RoomPinSchema } from '@/lib/validations';
+import { RoomPinSchema } from '@mic/backend/shared/validations';
 
 export default function HomePage() {
   const router = useRouter();

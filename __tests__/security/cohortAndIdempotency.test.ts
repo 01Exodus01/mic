@@ -9,10 +9,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { bordaCount } from '../../lib/algorithms/borda';
-import { kemenyYoung } from '../../lib/algorithms/kemenyYoung';
-import { runAggregationEngine } from '../../lib/algorithms/engine';
-import type { Ballot, WeakOrder } from '../../lib/algorithms/types';
+import { bordaCount } from '@mic/backend/algorithms/borda';
+import { kemenyYoung } from '@mic/backend/algorithms/kemenyYoung';
+import { runAggregationEngine } from '@mic/backend/algorithms/engine';
+import type { Ballot, WeakOrder } from '@mic/backend/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
 
@@ -210,7 +210,7 @@ describe('Idempotency & Concurrent Vote Mutation Simulation', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 import { vi, beforeAll as beforeAllDb, afterAll as afterAllDb } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { generateMemberCode, hashMemberCode } from '@/lib/member-codes';
+import { generateMemberCode, hashMemberCode } from '@mic/backend/shared/member-codes';
 import { TEST_DB_URL, hasTestDb, createRoomFixture, cleanupFixture, type RoomFixture } from '../helpers/dbFixtures';
 
 vi.hoisted(() => {
@@ -230,7 +230,7 @@ vi.mock('@/lib/participant-session', () => ({
   },
   clearParticipantSession: async () => undefined,
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@mic/backend/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: true, resetIn: 0 }),
   checkLockout: () => ({ isLocked: false, remainingSec: 0 }),
   recordFailedAttempt: () => ({ isLocked: false, remainingSec: 0 }),

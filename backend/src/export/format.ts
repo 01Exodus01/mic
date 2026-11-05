@@ -6,8 +6,8 @@
  *  - booleans as true / false; missing values as an empty cell.
  */
 
-import packageJson from '../../package.json';
-import { escapeCsvField } from '@/lib/csv';
+import packageJson from '../../../package.json';
+import { escapeCsvField } from '@mic/backend/shared/csv';
 
 export const APP_VERSION: string = packageJson.version;
 export const EXPORT_TIMEZONE = 'UTC';

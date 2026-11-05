@@ -27,6 +27,8 @@ const contentSecurityPolicy = [
 const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  // backend/ is a workspace package written in TypeScript: Next compiles it
+  transpilePackages: ['@mic/backend'],
   experimental: {
     serverActions: {
       bodySizeLimit: '128kb',

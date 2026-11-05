@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
-const schema = fs.readFileSync(path.resolve(__dirname, '../../prisma/schema.prisma'), 'utf8');
+const schema = fs.readFileSync(path.resolve(__dirname, '../../backend/prisma/schema.prisma'), 'utf8');
 
 function modelBlock(name: string): string {
   const match = schema.match(new RegExp(`model ${name} \\{[\\s\\S]*?\\n\\}`));
@@ -37,7 +37,7 @@ describe('PT-07: esquema de razones, historial y bitácora', () => {
   });
 
   it('ninguna migración borra tablas ni columnas', () => {
-    const dir = path.resolve(__dirname, '../../prisma/migrations');
+    const dir = path.resolve(__dirname, '../../backend/prisma/migrations');
     for (const folder of fs.readdirSync(dir).filter((f) => /^\d{14}_/.test(f))) {
       const sql = fs.readFileSync(path.join(dir, folder, 'migration.sql'), 'utf8');
       expect(sql, folder).not.toMatch(/DROP\s+TABLE/i);

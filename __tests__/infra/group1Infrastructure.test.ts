@@ -52,7 +52,7 @@ describe('Grupo 1: Infraestructura, secretos, Docker, worker y backups', () => {
     const content = fs.readFileSync(composePath, 'utf8');
 
     expect(content).toContain('worker:');
-    expect(content).toContain('scripts/worker.js');
+    expect(content).toContain('backend/worker.js');
     expect(content).toContain('WORKER_SECRET');
     expect(content).toContain('127.0.0.1:5432:5432');
   });
@@ -67,8 +67,8 @@ describe('Grupo 1: Infraestructura, secretos, Docker, worker y backups', () => {
     expect(content).toContain('COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts');
   });
 
-  it('lib/env.ts valida longitud mínima de 32 caracteres para secretos', async () => {
-    const { getValidatedEnv } = await import('../../lib/env');
+  it('backend/src/env.ts valida longitud mínima de 32 caracteres para secretos', async () => {
+    const { getValidatedEnv } = await import('@mic/backend/env');
     const validated = getValidatedEnv();
 
     expect(validated.NEXTAUTH_SECRET.length).toBeGreaterThanOrEqual(32);
@@ -89,8 +89,8 @@ describe('Grupo 1: Infraestructura, secretos, Docker, worker y backups', () => {
   });
 
   it('prisma/migrations contiene baseline con DDL y migration_lock.toml', () => {
-    const lockPath = path.join(rootDir, 'prisma/migrations/migration_lock.toml');
-    const ddlPath = path.join(rootDir, 'prisma/migrations/20261027000000_init_gdss_rfastcr/migration.sql');
+    const lockPath = path.join(rootDir, 'backend/prisma/migrations/migration_lock.toml');
+    const ddlPath = path.join(rootDir, 'backend/prisma/migrations/20261027000000_init_gdss_rfastcr/migration.sql');
 
     expect(fs.existsSync(lockPath)).toBe(true);
     expect(fs.existsSync(ddlPath)).toBe(true);
