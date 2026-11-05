@@ -61,7 +61,7 @@ describe('PT-24: configuración del consentimiento', () => {
 
   it('el formulario muestra el campo de texto solo con el interruptor activo', () => {
     const off = renderToStaticMarkup(<RoomConsentSettings required={false} text="" onChange={() => undefined} />);
-    expect(off).toContain('Pedir consentimiento antes de votar');
+    expect(off).toContain('Pedir consentimiento antes de la primera selección');
     expect(off).not.toContain('<textarea');
     const on = renderToStaticMarkup(<RoomConsentSettings required text="" onChange={() => undefined} />);
     expect(on).toContain('<textarea');

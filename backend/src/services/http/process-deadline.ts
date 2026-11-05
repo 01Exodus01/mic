@@ -68,7 +68,7 @@ export async function processDeadline(ctx: RequestContext, input: { workerSecret
     }
 
     if (room.status !== 'ROUND_OPEN') {
-      return { status: 409, body: { error: 'La sala no está en votación abierta.' } };
+      return { status: 409, body: { error: 'La sala no tiene una ronda abierta.' } };
     }
 
     if (!room.deadline || new Date() < room.deadline) {

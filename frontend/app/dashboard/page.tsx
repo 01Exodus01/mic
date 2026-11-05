@@ -8,9 +8,9 @@ import { Plus, ArrowRight } from 'lucide-react';
 
 const STATE_LABELS: Record<string, string> = {
   DRAFT: 'Borrador',
-  ROUND_OPEN: 'Votación abierta',
-  INSUFFICIENT_VOTES: 'Faltan votos',
-  QUORUM_UNMET: 'Faltan votos',
+  ROUND_OPEN: 'Ronda abierta',
+  INSUFFICIENT_VOTES: 'Faltan selecciones',
+  QUORUM_UNMET: 'Faltan selecciones',
   PROCESSING: 'Calculando resultados',
   ROUND_FEEDBACK: 'Revisión de argumentos',
   CONCLUDED: 'Finalizada',
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-6 mb-6 border-b border-[#D9D5CC]">
         <div>
           <h1 className="font-heading text-2xl font-bold text-[#14171A] tracking-tight">
-            Salas de votación
+            Salas
           </h1>
           <p className="text-xs text-[#5A554E] mt-1">
             Panel de control del anfitrión. Administra las salas grupales y el avance de rondas.

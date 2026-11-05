@@ -4,6 +4,8 @@ Este documento especifica la estructura, formato, tipos de datos, fórmulas mate
 
 > **Export normalizado (ZIP).** Desde el plan de mejora de los reportes, el panel de la sala descarga un ZIP con un archivo por granularidad (`rooms`, `options`, `participants`, `rounds`, `votes_long`, `voter_round_metrics`, `option_round_scores`, `round_metrics`, `reasons`, `events`), un `README_data_dictionary.md` generado con cada columna, su tipo, unidad y rango, y un `manifest.json` con el hash SHA-256 de cada archivo, la fecha y las versiones. Hay dos modos: **investigación** (datos completos, fechas ISO 8601 en UTC) y **publicación** (sin fechas absolutas, solo segundos desde la apertura de cada ronda; sin identificadores internos ni nombre de sala; sin texto de las razones salvo que se marque que su publicación fue aprobada). La lista del curso nunca entra al ZIP. Rutas: `/api/rooms/<id>/export/v2` (ZIP, `?mode=publication`, `&include_text=1`) y `/api/rooms/<id>/export/v2/<archivo>.csv`. Las columnas de cada archivo (tipo, unidad y rango) están en el `README_data_dictionary.md` de cada ZIP, que se genera con las columnas que ese export realmente trae; este documento explica las métricas y los eventos. Los archivos anteriores (`matrix_long`, `matrix_wide_metrics` y las primeras versiones de `reasons` y `events`) se retiraron el 2026-11-05.
 
+> **Terminología.** En la plataforma, el orden de opciones que envía un participante se llama *selección* (no "voto"). Los nombres de archivos y columnas conservan `vote` (`votes_long.csv`, `vote_version`, `vote_submitted`) porque son el contrato con los scripts de análisis.
+
 ---
 
 ## 1. Métricas de Consenso y Concordancia Ordinal
@@ -61,13 +63,13 @@ Además de los eventos del servidor (apertura y cierre de rondas, ingresos, env�
 
 | `type` | Cuándo | Campos de `data` |
 |---|---|---|
-| `report_read` | El informe estuvo realmente en pantalla (página visible y, en la pantalla de voto, el bloque de resultados abierto). Se envía al ocultar o dejar la página, cerrar el bloque o cambiar de informe; nunca con 0 ms. | `report_round`, `surface` (`feedback` o `vote`), `visible_ms`, `sections_opened` |
+| `report_read` | El informe estuvo realmente en pantalla (página visible y, en la pantalla de selección, el bloque de resultados abierto). Se envía al ocultar o dejar la página, cerrar el bloque o cambiar de informe; nunca con 0 ms. | `report_round`, `surface` (`feedback` o `vote`), `visible_ms`, `sections_opened` |
 | `report_section_opened` | Se desplegó una opción del informe: se mostraron las razones de los demás. | `report_round`, `surface`, `option_id` |
-| `ballot_viewed` | Apareció el formulario de voto editable (referencia para medir el primer reordenamiento). | `editing` |
+| `ballot_viewed` | Apareció el formulario de selección editable (referencia para medir el primer reordenamiento). | `editing` |
 | `ranking_reordered` | Un cambio de orden antes de enviar. | `method` (`buttons`, `drag`, `touch`), `option_id`, `from_position`, `to_position`, `reorder_index` |
 | `reason_field_added` | Se agregó un campo de razón. | `option_id`, `side` (`for` / `against`) |
 | `reason_typing_started` | Primera vez que se escribe en las razones de esa opción y lado, en la ronda. | `option_id`, `side` |
-| `vote_submitted` | Envío del voto (ya existía); ahora con cuántas razones se mandaron. | `version`, `changed`, `reasons_for`, `reasons_against` |
+| `vote_submitted` | Envío de la selección (ya existía); ahora con cuántas razones se mandaron. | `version`, `changed`, `reasons_for`, `reasons_against` |
 | `join_failed` | Ingreso rechazado a una sala que existe. | `reason` (`wrong_pin`, `locked_out`, `retired`, `room_unavailable`, `late_join_closed`, `room_full`, `invalid_code`, `removed_member`), `mode` (`pin` / `roster`), `device_tag` |
 
 `report_viewed` (el servidor entregó el informe) sigue existiendo, pero **no es una lectura**: en el export normalizado se llama `report_delivered`, y la lectura real es `report_read`. `participant_joined` lleva `returning` (reingreso) y `device_tag`. `device_tag` es una etiqueta aleatoria que guarda el navegador para contar reintentos de un mismo dispositivo; no identifica a nadie ni se liga al nombre o código escrito.
@@ -76,9 +78,9 @@ Además de los eventos del servidor (apertura y cierre de rondas, ingresos, env�
 
 ## 3. Tratamiento de Participantes Retirados y Cancelaciones
 
-- **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Desde PT-11 **ningún voto se borra**: los de rondas cerradas siguen tal como entraron al informe, y los de la ronda activa se conservan pero quedan fuera del cálculo (`voter_round_metrics.counted_in_round = false`; el participante aparece en `participants.csv` con `status = EXCLUDED`).
+- **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Desde PT-11 **ninguna selección se borra**: las de rondas cerradas siguen tal como entraron al informe, y las de la ronda activa se conservan pero quedan fuera del cálculo (`voter_round_metrics.counted_in_round = false`; el participante aparece en `participants.csv` con `status = EXCLUDED`).
 - **Lista del curso:** la etiqueta de cada persona (matrícula o usuario) vive solo en la base de datos y nunca aparece en ningún CSV.
-- **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus votos emitidos se conservan. El estado `CANCELLED` se refleja en la columna `room_status` de `rooms.csv`.
+- **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus selecciones enviadas se conservan. El estado `CANCELLED` se refleja en la columna `room_status` de `rooms.csv`.
 
 ---
 

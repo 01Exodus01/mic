@@ -12,8 +12,8 @@ import { getRoomParticipation, type ParticipationData, type ParticipationState }
 export const PARTICIPATION_LABELS: Record<ParticipationState, string> = {
   not_joined: 'No había ingresado',
   joined: 'Ingresó',
-  voted: 'Votó',
-  not_voted: 'No votó',
+  voted: 'Envió',
+  not_voted: 'No envió',
   retired: 'Retirado',
   removed: 'Quitada de la lista',
 };
@@ -29,7 +29,7 @@ const STATE_CLASS: Record<ParticipationState, string> = {
 
 export function ParticipationGrid({ data }: { data: ParticipationData }) {
   if (data.rounds.length === 0) {
-    return <p className="text-xs text-[#5A554E]">La participación por ronda aparece cuando se abre la primera votación.</p>;
+    return <p className="text-xs text-[#5A554E]">La participación por ronda aparece cuando se abre la primera ronda.</p>;
   }
   if (data.rows.length === 0) {
     return <p className="text-xs text-[#5A554E]">Todavía no hay participantes.</p>;
@@ -81,7 +81,7 @@ export default function ParticipationTable({ roomId, refreshKey }: { roomId: str
     <section className="space-y-3">
       <div>
         <h2 className="font-heading text-lg font-bold text-[#14171A]">Participación por ronda</h2>
-        <p className="text-xs text-[#5A554E] mt-0.5">Quién ingresó y quién votó en cada ronda. No muestra el contenido de ningún voto.</p>
+        <p className="text-xs text-[#5A554E] mt-0.5">Quién ingresó y quién envió su selección en cada ronda. No muestra el contenido de ninguna selección.</p>
       </div>
       {data ? <ParticipationGrid data={data} /> : <div className="h-16 rounded-[6px] bg-[#EBE7DF]" aria-hidden="true" />}
     </section>

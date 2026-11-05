@@ -28,7 +28,7 @@ export default function RoomConsentSettings({
       <div>
         <h2 className="text-sm font-semibold text-[#14171A]">Consentimiento informado</h2>
         <p className="text-xs text-[#5A554E] mt-0.5">
-          Opcional. Si lo activas, cada participante lee tu texto al entrar por primera vez y debe aceptarlo para votar.
+          Opcional. Si lo activas, cada participante lee tu texto al entrar por primera vez y debe aceptarlo para enviar su selección.
           No se puede cambiar después de iniciar la sala.
         </p>
       </div>
@@ -39,7 +39,7 @@ export default function RoomConsentSettings({
           onChange={(e) => onChange({ consentRequired: e.target.checked, consentText: text })}
           className="mt-0.5 accent-[#E4572E] w-4 h-4"
         />
-        <span className="font-medium text-[#14171A]">Pedir consentimiento antes de votar</span>
+        <span className="font-medium text-[#14171A]">Pedir consentimiento antes de la primera selección</span>
       </label>
       {required && (
         <div className="space-y-1.5">

@@ -44,8 +44,8 @@ export const STATE_TRANSITIONS = VALID_TRANSITIONS;
 
 export const ROOM_STATUS_LABELS: Record<RoomStatus, string> = {
   DRAFT: 'Borrador',
-  ROUND_OPEN: 'Votación abierta',
-  INSUFFICIENT_VOTES: 'Faltan votos',
+  ROUND_OPEN: 'Ronda abierta',
+  INSUFFICIENT_VOTES: 'Faltan selecciones',
   PROCESSING: 'Calculando resultados',
   ROUND_FEEDBACK: 'Revisión de argumentos',
   CONCLUDED: 'Finalizada',

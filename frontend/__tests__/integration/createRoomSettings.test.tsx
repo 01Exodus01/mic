@@ -56,7 +56,7 @@ describe('PT-18: componentes', () => {
     expect(html).toContain('por mayoría entre las opciones');
     expect(html).toContain('orden alfabético del título');
     expect(html).toContain('Solo personas de una lista');
-    expect(html).toContain('Cerrar la ronda en cuanto voten todos');
+    expect(html).toContain('Cerrar la ronda en cuanto todos envíen su selección');
     for (const banned of ['τ', 'tau', 'cohorte', 'Kendall', 'mid-rank', 'quórum']) {
       expect(html.toLowerCase()).not.toContain(banned.toLowerCase());
     }

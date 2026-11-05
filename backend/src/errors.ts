@@ -16,13 +16,13 @@ export class AppError extends Error {
 
 export const Errors = {
   QUORUM_UNMET:         (_m?: number, _min?: number) =>
-    new AppError('QUORUM_UNMET', 'Faltan votos para calcular el resultado. Se necesitan al menos 3 votos válidos.', 422),
+    new AppError('QUORUM_UNMET', 'Faltan selecciones para calcular el resultado. Se necesitan al menos 3 selecciones válidas.', 422),
   ROOM_NOT_FOUND:       () => new AppError('ROOM_NOT_FOUND', 'Sala no encontrada.', 404),
   PARTICIPANT_NOT_FOUND: () => new AppError('PARTICIPANT_NOT_FOUND', 'Participante no encontrado en esta sala.', 404),
   WRONG_PIN:            () => new AppError('WRONG_PIN', 'PIN incorrecto.', 401),
   LOCKED_OUT:           (sec: number) =>
     new AppError('LOCKED_OUT', `Demasiados intentos fallidos. Acceso bloqueado temporalmente por ${sec} segundos.`, 429),
-  ROOM_CLOSED:          () => new AppError('ROOM_CLOSED', 'La votación ya se cerró. Tu voto no se guardó.', 403),
+  ROOM_CLOSED:          () => new AppError('ROOM_CLOSED', 'La ronda ya se cerró. Tu selección no se guardó.', 403),
   INVALID_BALLOT:       (msg: string) => new AppError('INVALID_BALLOT', msg, 422),
   JUSTIFICATION_SHORT:  () =>
     new AppError('JUSTIFICATION_SHORT', 'La razón debe tener al menos 25 caracteres.', 422),
@@ -31,7 +31,7 @@ export const Errors = {
   INVALID_STATE:        (from: string, to: string) =>
     new AppError('INVALID_STATE', `Transición inválida: ${from} → ${to}`, 409),
   NOT_ROUND1_VOTER:     () =>
-    new AppError('NOT_ROUND1_VOTER', 'Solo pueden votar en rondas posteriores quienes votaron en la ronda 1.', 403),
+    new AppError('NOT_ROUND1_VOTER', 'Solo pueden participar en rondas posteriores quienes enviaron su selección en la ronda 1.', 403),
   NICKNAME_TAKEN:       () => new AppError('NICKNAME_TAKEN', 'El nombre ya está en uso en esta sala.', 409),
   ROOM_FULL:            (max: number) =>
     new AppError('ROOM_FULL', `La sala ha alcanzado su capacidad máxima de ${max} participantes.`, 409),
@@ -41,11 +41,11 @@ export const Errors = {
   SESSION_EXPIRED:      () =>
     new AppError('SESSION_EXPIRED', 'Tu sesión se cerró porque el anfitrión cambió tu acceso. Vuelve a ingresar.', 401),
   RETIRED:              () =>
-    new AppError('RETIRED', 'Fuiste retirado de la sala. Tus votos anteriores se conservan.', 403),
+    new AppError('RETIRED', 'Fuiste retirado de la sala. Tus selecciones anteriores se conservan.', 403),
   CONSENT_REQUIRED:     () =>
-    new AppError('CONSENT_REQUIRED', 'Para votar primero tienes que aceptar el consentimiento de la sala.', 403),
+    new AppError('CONSENT_REQUIRED', 'Para enviar tu selección primero tienes que aceptar el consentimiento de la sala.', 403),
   BUSY:                 () =>
-    new AppError('BUSY', 'Llegaron muchos votos a la vez y no se pudo guardar el tuyo. Envíalo de nuevo.', 503),
+    new AppError('BUSY', 'Llegaron muchas selecciones a la vez y no se pudo guardar la tuya. Envíala de nuevo.', 503),
   CANNOT_JOIN:          () => new AppError('CANNOT_JOIN', 'No se puede ingresar a esa sala. Revisa tus datos.', 400),
   INVALID_N_RANGE:      (n: number) =>
     new AppError('INVALID_N_RANGE', `El número de opciones debe ser entre 3 y 8 (recibido: ${n}).`, 422),

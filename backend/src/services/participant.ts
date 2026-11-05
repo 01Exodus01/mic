@@ -800,7 +800,7 @@ export async function submitVote(ctx: RequestContext, votes: VoteEntry[]): Promi
       });
 
       if (!result.success) {
-        const errorMsg = result.error.errors[0]?.message || 'Entrada de voto inválida.';
+        const errorMsg = result.error.errors[0]?.message || 'Selección inválida.';
         throw Errors.INVALID_BALLOT(errorMsg);
       }
 
@@ -848,7 +848,7 @@ export async function submitVote(ctx: RequestContext, votes: VoteEntry[]): Promi
 
         // Ballot count validation
         if (validatedVotes.length !== n) {
-          throw Errors.INVALID_BALLOT(`La boleta debe contener exactamente ${n} opciones.`);
+          throw Errors.INVALID_BALLOT(`La selección debe contener exactamente ${n} opciones.`);
         }
 
         if (!positions.every((p) => p >= 1 && p <= n)) {

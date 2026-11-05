@@ -239,7 +239,7 @@ export default function ParticipantVotePage() {
       const diff = deadlineMs - serverNow;
 
       if (diff <= 0) {
-        setTimeLeft('Votación cerrada');
+        setTimeLeft('Ronda cerrada');
         setIsExpiredLocally(true);
         return;
       }
@@ -382,7 +382,7 @@ export default function ParticipantVotePage() {
     try {
       const res = await submitVote(payload);
       if (res.success) {
-        toast.success('Voto guardado.');
+        toast.success('Selección guardada.');
         setIsEditing(false);
         isEditingRef.current = false;
         await loadData();
@@ -391,13 +391,13 @@ export default function ParticipantVotePage() {
       } else if (res.code === 'ROOM_CLOSED') {
         // The round closed while this screen still showed time: block and refresh now
         setIsExpiredLocally(true);
-        toast.error(res.error || 'La votación ya se cerró.');
+        toast.error(res.error || 'La ronda ya se cerró.');
         await loadData();
       } else {
-        toast.error(res.error || 'No fue posible guardar el voto.');
+        toast.error(res.error || 'No fue posible guardar la selección.');
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al enviar el voto.';
+      const msg = err instanceof Error ? err.message : 'Error al enviar la selección.';
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -514,12 +514,12 @@ export default function ParticipantVotePage() {
         {/* Status banner */}
         {isClosed ? (
           <div className="mt-3 p-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A]">
-            Votación cerrada. La hora límite fue a las {deadlineHour}. Esperando los resultados de la ronda.
+            Ronda cerrada. La hora límite fue a las {deadlineHour}. Esperando los resultados de la ronda.
           </div>
         ) : showReadOnlySummary ? (
           <div className="mt-3 p-3 rounded-[6px] border border-[#2F7D4F]/30 bg-[#2F7D4F]/5 text-xs text-[#2F7D4F] flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 stroke-[1.5] shrink-0" />
-            <span>Voto enviado. Puedes editarlo mientras la votación siga abierta.</span>
+            <span>Selección enviada. Puedes editarla mientras la ronda siga abierta.</span>
           </div>
         ) : (
           <p className="text-xs text-[#5A554E] mt-2 leading-relaxed">
@@ -600,7 +600,7 @@ export default function ParticipantVotePage() {
                 className="w-full min-h-[44px] rounded-[6px] border border-[#D9D5CC] bg-white hover:bg-[#EBE7DF] text-[#14171A] text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-4 h-4 stroke-[1.5]" />
-                <span>Editar voto</span>
+                <span>Editar selección</span>
               </button>
             </div>
           )}
@@ -718,7 +718,7 @@ export default function ParticipantVotePage() {
           <div className="max-w-[540px] mx-auto w-full space-y-2">
             {roomData?.sala?.closeWhenAllVoted && (
               <p className="text-xs text-[#5A554E] text-center">
-                Si eres la última persona en votar, la ronda se cierra al enviar y ya no podrás editar tu voto.
+                Si eres la última persona en enviar su selección, la ronda se cierra al enviar y ya no podrás editarla.
               </p>
             )}
             {hasVoted && (
@@ -757,7 +757,7 @@ export default function ParticipantVotePage() {
                 className="w-full h-[52px] rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-50 text-white font-medium text-base transition-colors flex items-center justify-center"
               >
                 {submitting
-                  ? 'Guardando voto...'
+                  ? 'Guardando selección...'
                   : hasVoted
                   ? 'Guardar cambios'
                   : 'Enviar mi selección'}

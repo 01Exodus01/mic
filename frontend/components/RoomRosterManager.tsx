@@ -253,7 +253,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
           <div className="space-y-4">
             <DialogTitle>¿Quitar a {toRemove?.label} de la lista?</DialogTitle>
             <DialogDescription>
-              Su código dejará de funcionar. Si ya ingresó, deja de participar; sus votos anteriores se conservan.
+              Su código dejará de funcionar. Si ya ingresó, deja de participar; sus selecciones anteriores se conservan.
             </DialogDescription>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button type="button" onClick={() => setToRemove(null)} className="min-h-[44px] text-xs text-[#5A554E] hover:text-[#14171A]">

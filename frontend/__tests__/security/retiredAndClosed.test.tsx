@@ -4,7 +4,7 @@
  *  - expelled participant: clear "Fuiste retirado de la sala" (RETIRED), on the
  *    view, on submitVote and on the sync endpoint;
  *  - round closed while the client timer still showed time: ROOM_CLOSED with
- *    "La votación ya se cerró", ballot not stored.
+ *    "La ronda ya se cerró", ballot not stored.
  */
 
 import React from 'react';
@@ -75,7 +75,7 @@ describe.skipIf(!hasTestDb)('Pantalla de voto abierta (PostgreSQL)', () => {
     await expelParticipant(fx.roomId, fx.participantIds[0]);
 
     const view = await getParticipantRoomView();
-    expect(view).toMatchObject({ success: false, code: 'RETIRED', error: 'Fuiste retirado de la sala. Tus votos anteriores se conservan.' });
+    expect(view).toMatchObject({ success: false, code: 'RETIRED', error: 'Fuiste retirado de la sala. Tus selecciones anteriores se conservan.' });
     expect(await submitVote(ballot(fx))).toMatchObject({ success: false, code: 'RETIRED' });
 
     state.hostId = null;
@@ -93,7 +93,7 @@ describe.skipIf(!hasTestDb)('Pantalla de voto abierta (PostgreSQL)', () => {
     expect(await submitVote(ballot(fx))).toMatchObject({
       success: false,
       code: 'ROOM_CLOSED',
-      error: 'La votación ya se cerró. Tu voto no se guardó.',
+      error: 'La ronda ya se cerró. Tu selección no se guardó.',
     });
     expect(await prisma.vote.count({ where: { participant_id: fx.participantIds[1] } })).toBe(0);
   });

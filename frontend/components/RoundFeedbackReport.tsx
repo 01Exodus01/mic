@@ -156,7 +156,7 @@ export default function RoundFeedbackReport({
             <span className="font-mono text-base font-bold text-[#14171A]">{Math.round(own.cix * 100)}%</span>
           </p>
         ) : (
-          <p className="mt-1 text-xs text-[#5A554E]">No votaste en esta ronda, así que no hay un nivel de concordancia tuyo.</p>
+          <p className="mt-1 text-xs text-[#5A554E]">No enviaste tu selección en esta ronda, así que no hay un nivel de concordancia tuyo.</p>
         )}
       </section>
 
@@ -186,7 +186,7 @@ export default function RoundFeedbackReport({
                 <span className="font-sans font-semibold text-sm text-[#14171A]">{title}</span>
                 <span className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[#5A554E] font-mono">
                   <span>Grupo: {group}</span>
-                  <span>Tú: {mine ? `${mine}.º` : 'sin voto'}</span>
+                  <span>Tú: {mine ? `${mine}.º` : 'sin selección'}</span>
                   <span>Razones: {total}</span>
                 </span>
               </summary>

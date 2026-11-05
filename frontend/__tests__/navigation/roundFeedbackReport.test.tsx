@@ -62,9 +62,9 @@ describe('PT-19: componente de retroalimentación', () => {
         }}
       />
     );
-    expect(html).toContain('No votaste en esta ronda');
+    expect(html).toContain('No enviaste tu selección en esta ronda');
     expect(html).toContain('se desempataron por el orden de la lista');
-    expect(html).toContain('Tú: sin voto');
+    expect(html).toContain('Tú: sin selección');
   });
 
   it('formatea empates de tres posiciones', () => {

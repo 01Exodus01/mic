@@ -92,9 +92,9 @@ interface RoomDashboardData {
 
 const STATE_LABELS: Record<string, string> = {
   DRAFT: 'Borrador',
-  ROUND_OPEN: 'Votación abierta',
-  INSUFFICIENT_VOTES: 'Faltan votos',
-  QUORUM_UNMET: 'Faltan votos',
+  ROUND_OPEN: 'Ronda abierta',
+  INSUFFICIENT_VOTES: 'Faltan selecciones',
+  QUORUM_UNMET: 'Faltan selecciones',
   PROCESSING: 'Calculando resultados',
   ROUND_FEEDBACK: 'Revisión de argumentos',
   CONCLUDED: 'Finalizada',
@@ -231,7 +231,7 @@ export default function RoomHostPage() {
       const diff = deadlineMs - serverNow;
 
       if (diff <= 0) {
-        setRemainingTime('Votación cerrada');
+        setRemainingTime('Ronda cerrada');
         return;
       }
 
@@ -284,13 +284,13 @@ export default function RoomHostPage() {
     try {
       const res = await closeRoundManually(salaId);
       if (res.success) {
-        toast.success('Votación cerrada. Resultados calculados.');
+        toast.success('Ronda cerrada. Resultados calculados.');
         await fetchStatus();
       } else {
-        toast.error(res.error || 'No fue posible cerrar la votación.');
+        toast.error(res.error || 'No fue posible cerrar la ronda.');
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al cerrar la votación.';
+      const msg = err instanceof Error ? err.message : 'Error al cerrar la ronda.';
       toast.error(msg);
     } finally {
       setActionLoading(false);
@@ -492,7 +492,7 @@ export default function RoomHostPage() {
           {remainingTime && sala.status === 'ROUND_OPEN' && (
             <span
               className={`font-mono text-xs font-bold px-2 py-0.5 rounded-[4px] border ${
-                remainingTime === 'Votación cerrada'
+                remainingTime === 'Ronda cerrada'
                   ? 'bg-[#B42318]/10 text-[#B42318] border-[#B42318]/30'
                   : 'bg-[#2F7D4F]/10 text-[#2F7D4F] border-[#2F7D4F]/30'
               }`}
@@ -553,10 +553,10 @@ export default function RoomHostPage() {
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
-                Iniciar votación
+                Iniciar la actividad
               </h2>
               <p className="text-xs text-[#5A554E] mt-0.5">
-                La sala está en borrador. Define el plazo de la Ronda 1 para que los participantes comiencen a votar.
+                La sala está en borrador. Define el plazo de la Ronda 1 para que los participantes comiencen a enviar su selección.
               </p>
             </div>
 
@@ -574,7 +574,7 @@ export default function RoomHostPage() {
                 disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
                 className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
-                {actionLoading ? 'Iniciando...' : 'Abrir votación Ronda 1'}
+                {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1'}
               </button>
             </div>
           </div>
@@ -585,10 +585,10 @@ export default function RoomHostPage() {
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[#14171A]">
-                Votación de la Ronda {sala.current_round} en curso
+                Ronda {sala.current_round} en curso
               </h2>
               <p className="text-xs text-[#5A554E] mt-0.5">
-                Votos recibidos: {votesCount} de {totalParticipants} participantes. Hora límite fijada: {deadlineHour || 'Sin hora límite'}.
+                Selecciones recibidas: {votesCount} de {totalParticipants} participantes. Hora límite fijada: {deadlineHour || 'Sin hora límite'}.
               </p>
             </div>
 
@@ -600,7 +600,7 @@ export default function RoomHostPage() {
                 disabled={actionLoading}
                 className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
-                Cerrar votación
+                Cerrar la ronda
               </button>
 
               {/* Acciones secundarias en texto plano */}
@@ -635,10 +635,10 @@ export default function RoomHostPage() {
               <AlertTriangle className="w-4 h-4 stroke-[1.5] text-[#B42318] shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-[#B42318] block">
-                  Faltan votos
+                  Faltan selecciones
                 </span>
                 <p className="text-xs text-[#14171A] leading-relaxed">
-                  Votaron {votesCount} de {totalParticipants} participantes. Se necesitan al menos {minRequired} para calcular el resultado.
+                  Enviaron su selección {votesCount} de {totalParticipants} participantes. Se necesitan al menos {minRequired} para calcular el resultado.
                 </p>
               </div>
             </div>
@@ -754,7 +754,7 @@ export default function RoomHostPage() {
               Calculando resultados
             </h2>
             <p className="text-xs text-[#5A554E]">
-              El motor de agregación está procesando las boletas y el consenso ordinal de esta ronda.
+              El motor de agregación está procesando las selecciones y el consenso ordinal de esta ronda.
             </p>
           </div>
         )}
@@ -802,7 +802,7 @@ export default function RoomHostPage() {
           </div>
         ) : (
           <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-4 text-xs text-[#5A554E]">
-            El nivel de acuerdo se calculará cuando se cierre la votación de la ronda y se procesen los votos recibidos.
+            El nivel de acuerdo se calculará cuando se cierre la ronda y se procesen las selecciones recibidas.
           </div>
         )}
 
@@ -818,7 +818,7 @@ export default function RoomHostPage() {
               {tauStar != null ? tauStar.toFixed(4) : 'Pendiente de cálculo'}
             </div>
             <div>
-              <span className="text-[#14171A] font-semibold">Votos recibidos:</span>{' '}
+              <span className="text-[#14171A] font-semibold">Selecciones recibidas:</span>{' '}
               {latestReport?.effective_voters ?? votesCount} participantes
             </div>
             <div>
@@ -840,7 +840,7 @@ export default function RoomHostPage() {
           </h2>
           <p className="text-xs text-[#5A554E] mt-0.5">
             {latestReport
-              ? 'Posiciones colectivas agregadas a partir de las boletas recibidas.'
+              ? 'Posiciones colectivas agregadas a partir de las selecciones recibidas.'
               : 'Opciones registradas que los participantes ordenarán.'}
           </p>
         </div>
@@ -934,7 +934,7 @@ export default function RoomHostPage() {
               Participantes ({totalParticipants})
             </h2>
             <p className="text-xs text-[#5A554E] mt-0.5">
-              Identificadores anónimos y estado de voto en la ronda actual.
+              Identificadores anónimos y si enviaron su selección en la ronda actual.
             </p>
           </div>
         </div>
@@ -964,7 +964,7 @@ export default function RoomHostPage() {
                       </td>
                       <td className="py-2.5 px-3 font-mono">
                         {didVote ? (
-                          <span className="text-[#2F7D4F] font-semibold">Votó</span>
+                          <span className="text-[#2F7D4F] font-semibold">Envió</span>
                         ) : (
                           <span className="text-[#5A554E]">Pendiente</span>
                         )}
@@ -1019,10 +1019,10 @@ export default function RoomHostPage() {
         <DialogContent>
           <div className="space-y-4">
             <DialogTitle>
-              ¿Cerrar votación de la ronda?
+              ¿Cerrar la ronda?
             </DialogTitle>
             <DialogDescription>
-              Se detendrá la recepción de votos y se calcularán los resultados de esta ronda con las boletas recibidas hasta el momento.
+              Se detendrá la recepción de selecciones y se calcularán los resultados de esta ronda con las recibidas hasta el momento.
             </DialogDescription>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
@@ -1052,7 +1052,7 @@ export default function RoomHostPage() {
               ¿Cancelar actividad?
             </DialogTitle>
             <DialogDescription>
-              La sala se marcará como cancelada y no recibirá más votos. Esta acción es definitiva.
+              La sala se marcará como cancelada y no recibirá más selecciones. Esta acción es definitiva.
             </DialogDescription>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
@@ -1176,7 +1176,7 @@ export default function RoomHostPage() {
           <div className="space-y-4">
             <DialogTitle>Extender hora límite</DialogTitle>
             <DialogDescription>
-              Selecciona cuántos minutos adicionales conceder para la votación en curso.
+              Selecciona cuántos minutos adicionales conceder para la ronda en curso.
             </DialogDescription>
             <div className="py-2">
               <DurationPicker
@@ -1225,7 +1225,7 @@ export default function RoomHostPage() {
               Expulsar a {expelModal.nickname}
             </DialogTitle>
             <DialogDescription>
-              El participante quedará excluido de la sala y no podrá volver a ingresar. Sus votos se conservan, pero los de la ronda activa no cuentan para el resultado.
+              El participante quedará excluido de la sala y no podrá volver a ingresar. Sus selecciones se conservan, pero la de la ronda activa no cuenta para el resultado.
             </DialogDescription>
 
             {/* D3: Advertencia crítica si quedan menos de 3 participantes */}

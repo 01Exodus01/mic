@@ -188,7 +188,7 @@ export default function ParticipantFeedbackPage() {
           <div className="mt-4 p-3.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] flex items-center gap-2">
             <Clock className="w-4 h-4 stroke-[1.5] text-[#5A554E] shrink-0" />
             <span>
-              Votación cerrada. Revisa los argumentos del grupo. Esperando la siguiente ronda.
+              Ronda cerrada. Revisa los argumentos del grupo. Esperando la siguiente ronda.
             </span>
           </div>
         )}

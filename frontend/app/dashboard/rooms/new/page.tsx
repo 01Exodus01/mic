@@ -384,7 +384,7 @@ export default function NewRoomPage() {
       {/* Page Header */}
       <div className="pb-6 mb-6 border-b border-[#D9D5CC]">
         <h1 className="font-heading text-2xl font-bold text-[#14171A] tracking-tight">
-          Nueva sala de votación
+          Nueva sala
         </h1>
         <p className="text-xs text-[#5A554E] mt-1">
           Configura las opciones que el grupo ordenará y los parámetros de consenso.
@@ -409,7 +409,7 @@ export default function NewRoomPage() {
               1. Identificación de la sala
             </h2>
             <p className="text-xs text-[#5A554E] mt-0.5">
-              Título general visible para todos los participantes durante la votación.
+              Título general visible para todos los participantes durante la actividad.
             </p>
           </div>
 
@@ -635,7 +635,7 @@ export default function NewRoomPage() {
               3. Parámetros de participación
             </h2>
             <p className="text-xs text-[#5A554E] mt-0.5">
-              Límites de votantes y acuerdo necesario para dar por finalizada la actividad.
+              Límites de participantes y acuerdo necesario para dar por finalizada la actividad.
             </p>
           </div>
 
@@ -686,7 +686,7 @@ export default function NewRoomPage() {
                 </p>
               ) : (
                 <p className="text-[11px] text-[#5A554E] mt-1">
-                  Con 3 participantes, todos deben votar.
+                  Con 3 participantes, todos deben enviar su selección.
                 </p>
               )}
             </div>
@@ -825,7 +825,7 @@ export default function NewRoomPage() {
               4. Regla de decisión colectiva
             </h2>
             <p className="text-xs text-[#5A554E] mt-0.5">
-              Forma en que se combinan los votos individuales para obtener el orden del grupo.
+              Forma en que se combinan las selecciones individuales para obtener el orden del grupo.
             </p>
           </div>
 
@@ -891,7 +891,7 @@ export default function NewRoomPage() {
             disabled={isSubmitDisabled}
             className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[6px] bg-[#E4572E] text-white text-xs font-semibold hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-none"
           >
-            <span>{loading ? 'Creando sala...' : 'Crear sala de votación'}</span>
+            <span>{loading ? 'Creando sala...' : 'Crear sala'}</span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
           </button>
           {isSubmitDisabled && submitMotive && (

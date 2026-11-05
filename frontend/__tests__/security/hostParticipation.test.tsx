@@ -43,7 +43,7 @@ describe('PT-25: tabla', () => {
       <ParticipationGrid data={{ rounds: [1, 2], rows: [{ key: 'a', name: 'A001', states: ['voted', 'joined'] }] }} />
     );
     expect(html).toContain('Ronda 2');
-    expect(html).toContain('Votó');
+    expect(html).toContain('Envió');
     expect(html).toContain('Ingresó');
   });
 });

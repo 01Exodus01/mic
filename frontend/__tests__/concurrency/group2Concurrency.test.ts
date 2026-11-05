@@ -30,8 +30,8 @@ describe('Grupo 2: Concurrencia y consistencia', () => {
     it('mapea correctamente la etiqueta visible en español según glosario', () => {
       expect(ROOM_STATUS_LABELS.CANCELLED).toBe('Cancelada');
       expect(ROOM_STATUS_LABELS.CONCLUDED).toBe('Finalizada');
-      expect(ROOM_STATUS_LABELS.ROUND_OPEN).toBe('Votación abierta');
-      expect(ROOM_STATUS_LABELS.INSUFFICIENT_VOTES).toBe('Faltan votos');
+      expect(ROOM_STATUS_LABELS.ROUND_OPEN).toBe('Ronda abierta');
+      expect(ROOM_STATUS_LABELS.INSUFFICIENT_VOTES).toBe('Faltan selecciones');
     });
   });
 

@@ -155,7 +155,7 @@ export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdv
           <span>
             <span className="block font-medium text-[#14171A]">Permitir que se sumen personas en rondas posteriores</span>
             <span className="block text-[#5A554E] mt-0.5">
-              Si no lo marcas, solo participan en las rondas siguientes quienes votaron en la primera.
+              Si no lo marcas, solo participan en las rondas siguientes quienes enviaron su selección en la primera.
             </span>
           </span>
         </label>
@@ -167,7 +167,7 @@ export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdv
             className="mt-0.5 accent-[#E4572E] w-4 h-4"
           />
           <span>
-            <span className="block font-medium text-[#14171A]">Cerrar la ronda en cuanto voten todos</span>
+            <span className="block font-medium text-[#14171A]">Cerrar la ronda en cuanto todos envíen su selección</span>
             <span className="block text-[#5A554E] mt-0.5">
               Si no lo marcas, la ronda espera a la hora límite o a que la cierres.
             </span>
@@ -195,9 +195,9 @@ export function RoomSettingsSummary({
     ['Empates', TIE_BREAK_LABELS[room.tie_break_rule ?? 'NONE'].name],
     ['Nivel de acuerdo', VARIANT_LABELS[room.concordance_variant ?? 'WITH_TIES'].name],
     ['Ingreso', ACCESS_LABELS[room.access_mode ?? 'OPEN_PIN'].name],
-    ['Personas en rondas posteriores', room.allow_late_join ? 'Se pueden sumar' : 'Solo quienes votaron en la primera'],
-    ['Cierre de ronda', room.close_when_all_voted ? 'Cuando votan todos o a la hora límite' : 'A la hora límite o a mano'],
-    ['Consentimiento', room.consent_required ? 'Se pide aceptar antes de votar' : 'No se pide'],
+    ['Personas en rondas posteriores', room.allow_late_join ? 'Se pueden sumar' : 'Solo quienes enviaron su selección en la primera'],
+    ['Cierre de ronda', room.close_when_all_voted ? 'Cuando todos envían su selección o a la hora límite' : 'A la hora límite o a mano'],
+    ['Consentimiento', room.consent_required ? 'Se pide aceptar antes de la primera selección' : 'No se pide'],
   ];
   return (
     <details className="rounded-[6px] border border-[#D9D5CC] bg-white text-xs">

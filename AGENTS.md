@@ -163,7 +163,7 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   y la hora del servidor, corrige el desfase y cuenta hacia atrás; nunca confía en
   el reloj del dispositivo.
 - Cronómetro visible de cuenta regresiva para anfitrión y participantes. Al llegar
-  a cero se bloquea el envío y se muestra "Votación cerrada".
+  a cero se bloquea el envío y se muestra "Ronda cerrada".
 - Duración al abrir ronda y al extender: presets (5, 15, 30 minutos, 1 hora,
   24 horas, 3 días, 1 semana, 2 semanas) más valor personalizado en minutos,
   horas, días o semanas, con rango validado (1 minuto a 30 días, 43200 minutos).
@@ -176,7 +176,7 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
 - Cierre de ronda atómico: un solo cierre por ronda aunque coincidan el cierre
   perezoso, el worker y el cierre manual. Ningún voto queda fuera del informe
   de su ronda.
-- Ante estados obsoletos, mensajes claros ("La votación ya se cerró"), nunca
+- Ante estados obsoletos, mensajes claros ("La ronda ya se cerró"), nunca
   errores técnicos.
 
 ## DISEÑO (prioridad sobre cualquier "estilo Kahoot" o "estilo Linear/Vercel" del spec)
@@ -204,7 +204,7 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 - Hero centrado con badge, grids de 3 tarjetas idénticas con ícono
 - Sombra + borde + radio grande en todas las tarjetas
 - Animaciones decorativas, hover que escala, indicadores pulsantes
-- Microcopy cursi o de relleno ("¡Voto guardado!", "Potencia tu experiencia")
+- Microcopy cursi o de relleno ("¡Selección guardada!", "Potencia tu experiencia")
 
 ### Formularios
 - Validación en vivo con un solo esquema zod compartido: campo intacto sin error;
@@ -232,18 +232,18 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
   con botones para agregar y quitar, contador de 200 por razón y tope de 5 por
   lado. Enviar depende solo de haber ordenado todas las opciones.
 - Botón "Enviar mi selección" fijo abajo, con motivo visible si está deshabilitado.
-- Voto enviado: estado distinguible con mensaje persistente, resumen en solo
-  lectura (orden y razones) y botón "Editar voto" que vuelve a habilitar lo ya
+- Selección enviada: estado distinguible con mensaje persistente, resumen en solo
+  lectura (orden y razones) y botón "Editar selección" que vuelve a habilitar lo ya
   escrito. Nunca se borra lo escrito. Pasada la hora límite, sin edición.
 - Botón "Salir" visible que cierra solo la sesión de participante.
-- Espera o votación cerrada: texto plano con la hora límite, sin spinner infinito.
+- Espera o ronda cerrada: texto plano con la hora límite, sin spinner infinito.
 
 ### Anfitrión (escritorio)
 - Sidebar fija angosta + contenido max-width 1100px alineado a la izquierda.
 - Migas de pan y "Volver a salas" en pantallas secundarias.
 - Estado de la sala siempre visible como etiqueta de texto, con cronómetro.
 - Una sola acción principal por estado; las secundarias en texto plano.
-- "Faltan votos": bloque de alerta con "Extender hora límite" y "Cancelar
+- "Faltan selecciones": bloque de alerta con "Extender hora límite" y "Cancelar
   actividad", sin modal decorativo.
 - Participantes: tabla con nombre y si votó. Acciones por fila: "Restablecer PIN"
   y "Expulsar de la sala", ambas con diálogo accesible de confirmación.
@@ -274,20 +274,27 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
   "alumno", "profesor" ni "aula".
 - Prohibidos fuera de "Detalle técnico": quórum, cohorte, deadline, m_efectivo,
   τ*, mid-rank, Zero-PII, beatpath, weak order, Tau-c.
+- Nunca "voto", "votar", "votación", "votante" ni "boleta" en pantalla (pedido
+  de la tutora: evocan mayorías y democracia tradicional; 2026-11-05). El orden
+  que envía un participante es su "selección"; la etapa abierta es la "ronda"
+  ("Ronda abierta", "Ronda cerrada"); "votar" es "enviar tu selección"; "votó /
+  no votó" es "envió / no envió". Los identificadores de código y las columnas
+  de los CSV (`vote_*`, `votes_long`) no cambian: son contrato con R/Python.
 - Glosario:
 
 | Interno | Texto en pantalla |
 |---|---|
 | DRAFT | Borrador |
-| ROUND_OPEN | Votación abierta |
-| INSUFFICIENT_VOTES | Faltan votos |
+| ROUND_OPEN | Ronda abierta |
+| INSUFFICIENT_VOTES | Faltan selecciones |
 | PROCESSING | Calculando resultados |
 | ROUND_FEEDBACK | Revisión de argumentos |
 | CONCLUDED | Finalizada |
 | CANCELLED | Cancelada |
 | option | Opción |
 | deadline | Hora límite |
-| effective voters | Votos recibidos |
+| vote / ballot | Selección |
+| effective voters | Selecciones recibidas |
 | max participants | Número de participantes |
 | tau* | Nivel de acuerdo (en %) |
 | tau threshold | Acuerdo requerido (en %) |
@@ -298,10 +305,10 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 | blind code | Participante 04 (solo donde sea anónimo para el grupo) |
 | Borda / Schulze | Nombre + una línea, ej. "Borda: suma puntos según la posición" |
 
-- "Faltan votos": "Votaron X de Y participantes. Se necesitan al menos 3 para
-  calcular el resultado."
+- "Faltan selecciones": "Enviaron su selección X de Y participantes. Se necesitan
+  al menos 3 para calcular el resultado."
 - Frases cortas, sin jerga, sin signos de exclamación.
-- Los términos técnicos (nivel exacto, votos recibidos, rangos medios) pueden
+- Los términos técnicos (nivel exacto, selecciones recibidas, rangos medios) pueden
   aparecer solo dentro de la sección plegable "Detalle técnico" del anfitrión.
 
 ## Rutas

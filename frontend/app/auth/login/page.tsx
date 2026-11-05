@@ -125,7 +125,7 @@ export default function LoginPage() {
             Acceso de anfitrión
           </h1>
           <p className="text-xs text-[#5A554E]">
-            Ingresa con tus datos para administrar tus salas de votación.
+            Ingresa con tus datos para administrar tus salas.
           </p>
         </div>
 

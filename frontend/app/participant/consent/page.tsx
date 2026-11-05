@@ -93,7 +93,7 @@ export default function ParticipantConsentPage() {
 
       <p className="text-xs text-[#5A554E] font-mono mb-1">{data.sala.title}</p>
       <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">Consentimiento informado</h1>
-      <p className="text-xs text-[#5A554E] mt-2">Lee el texto. Para votar tienes que aceptarlo. Podrás volver a leerlo después.</p>
+      <p className="text-xs text-[#5A554E] mt-2">Lee el texto. Para enviar tu selección tienes que aceptarlo. Podrás volver a leerlo después.</p>
 
       <div className="mt-4 p-4 rounded-[6px] border border-[#D9D5CC] bg-white text-sm text-[#14171A] leading-relaxed whitespace-pre-wrap break-words">
         {data.consent.text}
