@@ -21,6 +21,7 @@ import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import RoomRosterManager from '@/components/RoomRosterManager';
 import ParticipationTable from '@/components/ParticipationTable';
 import ExportDownloads from '@/components/ExportDownloads';
+import { rankingHasTies } from '@/lib/ranking';
 import {
   Dialog,
   DialogContent,
@@ -850,7 +851,10 @@ export default function RoomHostPage() {
               <thead>
                 <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF]/60 text-[#5A554E] font-mono text-[11px] uppercase tracking-wider">
                   <th className="py-2.5 px-3 w-40">Posición</th>
-                  <th className="py-2.5 px-3 w-24">Rango</th>
+                  {/* The mid-rank only adds information when options share a place */}
+                  {rankingHasTies(latestReport.collective_ranking) && (
+                    <th className="py-2.5 px-3 w-24">Rango</th>
+                  )}
                   <th className="py-2.5 px-3">Opción</th>
                 </tr>
               </thead>
@@ -869,9 +873,11 @@ export default function RoomHostPage() {
                       <td className="py-2.5 px-3 font-semibold text-[#14171A]">
                         {rankLabel}
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-[#14171A]">
-                        {item.midRank.toFixed(1)}
-                      </td>
+                      {rankingHasTies(latestReport.collective_ranking) && (
+                        <td className="py-2.5 px-3 font-mono text-[#14171A]">
+                          {item.midRank.toFixed(1)}
+                        </td>
+                      )}
                       <td className="py-2.5 px-3 text-[#14171A]">
                         <span className="font-medium">{title}</span>
                         {proj?.description && (
