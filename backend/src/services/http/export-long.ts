@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/export-long.ts
- * Service behind app/api/rooms/[id]/export/long: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/export/long: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * Generates and downloads matrix_long.csv for academic and statistical analysis.
  *

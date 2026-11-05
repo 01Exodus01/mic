@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/process-deadline.ts
- * Service behind app/api/internal/process-deadline: returns a protocol-neutral
+ * Service behind frontend/app/api/internal/process-deadline: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * Internal route invoked by the background worker to safely trigger round consensus.
  * Protected by secret token header.

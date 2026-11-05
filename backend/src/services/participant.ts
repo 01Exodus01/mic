@@ -2,7 +2,7 @@
  * backend/src/services/participant.ts
  * Participant flow (join, consent, vote, room view, logout).
  * Web-agnostic: the request (IP, sessions, page revalidation) comes as a
- * RequestContext; the frontend exposes these as server actions (app/actions/participant.ts).
+ * RequestContext; the frontend exposes these as server actions (frontend/app/actions/participant.ts).
  * Services for participant Zero-PII session lifecycle.
  *
  * - joinRoom: Registers or re-authenticates a participant in a room with Zod validation and lockout.

@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/export-wide.ts
- * Service behind app/api/rooms/[id]/export/wide: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/export/wide: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * Generates and downloads matrix_wide_metrics.csv for paired hypothesis testing.
  *

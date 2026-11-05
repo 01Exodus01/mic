@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/export-table.ts
- * Service behind app/api/rooms/[id]/export/v2/[file]: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/export/v2/[file]: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * One file of the normalized export (plan de mejora de los reportes), e.g.
  * /api/rooms/<id>/export/v2/round_metrics.csv. Host of the room only.

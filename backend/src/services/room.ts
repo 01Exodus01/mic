@@ -2,7 +2,7 @@
  * backend/src/services/room.ts
  * Room lifecycle for the host (create, start, close, extend, cancel, roster, participation).
  * Web-agnostic: the request (IP, sessions, page revalidation) comes as a
- * RequestContext; the frontend exposes these as server actions (app/actions/room.ts).
+ * RequestContext; the frontend exposes these as server actions (frontend/app/actions/room.ts).
  * Services for room lifecycle management.
  *
  * All mutations are atomic and use Prisma transactions where needed.

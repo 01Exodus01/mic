@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/export-events.ts
- * Service behind app/api/rooms/[id]/export/events: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/export/events: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * events.csv (PT-26): the room activity log (RoomEvent).
  *

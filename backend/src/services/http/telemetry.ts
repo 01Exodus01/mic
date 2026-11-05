@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/telemetry.ts
- * Service behind app/api/participant/telemetry: returns a protocol-neutral
+ * Service behind frontend/app/api/participant/telemetry: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * Receives usability events from the participant screens (plan de mejora P2).
  * A route (not a server action) so the browser can send it with

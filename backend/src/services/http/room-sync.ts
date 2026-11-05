@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/room-sync.ts
- * Service behind app/api/rooms/[id]/sync: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/sync: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * Lightweight real-time synchronization endpoint for room state.
  * Supports ETag / 304 Not Modified to minimize bandwidth and processing.

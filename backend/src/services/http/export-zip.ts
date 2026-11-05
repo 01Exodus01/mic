@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/export-zip.ts
- * Service behind app/api/rooms/[id]/export/v2: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/export/v2: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * The whole normalized export as a ZIP (plan de mejora P3.1): every CSV,
  * README_data_dictionary.md and manifest.json. Host of the room only.

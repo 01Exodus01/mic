@@ -1,6 +1,6 @@
 /**
  * backend/src/services/http/export-reasons.ts
- * Service behind app/api/rooms/[id]/export/reasons: returns a protocol-neutral
+ * Service behind frontend/app/api/rooms/[id]/export/reasons: returns a protocol-neutral
  * ServiceResponse; the route only turns it into an HTTP response.
  * reasons.csv (PT-26): one row per reason, verbatim.
  *

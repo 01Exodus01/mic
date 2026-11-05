@@ -2,7 +2,7 @@
  * backend/src/services/auth.ts
  * Host registration.
  * Web-agnostic: the request (IP, sessions, page revalidation) comes as a
- * RequestContext; the frontend exposes these as server actions (app/actions/auth.ts).
+ * RequestContext; the frontend exposes these as server actions (frontend/app/actions/auth.ts).
  * Services for host account management.
  */
 
