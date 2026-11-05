@@ -281,7 +281,7 @@ export function votesLongTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       ctx.blindCode.get(v.participant_id) ?? '',
       v.option_id,
       v.position,
-      (v as { displayed_position?: number | null }).displayed_position ?? '',
+      v.displayed_position ?? '',
       isoUtc(v.created_at),
       version.get(`${v.round}:${v.participant_id}`) ?? '',
       prevPos === undefined ? '' : bool(prevPos !== v.position),

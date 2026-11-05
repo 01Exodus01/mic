@@ -36,6 +36,7 @@ import type { ActionResult } from '@/types/actions';
 import { buildVoteSnapshot, isSameSnapshot } from '@/lib/vote-revision';
 import { recordRoomEvent } from '@/lib/room-events';
 import { hashMemberCode, isWellFormedMemberCode } from '@/lib/member-codes';
+import { displayOrderFor, displayedPositions } from '@/lib/option-order';
 import type { ParticipantSessionPayload } from '@/lib/participant-session';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -833,12 +834,15 @@ export async function submitVote(votes: VoteEntry[]): Promise<ActionResult> {
           },
         });
 
+        // P1.4: where each option was first shown to this participant, computed on the server
+        const shown = displayedPositions(session.participantId, room.current_round, room.options.map((o) => o.id));
         const createdVotes = await tx.vote.createManyAndReturn({
           data: validatedVotes.map((vote) => ({
             participant_id: session.participantId,
             round: room.current_round,
             option_id: vote.optionId,
             position: vote.position,
+            displayed_position: shown.get(vote.optionId) ?? null,
             justification: vote.justification,
           })),
           select: { id: true, option_id: true },
@@ -993,9 +997,10 @@ export async function getParticipantRoomView(): Promise<ActionResult<Participant
       await recordReportViewedOnce(room.id, session.participantId, latestReport.round);
     }
 
-    const mappedOptions = room.options.map((o) => ({
-      ...o,
-    }));
+    // P1.4: each participant sees the options in their own random order for this round
+    const shownOrder = displayOrderFor(session.participantId, room.current_round, room.options.map((o) => o.id));
+    const optionById = new Map(room.options.map((o) => [o.id, o]));
+    const mappedOptions = shownOrder.map((id) => ({ ...optionById.get(id)! }));
 
     return {
       success: true,

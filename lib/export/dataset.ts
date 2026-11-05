@@ -47,6 +47,7 @@ export async function loadExportDataset(prisma: PrismaClient, roomId: string) {
         round: true,
         option_id: true,
         position: true,
+        displayed_position: true,
         justification: true,
         created_at: true,
         reasons: { select: { id: true, side: true, order_index: true, text: true, created_at: true } },

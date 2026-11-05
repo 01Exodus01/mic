@@ -140,6 +140,7 @@ model Vote {
   option_id      String
   option         Option      @relation(fields: [option_id], references: [id], onDelete: Cascade)
   position       Int         // 1..n strict ballot
+  displayed_position Int?    // 1..n place where the option was first shown to this participant (P1.4)
   justification  String?     @db.VarChar(200) // legacy single reason; null for votes that use VoteReason
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt

@@ -157,13 +157,8 @@ export default function ParticipantVotePage() {
           setOrderedOptions(sorted);
           syncReasonsFromVotes(myVotes);
         } else {
-          setOrderedOptions(
-            [...options].sort((a, b) => {
-              const idxA = a.order_index ?? 0;
-              const idxB = b.order_index ?? 0;
-              return idxA - idxB;
-            })
-          );
+          // P1.4: the server already sends the options in this participant's own random order
+          setOrderedOptions([...options]);
         }
       } else {
         // Subsequent polling calls: only sync ordered options and justifications
