@@ -134,7 +134,7 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
 
   it('ninguna acción del anfitrión cambia la configuración después de crear la sala', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('app/actions/room.ts', 'utf8');
+    const source = fs.readFileSync('backend/src/services/room.ts', 'utf8');
     const afterCreate = source.slice(source.indexOf('export async function startRoom'));
     for (const field of ['tie_break_rule', 'concordance_variant', 'access_mode', 'allow_late_join', 'close_when_all_voted']) {
       expect(afterCreate, field).not.toMatch(new RegExp(`${field}\\s*:`));

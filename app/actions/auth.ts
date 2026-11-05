@@ -1,78 +1,20 @@
-/**
- * app/actions/auth.ts
- * Server Actions for host account management.
- */
-
 'use server';
 
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import prisma from '@mic/backend/db';
-import { RegisterHostSchema, HostInviteCodeSchema } from '@mic/backend/shared/validations';
-import { checkRateLimit, getClientIp } from '@mic/backend/rate-limit';
-import { getHostInviteCode } from '@mic/backend/env';
-import { headers } from 'next/headers';
-import type { ActionResult } from '@mic/backend/shared/actions';
-
-export type RegisterResult = ActionResult;
-
-const INVITE_CODE_ERROR = 'No se pudo crear la cuenta con ese código de invitación.';
-
-function inviteCodeMatches(candidate: string, expected: string): boolean {
-  const a = crypto.createHash('sha256').update(candidate, 'utf8').digest();
-  const b = crypto.createHash('sha256').update(expected, 'utf8').digest();
-  return crypto.timingSafeEqual(a, b);
-}
-
 /**
- * Registers a new host account with strict Zod validation.
- * Requires the invite code from HOST_INVITE_CODE; without it registration is closed.
- * Password is hashed with bcrypt cost=10.
+ * app/actions/auth.ts
+ * Server actions: thin web adapters over @mic/backend/services/auth.
+ * Each one builds the request context (IP, sessions, host, revalidation)
+ * and calls the service with the same arguments. No business logic here.
  */
-export async function registerHost(
-  name: string,
-  email: string,
-  password: string,
-  inviteCode: string
-): Promise<ActionResult> {
-  try {
-    const hdrs = await headers();
-    const ip = getClientIp(hdrs);
-    const rl = checkRateLimit(`register:${ip}`, 5, 60);
-    if (!rl.allowed) {
-      return { success: false, error: `Demasiadas solicitudes. Reintenta en ${rl.resetIn} segundos.` };
-    }
 
-    const expectedCode = getHostInviteCode();
-    const codeValidation = HostInviteCodeSchema.safeParse(inviteCode);
-    if (!expectedCode || !codeValidation.success || !inviteCodeMatches(codeValidation.data, expectedCode)) {
-      return { success: false, error: INVITE_CODE_ERROR };
-    }
+import * as service from '@mic/backend/services/auth';
+import { requestContext } from '@/lib/request-context';
 
-    const validation = RegisterHostSchema.safeParse({ name, email, password });
-    if (!validation.success) {
-      const firstError = validation.error.errors[0]?.message || 'Datos de registro inválidos.';
-      return { success: false, error: firstError };
-    }
+export type { RegisterResult } from '@mic/backend/services/auth';
 
-    const validated = validation.data;
+/** Arguments of a service function after its request context */
+type Args<F> = F extends (ctx: never, ...rest: infer R) => unknown ? R : never;
 
-    const existing = await prisma.user.findUnique({ where: { email: validated.email } });
-    if (existing) {
-      return { success: false, error: 'El correo ya está registrado.' };
-    }
-
-    const passwordHash = await bcrypt.hash(validated.password, 10);
-    await prisma.user.create({
-      data: {
-        name: validated.name,
-        email: validated.email,
-        password_hash: passwordHash,
-      },
-    });
-
-    return { success: true };
-  } catch {
-    return { success: false, error: 'Error al registrar la cuenta.' };
-  }
+export async function registerHost(...args: Args<typeof service.registerHost>) {
+  return service.registerHost(requestContext(), ...args);
 }

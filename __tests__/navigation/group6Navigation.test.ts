@@ -32,7 +32,7 @@ describe('Grupo 6: Participantes, expulsión y navegación', () => {
     });
 
     it('expelParticipant ya no borra votos', () => {
-      const source = fs.readFileSync(path.resolve(__dirname, '../../app/actions/room.ts'), 'utf8');
+      const source = fs.readFileSync(path.resolve(__dirname, '../../backend/src/services/room.ts'), 'utf8');
       const expel = source.slice(source.indexOf('export async function expelParticipant'));
       expect(expel).not.toMatch(/vote\.deleteMany/);
     });

@@ -85,8 +85,10 @@ describe('PT-04: registro de anfitrión con código de invitación', () => {
   });
 
   it('el inicio de sesión no depende del código de invitación', () => {
-    const authSource = fs.readFileSync(path.resolve(__dirname, '../../lib/auth.ts'), 'utf8');
-    expect(authSource).not.toContain('HOST_INVITE_CODE');
-    expect(authSource).not.toContain('getHostInviteCode');
+    for (const file of ['../../lib/auth.ts', '../../backend/src/services/host-login.ts']) {
+      const authSource = fs.readFileSync(path.resolve(__dirname, file), 'utf8');
+      expect(authSource, file).not.toContain('HOST_INVITE_CODE');
+      expect(authSource, file).not.toContain('getHostInviteCode');
+    }
   });
 });

@@ -131,7 +131,8 @@ import fsPt26 from 'fs';
 import pathPt26 from 'path';
 
 function headersInRoute(file: string): string[] {
-  const src = fsPt26.readFileSync(pathPt26.resolve(__dirname, '../../app/api/rooms/[id]/export', file, 'route.ts'), 'utf8');
+  // The route is a thin adapter; the CSV columns are defined in its backend service
+  const src = fsPt26.readFileSync(pathPt26.resolve(__dirname, '../../backend/src/services/http', `export-${file}.ts`), 'utf8');
   const block = src.match(/(?:const headers = |_CSV_HEADERS = )\[([\s\S]*?)\];/);
   return [...(block?.[1] ?? '').matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
 }

@@ -6,11 +6,9 @@
 
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
-import prisma from '@mic/backend/db';
-import { checkLockout, recordFailedAttempt, resetFailedAttempts } from '@mic/backend/rate-limit';
-
 import { env } from '@mic/backend/env';
+import { authenticateHost } from '@mic/backend/services/host-login';
+import { requestContext } from '@/lib/request-context';
 
 const isHttps = process.env.NEXTAUTH_URL?.startsWith('https://') ?? false;
 const useSecure = isHttps;
@@ -26,52 +24,8 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        let clientIp = '127.0.0.1';
-        try {
-          const { headers } = await import('next/headers');
-          const hdrs = await headers();
-          const { getClientIp } = await import('@mic/backend/rate-limit');
-          clientIp = getClientIp(hdrs);
-        } catch {
-          // Fallback if headers context is unavailable
-        }
-
-        const normalizedEmail = credentials.email.toLowerCase().trim();
-        // Rate limit and lockout keyed by ip:email to prevent account lockout DoS (AUD-27)
-        const lockoutKey = `host_login:${clientIp}:${normalizedEmail}`;
-
-        // Verify temporal lockout
-        const lockout = checkLockout(lockoutKey);
-        if (lockout.isLocked) {
-          throw new Error(`Acceso bloqueado por demasiados intentos fallidos. Reintenta en ${lockout.remainingSec} segundos.`);
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (!user) {
-          recordFailedAttempt(lockoutKey, 5, 900);
-          return null;
-        }
-
-        const passwordValid = await bcrypt.compare(credentials.password, user.password_hash);
-        if (!passwordValid) {
-          const attempt = recordFailedAttempt(lockoutKey, 5, 900);
-          if (attempt.isLocked) {
-            throw new Error('Demasiados intentos fallidos. Acceso bloqueado temporalmente por 15 minutos.');
-          }
-          return null;
-        }
-
-        // Authentication succeeded: clear lockout counter
-        resetFailedAttempts(lockoutKey);
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
+        // Credential check, rate limit and lockout live in the backend
+        return authenticateHost(requestContext(), credentials.email, credentials.password);
       },
     }),
   ],
