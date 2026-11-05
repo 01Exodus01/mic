@@ -5,7 +5,6 @@
  */
 
 import { z } from 'zod';
-import { AggregationMethod } from '@prisma/client';
 
 /**
  * Fixed methodology constant: minimum participants required to compute consensus.
@@ -254,6 +253,9 @@ export const OptionItemSchema = z.object({
 // 8. Creación de Nueva Sala
 // ─────────────────────────────────────────────
 
+/** Aggregation methods a new room can use (E-12). */
+export const CREATABLE_METHODS = ['BORDA', 'SCHULZE'] as const;
+
 export const CreateRoomSchema = z
   .object({
     title: z
@@ -266,9 +268,10 @@ export const CreateRoomSchema = z
           .min(5, 'Mínimo 5 caracteres.')
           .max(100, 'Máximo 100 caracteres.')
       ),
-    method: z.nativeEnum(AggregationMethod, {
-      required_error: 'Selecciona una regla de decisión colectiva.',
-      invalid_type_error: 'Selecciona una regla de decisión colectiva.',
+    // E-12: new rooms use Borda or Schulze (Kemeny-Young stays only for older rooms)
+    method: z.enum(CREATABLE_METHODS, {
+      // Missing, wrong type or a method new rooms cannot use: same message
+      errorMap: () => ({ message: 'Selecciona una regla de decisión colectiva.' }),
     }),
     maxMembers: z
       .number({
@@ -316,24 +319,17 @@ export const CreateRoomSchema = z
 export type CreateRoomParsedInput = z.infer<typeof CreateRoomSchema>;
 
 /**
- * Tie-break rule and concordance variant (PT-16, PT-17). "Sin empates" is only
- * valid when a tie-break rule makes the group order strict.
+ * Tie-break and concordance of every new room (AGENTS.md E-12): not
+ * configurable. Ties of the group order are always broken by pairwise majority
+ * in the round, then by option title, so agreement is measured without ties.
+ * Rooms created before keep the rule and variant stored with them.
  */
-export const RoomAnalysisSchema = z
-  .object({
-    tieBreakRule: z.enum(['NONE', 'LEXICOGRAPHIC', 'REASON_BALANCE'], {
-      invalid_type_error: 'Elige una regla de desempate válida.',
-    }).default('NONE'),
-    concordanceVariant: z.enum(['WITH_TIES', 'WITHOUT_TIES'], {
-      invalid_type_error: 'Elige una forma válida de medir el acuerdo.',
-    }).default('WITH_TIES'),
-  })
-  .refine((v) => !(v.concordanceVariant === 'WITHOUT_TIES' && v.tieBreakRule === 'NONE'), {
-    message: 'Para medir el acuerdo sin empates, elige una regla de desempate.',
-    path: ['concordanceVariant'],
-  });
+export const FIXED_TIE_BREAK_RULE = 'PAIRWISE_MAJORITY' as const;
+export const FIXED_CONCORDANCE_VARIANT = 'WITHOUT_TIES' as const;
 
-export type RoomAnalysisInput = z.infer<typeof RoomAnalysisSchema>;
+/** Every rule and variant a stored room can have (older rooms included). */
+export type TieBreakRuleValue = 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE' | 'PAIRWISE_MAJORITY';
+export type ConcordanceVariantValue = 'WITH_TIES' | 'WITHOUT_TIES';
 
 export const CONSENT_TEXT_MIN = 20;
 export const CONSENT_TEXT_MAX = 4000;
@@ -345,12 +341,7 @@ export const CONSENT_TEXT_MAX = 4000;
  */
 export const RoomSettingsSchema = z
   .object({
-    tieBreakRule: z.enum(['NONE', 'LEXICOGRAPHIC', 'REASON_BALANCE'], {
-      invalid_type_error: 'Elige una regla de desempate válida.',
-    }).default('NONE'),
-    concordanceVariant: z.enum(['WITH_TIES', 'WITHOUT_TIES'], {
-      invalid_type_error: 'Elige una forma válida de medir el acuerdo.',
-    }).default('WITH_TIES'),
+    // Tie-break and concordance are fixed (E-12): any value sent is ignored
     accessMode: z.enum(['OPEN_PIN', 'ROSTER'], {
       invalid_type_error: 'Elige una forma de ingreso válida.',
     }).default('OPEN_PIN'),
@@ -362,10 +353,6 @@ export const RoomSettingsSchema = z
       .string({ invalid_type_error: 'El texto del consentimiento no es válido.' })
       .optional()
       .transform((v) => (v ? sanitizeText(v) : '')),
-  })
-  .refine((v) => !(v.concordanceVariant === 'WITHOUT_TIES' && v.tieBreakRule === 'NONE'), {
-    message: 'Para medir el acuerdo sin empates, elige una regla de desempate.',
-    path: ['concordanceVariant'],
   })
   .refine((v) => !v.consentRequired || getUnicodeLength(v.consentText) >= CONSENT_TEXT_MIN, {
     message: `Escribe el texto del consentimiento (mínimo ${CONSENT_TEXT_MIN} caracteres).`,

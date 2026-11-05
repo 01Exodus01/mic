@@ -32,6 +32,10 @@ const ALGORITHMS_FINGERPRINTS: Record<string, string[]> = {
     // P0.4: seeded random last-resort order for REASON_BALANCE
     'ab7f7b921ef856e003c900566e7d4f78109d668911c1a599b2312420596a9476',
   ],
+  'r-fast-cr-4': [
+    // E-12: PAIRWISE_MAJORITY tie-break (pairwise majority, then option title)
+    'fc45e22cea6334d3552964b031f6476af199e29a2464172fc0fbb45523c40143',
+  ],
 };
 
 function algorithmsFingerprint(): string {

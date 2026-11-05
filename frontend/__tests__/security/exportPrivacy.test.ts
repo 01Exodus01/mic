@@ -69,7 +69,7 @@ describe.skipIf(!hasTestDb)('PT-26: exportes (PostgreSQL)', () => {
 
   beforeAll(async () => {
     prisma = new PrismaClient({ datasources: { db: { url: TEST_DB_URL } } });
-    fx = await createRoomFixture(prisma, { participants: 4, room: { tau_threshold: 0.99, access_mode: 'ROSTER', tie_break_rule: 'LEXICOGRAPHIC' } });
+    fx = await createRoomFixture(prisma, { participants: 4, room: { tau_threshold: 0.99, access_mode: 'ROSTER', tie_break_rule: 'LEXICOGRAPHIC', concordance_variant: 'WITH_TIES' } });
     state.hostId = fx.hostId;
     // Roster labels and nicknames that must never appear in any CSV
     for (let i = 0; i < 4; i++) {

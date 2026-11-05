@@ -38,10 +38,8 @@ describe('PT-18: esquema de opciones de sala', () => {
     expect(RoomSettingsSchema.parse({})).toEqual(DEFAULT_ROOM_SETTINGS);
   });
 
-  it('rechaza combinaciones inválidas con un mensaje claro', () => {
-    const res = RoomSettingsSchema.safeParse({ tieBreakRule: 'NONE', concordanceVariant: 'WITHOUT_TIES' });
-    expect(res.success).toBe(false);
-    if (!res.success) expect(res.error.errors[0]?.message).toBe('Para medir el acuerdo sin empates, elige una regla de desempate.');
+  it('rechaza valores inválidos; regla de desempate y variante ya no se eligen (E-12)', () => {
+    expect(RoomSettingsSchema.parse({ tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' })).toEqual(DEFAULT_ROOM_SETTINGS);
     expect(RoomSettingsSchema.safeParse({ accessMode: 'OTRO' }).success).toBe(false);
     expect(RoomSettingsSchema.safeParse({ allowLateJoin: 'sí' }).success).toBe(false);
   });
@@ -52,17 +50,27 @@ describe('PT-18: componentes', () => {
     const html = renderToStaticMarkup(<RoomAdvancedSettings value={DEFAULT_ROOM_SETTINGS} onChange={() => undefined} />);
     expect(html).toContain('<details');
     expect(html).toContain('Opciones avanzadas');
-    expect(html).toContain('Mantener los empates');
+    // E-12: no tie-break or variant choice; the fixed cascade is explained
+    expect(html).not.toContain('name="tieBreakRule"');
+    expect(html).not.toContain('name="concordanceVariant"');
+    expect(html).toContain('por mayoría entre las opciones');
+    expect(html).toContain('orden alfabético del título');
     expect(html).toContain('Solo personas de una lista');
     expect(html).toContain('Cerrar la ronda en cuanto voten todos');
     for (const banned of ['τ', 'tau', 'cohorte', 'Kendall', 'mid-rank', 'quórum']) {
       expect(html.toLowerCase()).not.toContain(banned.toLowerCase());
     }
-    // "Sin empates" is disabled while no tie-break rule is chosen
-    expect(html).toMatch(/<input[^>]*disabled=""[^>]*value="WITHOUT_TIES"/);
   });
 
-  it('el resumen de solo lectura muestra la configuración', () => {
+  it('el resumen de una sala nueva muestra el desempate fijo', () => {
+    const html = renderToStaticMarkup(
+      <RoomSettingsSummary room={{ tie_break_rule: 'PAIRWISE_MAJORITY', concordance_variant: 'WITHOUT_TIES', access_mode: 'OPEN_PIN' }} />
+    );
+    expect(html).toContain('Desempate por mayoría entre las opciones empatadas');
+    expect(html).toContain('Sin empates');
+  });
+
+  it('el resumen de solo lectura muestra la configuración de una sala anterior', () => {
     const html = renderToStaticMarkup(
       <RoomSettingsSummary room={{ tie_break_rule: 'REASON_BALANCE', concordance_variant: 'WITHOUT_TIES', access_mode: 'ROSTER', allow_late_join: true, close_when_all_voted: true }} />
     );
@@ -90,15 +98,15 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
     await prisma.$disconnect();
   });
 
-  it('sin opciones avanzadas la sala queda como antes', async () => {
+  it('toda sala nueva desempata por mayoría y mide sin empates', async () => {
     const { createRoom } = await import('@/app/actions/room');
     const res = await createRoom(baseInput);
     expect(res.success).toBe(true);
     if (!res.success || !res.data) throw new Error('createRoom failed');
     const room = await prisma.room.findUnique({ where: { id: res.data.salaId } });
     expect(room).toMatchObject({
-      tie_break_rule: 'NONE',
-      concordance_variant: 'WITH_TIES',
+      tie_break_rule: 'PAIRWISE_MAJORITY',
+      concordance_variant: 'WITHOUT_TIES',
       access_mode: 'OPEN_PIN',
       allow_late_join: false,
       close_when_all_voted: false,
@@ -110,13 +118,13 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
     const { createRoom } = await import('@/app/actions/room');
     const res = await createRoom({
       ...baseInput,
-      settings: { tieBreakRule: 'LEXICOGRAPHIC', concordanceVariant: 'WITHOUT_TIES', accessMode: 'ROSTER', allowLateJoin: true, closeWhenAllVoted: true },
+      settings: { accessMode: 'ROSTER', allowLateJoin: true, closeWhenAllVoted: true },
     });
     expect(res.success).toBe(true);
     if (!res.success || !res.data) throw new Error('createRoom failed');
     const room = await prisma.room.findUnique({ where: { id: res.data.salaId } });
     expect(room).toMatchObject({
-      tie_break_rule: 'LEXICOGRAPHIC',
+      tie_break_rule: 'PAIRWISE_MAJORITY',
       concordance_variant: 'WITHOUT_TIES',
       access_mode: 'ROSTER',
       allow_late_join: true,
@@ -124,11 +132,21 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
     });
   });
 
-  it('rechaza en el servidor la combinación inválida y no crea la sala', async () => {
+  it('el servidor ignora una regla o variante enviada por el cliente', async () => {
+    const { createRoom } = await import('@/app/actions/room');
+    const forged = { ...baseInput, settings: { tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' } } as unknown as Parameters<typeof createRoom>[0];
+    const res = await createRoom(forged);
+    expect(res.success).toBe(true);
+    if (!res.success || !res.data) throw new Error('createRoom failed');
+    const room = await prisma.room.findUnique({ where: { id: res.data.salaId } });
+    expect(room).toMatchObject({ tie_break_rule: 'PAIRWISE_MAJORITY', concordance_variant: 'WITHOUT_TIES' });
+  });
+
+  it('una sala nueva no puede usar Kemeny-Young', async () => {
     const { createRoom } = await import('@/app/actions/room');
     const before = await prisma.room.count({ where: { host_id: hostId } });
-    const res = await createRoom({ ...baseInput, settings: { tieBreakRule: 'NONE', concordanceVariant: 'WITHOUT_TIES' } });
-    expect(res).toMatchObject({ success: false, error: 'Para medir el acuerdo sin empates, elige una regla de desempate.' });
+    const res = await createRoom({ ...baseInput, method: 'KEMENY_YOUNG' } as unknown as Parameters<typeof createRoom>[0]);
+    expect(res).toMatchObject({ success: false, error: 'Selecciona una regla de decisión colectiva.' });
     expect(await prisma.room.count({ where: { host_id: hostId } })).toBe(before);
   });
 

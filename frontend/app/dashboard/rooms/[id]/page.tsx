@@ -826,7 +826,7 @@ export default function RoomHostPage() {
               {sala.method}
             </div>
             <p className="font-sans text-[11px] text-[#5A554E] pt-1">
-              El nivel de acuerdo mide la concordancia entre los participantes considerando empates y posiciones promedio.
+              El nivel de acuerdo compara el orden de cada participante con el orden del grupo, ya sin empates.
             </p>
           </div>
         </details>

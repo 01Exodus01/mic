@@ -24,15 +24,17 @@ export type EstadoSala = RoomStatus;
 
 /**
  * Version of the computation procedure stored in every round report (PT-29).
- * Raise it whenever the computation changes (lib/algorithms, what counts as a
- * ballot, tie-break or concordance handling). __tests__/integration/
- * procedureVersion.test.ts fails if lib/algorithms changes without a new version.
+ * Raise it whenever the computation changes (backend/src/algorithms, what counts
+ * as a ballot, tie-break or concordance handling). backend/__tests__/integration/
+ * procedureVersion.test.ts fails if the algorithms change without a new version.
  *   r-fast-cr-1: reports before PT-29 (no __procedure key)
  *   r-fast-cr-2: declared tie-break, concordance variant, expelled ballots excluded
  *   r-fast-cr-3: REASON_BALANCE resolves remaining ties with a seeded random order
  *                (seed stored in __tieBreak.seed) instead of the host's list order
+ *   r-fast-cr-4: PAIRWISE_MAJORITY tie-break (pairwise majority among the tied
+ *                options in the round, then option title), fixed for new rooms
  */
-export const PROCEDURE_VERSION = 'r-fast-cr-3';
+export const PROCEDURE_VERSION = 'r-fast-cr-4';
 
 export type BlindArgumentItem = BlindArgumentEntry;
 export type BlindArgumentsByOption = BlindArgumentsMap;
@@ -242,6 +244,11 @@ export async function processRoundConsensus(
         reasonBalance: room.tie_break_rule === 'REASON_BALANCE' ? reasonBalanceOf(reasonsByOption) : undefined,
         // P0.4: last-resort random order, reproducible from the stored seed
         seed: room.tie_break_rule === 'REASON_BALANCE' ? randomInt(0, 2 ** 32 - 1) : undefined,
+        // E-12: pairwise majority on the counted ballots (the engine adds them), then title
+        optionTitles:
+          room.tie_break_rule === 'PAIRWISE_MAJORITY'
+            ? Object.fromEntries(room.options.map((o) => [o.id, o.title]))
+            : undefined,
       },
       concordanceVariant: room.concordance_variant,
     });

@@ -3,17 +3,16 @@
 /**
  * components/RoomAdvancedSettings.tsx
  * Advanced room options at creation (PT-18) and their read-only summary for the
- * host panel. Defaults reproduce the behaviour before these options existed.
+ * host panel. Tie-break and concordance are fixed for new rooms (AGENTS.md
+ * E-12); the labels below also describe the rules of rooms created before.
  */
 
 import React from 'react';
-import type { RoomSettings } from '@mic/backend/shared/validations';
+import type { ConcordanceVariantValue, RoomSettings, TieBreakRuleValue } from '@mic/backend/shared/validations';
 
 export type RoomSettingsValue = RoomSettings;
 
 export const DEFAULT_ROOM_SETTINGS: RoomSettingsValue = {
-  tieBreakRule: 'NONE',
-  concordanceVariant: 'WITH_TIES',
   accessMode: 'OPEN_PIN',
   allowLateJoin: false,
   closeWhenAllVoted: false,
@@ -21,9 +20,13 @@ export const DEFAULT_ROOM_SETTINGS: RoomSettingsValue = {
   consentText: '',
 };
 
-export const TIE_BREAK_LABELS: Record<RoomSettingsValue['tieBreakRule'], { name: string; help: string }> = {
+export const TIE_BREAK_LABELS: Record<TieBreakRuleValue, { name: string; help: string }> = {
+  PAIRWISE_MAJORITY: {
+    name: 'Desempate por mayoría entre las opciones empatadas',
+    help: 'Entre opciones empatadas, va primero la que más participantes pusieron antes que la otra en esta ronda. Si siguen igualadas, decide el orden alfabético del título.',
+  },
   NONE: {
-    name: 'Mantener los empates',
+    name: 'Mantener los empates (salas anteriores)',
     help: 'Si dos opciones quedan igualadas, se muestran empatadas.',
   },
   LEXICOGRAPHIC: {
@@ -36,7 +39,7 @@ export const TIE_BREAK_LABELS: Record<RoomSettingsValue['tieBreakRule'], { name:
   },
 };
 
-export const VARIANT_LABELS: Record<RoomSettingsValue['concordanceVariant'], { name: string; help: string }> = {
+export const VARIANT_LABELS: Record<ConcordanceVariantValue, { name: string; help: string }> = {
   WITH_TIES: {
     name: 'Con empates',
     help: 'El nivel de acuerdo admite opciones empatadas en el orden del grupo.',
@@ -115,7 +118,6 @@ function RadioGroup<K extends string>({
 
 export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdvancedSettingsProps) {
   const set = <K extends keyof RoomSettingsValue>(key: K, v: RoomSettingsValue[K]) => onChange({ ...value, [key]: v });
-  const variantNeedsRule = value.tieBreakRule === 'NONE';
 
   return (
     <details className="rounded-[6px] border border-[#D9D5CC] bg-white">
@@ -126,36 +128,23 @@ export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdv
         </span>
       </summary>
       <div className="px-4 pb-4 pt-1 space-y-5">
-        <RadioGroup
-          name="tieBreakRule"
-          legend="Empates en el orden del grupo"
-          options={TIE_BREAK_LABELS}
-          selected={value.tieBreakRule}
-          onSelect={(k) => set('tieBreakRule', k)}
-        />
-        <div className="space-y-1">
-          <RadioGroup
-            name="concordanceVariant"
-            legend="Cómo se mide el nivel de acuerdo"
-            options={VARIANT_LABELS}
-            selected={value.concordanceVariant}
-            onSelect={(k) => set('concordanceVariant', k)}
-            disabledKeys={variantNeedsRule && value.concordanceVariant !== 'WITHOUT_TIES' ? ['WITHOUT_TIES'] : []}
-            errorId={error ? 'settings-variant-error' : undefined}
-          />
-          {error && (
-            <p id="settings-variant-error" role="alert" className="text-xs text-[#B42318]">
-              {error}
-            </p>
-          )}
-        </div>
+        <p className="text-xs text-[#5A554E] leading-relaxed">
+          Los empates del orden del grupo se resuelven siempre igual: primero por mayoría entre las opciones
+          empatadas en la ronda y, si siguen igualadas, por el orden alfabético del título.
+        </p>
         <RadioGroup
           name="accessMode"
           legend="Ingreso de participantes"
           options={ACCESS_LABELS}
           selected={value.accessMode}
           onSelect={(k) => set('accessMode', k)}
+          errorId={error ? 'settings-error' : undefined}
         />
+        {error && (
+          <p id="settings-error" role="alert" className="text-xs text-[#B42318]">
+            {error}
+          </p>
+        )}
         <label className="flex items-start gap-3 text-xs cursor-pointer">
           <input
             type="checkbox"
@@ -194,8 +183,8 @@ export function RoomSettingsSummary({
   room,
 }: {
   room: {
-    tie_break_rule?: RoomSettingsValue['tieBreakRule'];
-    concordance_variant?: RoomSettingsValue['concordanceVariant'];
+    tie_break_rule?: TieBreakRuleValue;
+    concordance_variant?: ConcordanceVariantValue;
     access_mode?: RoomSettingsValue['accessMode'];
     allow_late_join?: boolean;
     close_when_all_voted?: boolean;

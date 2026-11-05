@@ -10,6 +10,19 @@
  *                   example, no reasons at all) are ordered by a seeded random
  *                   permutation. The seed is stored in the report, so the same
  *                   seed reproduces the same ranking (plan de mejora P0.4).
+ * PAIRWISE_MAJORITY → fixed cascade for every room since r-fast-cr-4
+ *                   (AGENTS.md E-12):
+ *                   1. pairwise majority in the current round: within the tied
+ *                      group, an option beats another when more counted
+ *                      ballots ranked it above the other. Options are ordered
+ *                      by how many of the other tied options they beat
+ *                      (Copeland score inside the group); options with the
+ *                      same score are ordered again with the same rule among
+ *                      themselves only;
+ *                   2. lexicographic order of the option title, only when the
+ *                      pairwise majority leaves them tied (equal head to head,
+ *                      or a cycle). Titles compare ignoring case and accents
+ *                      (Spanish collation), then exactly, then by option id.
  *
  * With a rule other than NONE the result is a strict order: each tied group
  * that occupied positions [start..end] gets start, start+1, ..., end.
@@ -18,7 +31,7 @@
 
 import type { WeakOrder } from './types';
 
-export type TieBreakRule = 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
+export type TieBreakRule = 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE' | 'PAIRWISE_MAJORITY';
 
 export interface TieBreakInput {
   rule: TieBreakRule;
@@ -28,6 +41,10 @@ export interface TieBreakInput {
   reasonBalance?: Record<string, number>;
   /** 32-bit seed for the last-resort random order; required for REASON_BALANCE */
   seed?: number;
+  /** Counted ballots of the round (option id → position); required for PAIRWISE_MAJORITY */
+  ballots?: Array<Map<string, number>>;
+  /** Option titles; required for PAIRWISE_MAJORITY (last step of the cascade) */
+  optionTitles?: Record<string, string>;
 }
 
 export interface TieBreakReport {
@@ -36,7 +53,8 @@ export interface TieBreakReport {
   applied: boolean;
   /** Groups of option ids that were tied before the rule (in host order) */
   tiedGroups: string[][];
-  /** True when the seeded random order decided at least one remaining tie */
+  /** True when the last step decided at least one remaining tie: the seeded
+   * random order (REASON_BALANCE) or the option title (PAIRWISE_MAJORITY) */
   fallbackUsed?: boolean;
   /** Seed used for the last-resort random order (REASON_BALANCE only) */
   seed?: number;
@@ -65,6 +83,52 @@ function seededShuffle<T extends { id: string }>(items: T[], rand: () => number)
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
+}
+
+/** Title order: Spanish collation ignoring case and accents, then exact, then id. */
+function titleOrder(titles: Record<string, string>) {
+  return (a: string, b: string): number => {
+    const ta = titles[a] ?? '';
+    const tb = titles[b] ?? '';
+    return ta.localeCompare(tb, 'es', { sensitivity: 'base' }) || (ta < tb ? -1 : ta > tb ? 1 : 0) || a.localeCompare(b);
+  };
+}
+
+/**
+ * PAIRWISE_MAJORITY on one tied group: Copeland score inside the group, the
+ * options with equal score ordered again among themselves, and the title when
+ * the majority no longer separates them. Returns the ids in order and whether
+ * the title had to decide.
+ */
+function pairwiseMajorityOrder(
+  ids: string[],
+  ballots: Array<Map<string, number>>,
+  byTitle: (a: string, b: string) => number
+): { order: string[]; titleUsed: boolean } {
+  if (ids.length < 2) return { order: [...ids], titleUsed: false };
+  const prefers = (a: string, b: string) =>
+    ballots.reduce((n, ballot) => n + ((ballot.get(a) ?? Infinity) < (ballot.get(b) ?? Infinity) ? 1 : 0), 0);
+  const wins = new Map(ids.map((id) => [id, 0]));
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const ab = prefers(ids[i], ids[j]);
+      const ba = prefers(ids[j], ids[i]);
+      if (ab > ba) wins.set(ids[i], wins.get(ids[i])! + 1);
+      else if (ba > ab) wins.set(ids[j], wins.get(ids[j])! + 1);
+    }
+  }
+  const scores = [...new Set(wins.values())].sort((a, b) => b - a);
+  // The majority does not separate any of them (all tied head to head, or a cycle)
+  if (scores.length === 1) return { order: [...ids].sort(byTitle), titleUsed: true };
+  const order: string[] = [];
+  let titleUsed = false;
+  for (const score of scores) {
+    const sub = ids.filter((id) => wins.get(id) === score);
+    const res = pairwiseMajorityOrder(sub, ballots, byTitle);
+    order.push(...res.order);
+    titleUsed ||= res.titleUsed;
+  }
+  return { order, titleUsed };
 }
 
 /** Groups of ids sharing the same mid-rank, each group with more than one id. */
@@ -97,6 +161,9 @@ export function applyTieBreak(
   if (input.rule === 'REASON_BALANCE' && (!input.reasonBalance || input.seed === undefined)) {
     throw new Error('REASON_BALANCE tie-break requires reasonBalance and seed.');
   }
+  if (input.rule === 'PAIRWISE_MAJORITY' && (!input.ballots || !input.optionTitles)) {
+    throw new Error('PAIRWISE_MAJORITY tie-break requires ballots and optionTitles.');
+  }
 
   const weakOrder = ranking.map((r) => ({ id: r.id, midRank: r.midRank }));
   const orderIndex = new Map(input.optionOrder.map((id, i) => [id, i]));
@@ -117,6 +184,15 @@ export function applyTieBreak(
       ordered.push(group[0]);
     } else if (input.rule === 'LEXICOGRAPHIC') {
       ordered.push(...[...group].sort(hostOrder));
+    } else if (input.rule === 'PAIRWISE_MAJORITY') {
+      const byId = new Map(group.map((g) => [g.id, g]));
+      const res = pairwiseMajorityOrder(
+        group.map((g) => g.id).sort(),
+        input.ballots!,
+        titleOrder(input.optionTitles!)
+      );
+      if (res.titleUsed) fallbackUsed = true;
+      ordered.push(...res.order.map((id) => byId.get(id)!));
     } else {
       // REASON_BALANCE: higher balance first; equal balances by the seeded random order
       const balances = [...new Set(group.map((g) => balance(g.id)))].sort((a, b) => b - a);
@@ -135,5 +211,6 @@ export function applyTieBreak(
     report.seed = input.seed;
     report.fallbackUsed = fallbackUsed;
   }
+  if (input.rule === 'PAIRWISE_MAJORITY') report.fallbackUsed = fallbackUsed;
   return { ranking: strict, report };
 }

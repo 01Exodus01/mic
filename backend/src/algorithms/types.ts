@@ -49,7 +49,7 @@ export interface RoundResult {
   concordanceVariant?: 'WITH_TIES' | 'WITHOUT_TIES';
   /** Present only when the caller declared a tie-break rule (PT-16) */
   tieBreak?: {
-    rule: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
+    rule: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE' | 'PAIRWISE_MAJORITY';
     applied: boolean;
     tiedGroups: string[][];
     fallbackUsed?: boolean;

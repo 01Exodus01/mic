@@ -249,7 +249,7 @@ import {
   isStrictRanking,
 } from '@mic/backend/algorithms/kendallTau';
 import { runAggregationEngine as engineRun } from '@mic/backend/algorithms/engine';
-import { RoomAnalysisSchema } from '@mic/backend/shared/validations';
+import { RoomSettingsSchema, FIXED_TIE_BREAK_RULE, FIXED_CONCORDANCE_VARIANT } from '@mic/backend/shared/validations';
 
 function strictOrder(ids: string[]) {
   return ids.map((id, i) => ({ id, midRank: i + 1, score: 0 }));
@@ -359,10 +359,12 @@ describe('PT-17: Kendall estándar sobre un orden del grupo estricto', () => {
     expect(ok.result!.tauStar).toBe(tauB.result!.tauStar);
   });
 
-  it('crear una sala "sin empates" con la regla "ninguna" se rechaza', () => {
-    expect(RoomAnalysisSchema.safeParse({ tieBreakRule: 'NONE', concordanceVariant: 'WITHOUT_TIES' }).success).toBe(false);
-    expect(RoomAnalysisSchema.safeParse({ tieBreakRule: 'LEXICOGRAPHIC', concordanceVariant: 'WITHOUT_TIES' }).success).toBe(true);
-    expect(RoomAnalysisSchema.parse({})).toEqual({ tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' });
+  it('E-12: las salas nuevas no eligen regla ni variante; lo que llegue se ignora', () => {
+    expect(FIXED_TIE_BREAK_RULE).toBe('PAIRWISE_MAJORITY');
+    expect(FIXED_CONCORDANCE_VARIANT).toBe('WITHOUT_TIES');
+    const parsed = RoomSettingsSchema.parse({ tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' });
+    expect(parsed).not.toHaveProperty('tieBreakRule');
+    expect(parsed).not.toHaveProperty('concordanceVariant');
   });
 });
 

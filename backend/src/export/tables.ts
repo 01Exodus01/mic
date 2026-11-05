@@ -157,7 +157,7 @@ export function roomsTable(ds: ExportDataset): CsvTable {
       r.method,
       r.concordance_variant,
       r.tie_break_rule,
-      r.tie_break_rule === 'REASON_BALANCE' ? 'SEEDED_RANDOM' : '',
+      r.tie_break_rule === 'REASON_BALANCE' ? 'SEEDED_RANDOM' : r.tie_break_rule === 'PAIRWISE_MAJORITY' ? 'TITLE' : '',
       metric(r.tau_threshold),
       r.max_rounds,
       r.allow_late_join ? 'ALLOWED' : 'CLOSED_COHORT',
@@ -426,6 +426,7 @@ function tieResolvedBy(ds: ExportDataset, report: ExportReport): string {
   const tb = extras(report).tieBreak;
   if (!tb?.tiedGroups?.length) return '';
   if (!tb.applied || tb.rule === 'NONE') return 'NONE';
+  if (tb.rule === 'PAIRWISE_MAJORITY') return tb.fallbackUsed ? 'PAIRWISE_MAJORITY+TITLE' : 'PAIRWISE_MAJORITY';
   if (tb.rule === 'LEXICOGRAPHIC') return 'LEXICOGRAPHIC';
   if (tb.seed !== undefined) return tb.fallbackUsed ? 'REASON_BALANCE+SEEDED_RANDOM' : 'REASON_BALANCE';
   // Before r-fast-cr-3 the remaining ties after the balance followed the host's list order

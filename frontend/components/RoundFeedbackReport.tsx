@@ -40,6 +40,7 @@ export interface FeedbackReportData {
 }
 
 const TIE_BREAK_NOTE: Record<string, string> = {
+  PAIRWISE_MAJORITY: 'Hubo empates y se desempataron por mayoría: va primero la opción que más participantes pusieron antes que la otra.',
   LEXICOGRAPHIC: 'Hubo empates y se desempataron por el orden de la lista de opciones.',
   REASON_BALANCE: 'Hubo empates y se desempataron por las razones (más a favor que en contra).',
 };
@@ -142,7 +143,7 @@ export default function RoundFeedbackReport({
   );
   const own = report.myConcordance;
   const tieNote = report.tieBreak?.applied
-    ? `${TIE_BREAK_NOTE[report.tieBreak.rule] ?? ''}${report.tieBreak.fallbackUsed ? ' Las que seguían igualadas se ordenaron por sorteo.' : ''}`.trim() || undefined
+    ? `${TIE_BREAK_NOTE[report.tieBreak.rule] ?? ''}${report.tieBreak.fallbackUsed ? (report.tieBreak.rule === 'PAIRWISE_MAJORITY' ? ' Las que seguían igualadas se ordenaron por el título.' : ' Las que seguían igualadas se ordenaron por sorteo.') : ''}`.trim() || undefined
     : undefined;
 
   return (

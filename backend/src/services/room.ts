@@ -26,6 +26,8 @@ import {
   MIN_PARTICIPANTS,
   RoomSettingsSchema,
   RoomMemberLabelSchema,
+  FIXED_TIE_BREAK_RULE,
+  FIXED_CONCORDANCE_VARIANT,
   type RoomSettingsInput,
 } from '@mic/backend/shared/validations';
 import type { ActionResult } from '@mic/backend/shared/actions';
@@ -180,8 +182,9 @@ export async function createRoom(ctx: RequestContext, input: CreateRoomInput): P
         max_members: valid.maxMembers,
         tau_threshold: valid.tauThreshold,
         max_rounds: valid.maxRounds,
-        tie_break_rule: settings.tieBreakRule,
-        concordance_variant: settings.concordanceVariant,
+        // E-12: fixed for every new room, never taken from the request
+        tie_break_rule: FIXED_TIE_BREAK_RULE,
+        concordance_variant: FIXED_CONCORDANCE_VARIANT,
         access_mode: settings.accessMode,
         allow_late_join: settings.allowLateJoin,
         close_when_all_voted: settings.closeWhenAllVoted,

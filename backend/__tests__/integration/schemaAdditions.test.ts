@@ -129,8 +129,9 @@ describe('PT-08: configuración por sala, lista y consentimiento', () => {
     expect(room).toMatch(/allow_late_join\s+Boolean\s+@default\(false\)/);
     expect(room).toMatch(/consent_required\s+Boolean\s+@default\(false\)/);
     expect(room).toMatch(/close_when_all_voted\s+Boolean\s+@default\(false\)/);
-    expect(room).toMatch(/tie_break_rule\s+TieBreakRule\s+@default\(NONE\)/);
-    expect(room).toMatch(/concordance_variant\s+ConcordanceVariant\s+@default\(WITH_TIES\)/);
+    // E-12: every new room breaks ties (pairwise majority, then title) and measures without ties
+    expect(room).toMatch(/tie_break_rule\s+TieBreakRule\s+@default\(PAIRWISE_MAJORITY\)/);
+    expect(room).toMatch(/concordance_variant\s+ConcordanceVariant\s+@default\(WITHOUT_TIES\)/);
     expect(modelBlock('Participant')).toMatch(/joined_round\s+Int\s+@default\(1\)/);
   });
 
@@ -143,7 +144,7 @@ describe('PT-08: configuración por sala, lista y consentimiento', () => {
 });
 
 describe.skipIf(!dbUrl)('PT-08: valores por defecto en la base (PostgreSQL)', () => {
-  it('una sala creada sin configuración queda abierta, cerrada a tardíos, sin consentimiento ni desempate', async () => {
+  it('una sala creada sin configuración queda abierta, cerrada a tardíos, sin consentimiento y con el desempate fijo', async () => {
     const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
     const suffix = (Date.now() + 1).toString(36);
     try {
@@ -159,8 +160,8 @@ describe.skipIf(!dbUrl)('PT-08: valores por defecto en la base (PostgreSQL)', ()
         consent_required: false,
         consent_text: null,
         close_when_all_voted: false,
-        tie_break_rule: 'NONE',
-        concordance_variant: 'WITH_TIES',
+        tie_break_rule: 'PAIRWISE_MAJORITY',
+        concordance_variant: 'WITHOUT_TIES',
       });
       const participant = await prisma.participant.create({
         data: { room_id: room.id, nickname: 'Ana', pin_hash: 'x', blind_code: 'Participante 01' },

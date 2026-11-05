@@ -34,6 +34,7 @@ enum TieBreakRule {
   NONE
   LEXICOGRAPHIC
   REASON_BALANCE
+  PAIRWISE_MAJORITY
 }
 
 enum ConcordanceVariant {
@@ -83,8 +84,8 @@ model Room {
   consent_text         String?            @db.VarChar(4000)
   consent_version      Int                @default(1)
   close_when_all_voted Boolean            @default(false)
-  tie_break_rule       TieBreakRule       @default(NONE)
-  concordance_variant  ConcordanceVariant @default(WITH_TIES)
+  tie_break_rule       TieBreakRule       @default(PAIRWISE_MAJORITY)
+  concordance_variant  ConcordanceVariant @default(WITHOUT_TIES)
 
   options       Option[]
   participants  Participant[]

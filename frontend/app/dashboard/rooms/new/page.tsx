@@ -841,11 +841,6 @@ export default function NewRoomPage() {
                 name: 'Schulze',
                 desc: 'Schulze: compara las opciones por pares buscando la opción más respaldada.',
               },
-              {
-                id: 'KEMENY_YOUNG',
-                name: 'Kemeny-Young',
-                desc: 'Kemeny-Young: busca el orden colectivo con menor número de discrepancias globales.',
-              },
             ].map((m) => (
               <label
                 key={m.id}

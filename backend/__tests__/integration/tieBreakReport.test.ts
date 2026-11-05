@@ -57,7 +57,8 @@ describe.skipIf(!hasTestDb)('PT-16: regla de desempate en el informe (PostgreSQL
   });
 
   it('sin regla los empates se conservan como antes', async () => {
-    const fx = await createRoomFixture(prisma, { participants: 3 });
+    // A room created before E-12 with the rule "none" (still supported)
+    const fx = await createRoomFixture(prisma, { participants: 3, room: { tie_break_rule: 'NONE', concordance_variant: 'WITH_TIES' } });
     fixtures.push(fx);
     await cyclicVotes(fx);
     const { processRoundConsensus } = await import('@mic/backend/round-processor');

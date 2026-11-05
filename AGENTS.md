@@ -62,6 +62,8 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   Aprobación explícita vigente (enmienda E-5): regla de desempate declarada por
   sala y variante de concordancia (PT-16, PT-17) y limpieza de `kendallTauC.ts`
   (PT-33). Con la regla "ninguna" el resultado debe ser idéntico al actual.
+  Aprobación explícita del equipo (2026-11-05, enmienda E-12): regla de desempate
+  fija PAIRWISE_MAJORITY.
 - La BD solo cambia con migraciones de Prisma (nunca SQL manual directo).
   Mostrar el SQL antes de aplicar. Prohibido DROP de tablas con datos.
 - Las columnas de los CSV son un contrato con R/Python. Cambiarlas exige
@@ -84,18 +86,23 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   participantes tardíos, se puede ingresar o votar por primera vez en cualquier
   ronda abierta y queda registrada la ronda de ingreso. En ambos casos, sin
   arrastre de votos de rondas anteriores.
-- Desempate configurable por sala (enmienda E-1). Por defecto, regla "ninguna":
-  los empates del orden del grupo se conservan (rangos medios) y la concordancia
-  es tau-b. Solo si la sala declara una regla al crearse (lexicográfica por el
-  orden de las opciones, o saldo de razones a favor menos en contra; si con el
-  saldo sigue el empate, un sorteo con semilla guardada en el informe) se desempata,
-  y entonces el orden del grupo es estricto. Nunca se desempata de forma
-  arbitraria ni sin dejarlo registrado: el informe de ronda guarda qué grupos
-  estaban empatados y qué regla actuó.
-- Métrica por variante (enmienda E-2). Variante "con empates" (por defecto):
-  tau-b. Variante "sin empates": Kendall estándar, válida solo con una regla de
-  desempate distinta de "ninguna"; el informe guarda la variante usada. cix sigue
-  siendo (τ+1)/2.
+- Métodos de agregación de una sala nueva: Borda o Schulze (enmienda E-12).
+  Kemeny-Young queda solo para salas creadas antes.
+- Desempate siempre activo y no configurable (enmienda E-12, reemplaza a E-1 y
+  E-2 para salas nuevas). Cascada fija, igual para todas las salas:
+  1. mayoría pareada en la ronda actual: entre las opciones empatadas, va
+     primero la que más participantes pusieron antes que la otra en sus
+     selecciones de esta ronda (solo las que cuentan). Con tres o más empatadas,
+     se ordenan por cuántas de las otras empatadas le ganan (Copeland dentro del
+     grupo) y, entre las que siguen igualadas, se vuelve a aplicar la regla;
+  2. orden lexicográfico del título de la opción, solo si la mayoría pareada
+     también empata (empate cara a cara o ciclo). Se compara sin distinguir
+     mayúsculas ni tildes.
+  El orden del grupo siempre es estricto y el nivel de acuerdo se mide "sin
+  empates" (cix = (τ+1)/2). Nunca se desempata sin dejarlo registrado: el
+  informe guarda qué grupos estaban empatados, la regla y si decidió el título.
+  Las salas creadas antes conservan la regla y la variante con que se crearon
+  (E-1, E-2), y sus informes no cambian.
 - Consentimiento configurable por sala (enmienda E-4). Si se activa al crear la
   sala, el anfitrión escribe el texto (no hay texto legal por defecto), se
   muestra en el primer ingreso, hay que aceptarlo para votar (lo exige el
@@ -289,7 +296,7 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 | collective ranking | Orden del grupo |
 | tie (weak order) | Empatadas (ej. "1.º y 2.º empatadas") |
 | blind code | Participante 04 (solo donde sea anónimo para el grupo) |
-| Borda / Schulze / Kemeny | Nombre + una línea, ej. "Borda: suma puntos según la posición" |
+| Borda / Schulze | Nombre + una línea, ej. "Borda: suma puntos según la posición" |
 
 - "Faltan votos": "Votaron X de Y participantes. Se necesitan al menos 3 para
   calcular el resultado."
@@ -332,6 +339,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-9 | 2026-11-04 | Expulsar conserva los votos y los excluye del cálculo | No perder datos (PT-11) |
 | E-10 | 2026-11-04 | Cierre anticipado opcional cuando votan todos | Configurable por sala (PT-27) |
 | E-11 | 2026-11-05 | Frontend y backend en carpetas separadas (npm workspaces), con reglas de capas | Separar la lógica y los datos de la capa web; mismo comportamiento y mismas pruebas. Las rutas anteriores (`lib/…`, `app/…`) citadas en enmiendas e informes previos corresponden hoy a `backend/src/…` y `frontend/app/…` |
+| E-12 | 2026-11-05 | Solo Borda y Schulze en salas nuevas; desempate fijo (mayoría pareada en la ronda, luego título) y medición sin empates; sin opciones de desempate ni variante al crear la sala | Pedido del equipo; evita combinaciones redundantes ("desempatar" con "con empates" medía lo mismo). Procedimiento r-fast-cr-4 |
 
 ### Especificación en PDF superada
 

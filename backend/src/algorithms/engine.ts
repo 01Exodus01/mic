@@ -103,7 +103,11 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
   let tieBreakReport: RoundResult['tieBreak'];
   if (input.tieBreak) {
     if (input.tieBreak.rule !== 'NONE') {
-      const broken = applyTieBreak(ranking, input.tieBreak);
+      // PAIRWISE_MAJORITY compares the tied options on the counted ballots of the round
+      const broken = applyTieBreak(
+        ranking,
+        input.tieBreak.rule === 'PAIRWISE_MAJORITY' ? { ...input.tieBreak, ballots: ballotsArray } : input.tieBreak
+      );
       ranking = broken.ranking;
       tieBreakReport = broken.report;
     } else {
