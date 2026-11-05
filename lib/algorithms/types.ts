@@ -52,5 +52,8 @@ export interface RoundResult {
     rule: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
     applied: boolean;
     tiedGroups: string[][];
+    fallbackUsed?: boolean;
+    seed?: number;
+    weakOrder?: Array<{ id: string; midRank: number }>;
   };
 }

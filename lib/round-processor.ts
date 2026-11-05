@@ -11,6 +11,7 @@
  *  6. Transitioning room state (CONCLUDED or ROUND_FEEDBACK or INSUFFICIENT_VOTES)
  */
 
+import { randomInt } from 'crypto';
 import prisma from './prisma';
 import { runAggregationEngine, Ballot, AggregationMethod, WeakOrder } from './algorithms';
 import { RoomStatus, Prisma } from '@prisma/client';
@@ -28,8 +29,10 @@ export type EstadoSala = RoomStatus;
  * procedureVersion.test.ts fails if lib/algorithms changes without a new version.
  *   r-fast-cr-1: reports before PT-29 (no __procedure key)
  *   r-fast-cr-2: declared tie-break, concordance variant, expelled ballots excluded
+ *   r-fast-cr-3: REASON_BALANCE resolves remaining ties with a seeded random order
+ *                (seed stored in __tieBreak.seed) instead of the host's list order
  */
-export const PROCEDURE_VERSION = 'r-fast-cr-2';
+export const PROCEDURE_VERSION = 'r-fast-cr-3';
 
 export type BlindArgumentItem = BlindArgumentEntry;
 export type BlindArgumentsByOption = BlindArgumentsMap;
@@ -233,6 +236,8 @@ export async function processRoundConsensus(
         rule: room.tie_break_rule,
         optionOrder: optionIds,
         reasonBalance: room.tie_break_rule === 'REASON_BALANCE' ? reasonBalanceOf(reasonsByOption) : undefined,
+        // P0.4: last-resort random order, reproducible from the stored seed
+        seed: room.tie_break_rule === 'REASON_BALANCE' ? randomInt(0, 2 ** 32 - 1) : undefined,
       },
       concordanceVariant: room.concordance_variant,
     });

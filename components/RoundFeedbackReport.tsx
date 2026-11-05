@@ -34,7 +34,7 @@ export interface FeedbackReportData {
   collective_ranking?: Array<{ id: string; midRank: number }>;
   arguments_json?: Record<string, FeedbackLegacyArgument[]>;
   reasonsByOption?: Record<string, { reasonsFor: FeedbackReason[]; reasonsAgainst: FeedbackReason[] }>;
-  tieBreak?: { rule: string; applied: boolean };
+  tieBreak?: { rule: string; applied: boolean; fallbackUsed?: boolean };
   myConcordance?: { voted: boolean; cix: number | null };
   myPositions?: Record<string, number>;
 }
@@ -124,7 +124,9 @@ export default function RoundFeedbackReport({
     (a, b) => (ranking.find((r) => r.id === a.id)?.midRank ?? 99) - (ranking.find((r) => r.id === b.id)?.midRank ?? 99)
   );
   const own = report.myConcordance;
-  const tieNote = report.tieBreak?.applied ? TIE_BREAK_NOTE[report.tieBreak.rule] : undefined;
+  const tieNote = report.tieBreak?.applied
+    ? `${TIE_BREAK_NOTE[report.tieBreak.rule] ?? ''}${report.tieBreak.fallbackUsed ? ' Las que seguían igualadas se ordenaron por sorteo.' : ''}`.trim() || undefined
+    : undefined;
 
   return (
     <div className="space-y-4">

@@ -202,7 +202,7 @@ describe('PT-19: cada participante ve solo su nivel de concordancia', () => {
   it('entrega sus propias posiciones de la ronda del informe', async () => {
     const data = await viewAs(PARTICIPANT_A, 'P-07');
     expect(data.latestReport!.myPositions).toEqual({ 'opt-1': 1 });
-    expect(data.latestReport!.tieBreak).toEqual({ rule: 'NONE', applied: false });
+    expect(data.latestReport!.tieBreak).toEqual({ rule: 'NONE', applied: false, fallbackUsed: false });
     expect(data.latestReport!.reasonsByOption['opt-1']).toEqual({ reasonsFor: [], reasonsAgainst: [] });
   });
 });

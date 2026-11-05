@@ -98,25 +98,50 @@ describe('PT-16: regla lexicográfica', () => {
 
 describe('PT-16: regla de saldo de razones', () => {
   for (const method of METHODS) {
-    it(`${method}: mayor saldo primero; si sigue el empate, orden de la lista`, () => {
-      const out = run(method, TOTAL.ids, TOTAL.orders, {
-        rule: 'REASON_BALANCE',
-        optionOrder: ['A', 'B', 'C'],
-        reasonBalance: { A: 1, B: 3, C: 1 },
-      }).result!;
+    // P0.4 (plan de mejora): options still tied after the balance are ordered by a
+    // seeded random permutation, no longer by the host's list order.
+    it(`${method}: mayor saldo primero; si sigue el empate, decide un sorteo reproducible`, () => {
+      const run3 = (seed: number) =>
+        run(method, TOTAL.ids, TOTAL.orders, {
+          rule: 'REASON_BALANCE',
+          optionOrder: ['A', 'B', 'C'],
+          reasonBalance: { A: 1, B: 3, C: 1 },
+          seed,
+        }).result!;
+      const out = run3(12345);
       const byRank = [...out.ranking].sort((a, b) => a.midRank - b.midRank).map((r) => r.id);
-      expect(byRank).toEqual(['B', 'A', 'C']);
-      expect(out.tieBreak).toMatchObject({ rule: 'REASON_BALANCE', applied: true });
+      expect(byRank[0]).toBe('B');
+      expect([...byRank.slice(1)].sort()).toEqual(['A', 'C']);
+      expect(out.tieBreak).toMatchObject({ rule: 'REASON_BALANCE', applied: true, fallbackUsed: true, seed: 12345 });
+      // Same seed, same ranking
+      expect(run3(12345).ranking).toEqual(out.ranking);
     });
   }
 
-  it('exige el saldo para aplicar la regla', () => {
-    expect(() =>
-      applyTieBreak([{ id: 'A', midRank: 1.5, score: 1 }, { id: 'B', midRank: 1.5, score: 1 }], {
-        rule: 'REASON_BALANCE',
-        optionOrder: ['A', 'B'],
-      })
-    ).toThrow();
+  it('sin razones, el sorteo con semilla decide y no sigue el orden de la lista ni el id', () => {
+    const tied = [{ id: 'A', midRank: 2, score: 1 }, { id: 'B', midRank: 2, score: 1 }, { id: 'C', midRank: 2, score: 1 }];
+    const orders = new Set<string>();
+    for (let seed = 0; seed < 200; seed++) {
+      const { ranking, report } = applyTieBreak(tied, { rule: 'REASON_BALANCE', optionOrder: ['A', 'B', 'C'], reasonBalance: {}, seed });
+      orders.add([...ranking].sort((a, b) => a.midRank - b.midRank).map((r) => r.id).join(''));
+      expect(report.fallbackUsed).toBe(true);
+      expect(report.weakOrder).toEqual(tied.map((t) => ({ id: t.id, midRank: t.midRank })));
+    }
+    // All six orders appear across seeds: neither list order nor id decides
+    expect(orders.size).toBe(6);
+  });
+
+  it('sin empate residual no usa el sorteo', () => {
+    const tied = [{ id: 'A', midRank: 1.5, score: 1 }, { id: 'B', midRank: 1.5, score: 1 }];
+    const { ranking, report } = applyTieBreak(tied, { rule: 'REASON_BALANCE', optionOrder: ['A', 'B'], reasonBalance: { A: -1, B: 2 }, seed: 7 });
+    expect(ranking.find((r) => r.id === 'B')!.midRank).toBe(1);
+    expect(report.fallbackUsed).toBe(false);
+  });
+
+  it('exige el saldo y la semilla para aplicar la regla', () => {
+    const tied = [{ id: 'A', midRank: 1.5, score: 1 }, { id: 'B', midRank: 1.5, score: 1 }];
+    expect(() => applyTieBreak(tied, { rule: 'REASON_BALANCE', optionOrder: ['A', 'B'] })).toThrow();
+    expect(() => applyTieBreak(tied, { rule: 'REASON_BALANCE', optionOrder: ['A', 'B'], reasonBalance: {} })).toThrow();
   });
 });
 

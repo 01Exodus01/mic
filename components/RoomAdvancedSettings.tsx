@@ -32,7 +32,7 @@ export const TIE_BREAK_LABELS: Record<RoomSettingsValue['tieBreakRule'], { name:
   },
   REASON_BALANCE: {
     name: 'Desempatar por las razones',
-    help: 'Entre opciones empatadas, va primero la que tiene más razones a favor que en contra. Si siguen igualadas, decide el orden de la lista.',
+    help: 'Entre opciones empatadas, va primero la que tiene más razones a favor que en contra. Si siguen igualadas, decide un sorteo que queda registrado.',
   },
 };
 

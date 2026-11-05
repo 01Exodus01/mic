@@ -113,7 +113,7 @@ export interface ParticipantReportView {
   /** PT-19: all reasons for and against per option, verbatim, with blind codes */
   reasonsByOption: Record<string, ParticipantOptionReasonsView>;
   /** PT-19: declared tie-break rule and whether it resolved a tie in this round */
-  tieBreak: { rule: string; applied: boolean };
+  tieBreak: { rule: string; applied: boolean; fallbackUsed: boolean };
   /** PT-19: only the requesting participant's own concordance, never others' */
   myConcordance: { voted: boolean; cix: number | null };
   /** PT-19: positions this participant gave in the report's round */
@@ -195,11 +195,12 @@ function toReasonsView(
   return result;
 }
 
-function toTieBreakView(raw: unknown): { rule: string; applied: boolean } {
+function toTieBreakView(raw: unknown): { rule: string; applied: boolean; fallbackUsed: boolean } {
   const tb = isRecord(raw) && isRecord(raw.__tieBreak) ? raw.__tieBreak : {};
   return {
     rule: typeof tb.rule === 'string' ? tb.rule : 'NONE',
     applied: tb.applied === true,
+    fallbackUsed: tb.fallbackUsed === true,
   };
 }
 

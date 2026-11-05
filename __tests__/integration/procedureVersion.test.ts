@@ -28,6 +28,10 @@ const ALGORITHMS_FINGERPRINTS: Record<string, string[]> = {
     // PT-33: removed the kendallTauC.ts re-export file; no computation change
     'b5f1c7b825d8962f9919e9c5983120c9247f43ebdabe0863ab3079516e8325fc',
   ],
+  'r-fast-cr-3': [
+    // P0.4: seeded random last-resort order for REASON_BALANCE
+    'ab7f7b921ef856e003c900566e7d4f78109d668911c1a599b2312420596a9476',
+  ],
 };
 
 function algorithmsFingerprint(): string {

@@ -52,8 +52,8 @@ describe.skipIf(!hasTestDb)('PT-16: regla de desempate en el informe (PostgreSQL
     const report = await prisma.roundReport.findUnique({ where: { room_id_round: { room_id: fx.roomId, round: 1 } } });
     const ranking = report!.collective_ranking as Array<{ id: string; midRank: number }>;
     expect(fx.optionIds.map((id) => ranking.find((r) => r.id === id)!.midRank)).toEqual([1, 2, 3]);
-    const args = report!.arguments_json as unknown as { __tieBreak: { rule: string; applied: boolean; tiedGroups: string[][] } };
-    expect(args.__tieBreak).toEqual({ rule: 'LEXICOGRAPHIC', applied: true, tiedGroups: [fx.optionIds] });
+    const args = report!.arguments_json as unknown as { __tieBreak: { rule: string; applied: boolean; tiedGroups: string[][]; weakOrder?: unknown[] } };
+    expect(args.__tieBreak).toMatchObject({ rule: 'LEXICOGRAPHIC', applied: true, tiedGroups: [fx.optionIds] });
   });
 
   it('sin regla los empates se conservan como antes', async () => {

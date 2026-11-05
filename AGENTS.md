@@ -58,7 +58,8 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Desempate configurable por sala (enmienda E-1). Por defecto, regla "ninguna":
   los empates del orden del grupo se conservan (rangos medios) y la concordancia
   es tau-b. Solo si la sala declara una regla al crearse (lexicográfica por el
-  orden de las opciones, o saldo de razones a favor menos en contra) se desempata,
+  orden de las opciones, o saldo de razones a favor menos en contra; si con el
+  saldo sigue el empate, un sorteo con semilla guardada en el informe) se desempata,
   y entonces el orden del grupo es estricto. Nunca se desempata de forma
   arbitraria ni sin dejarlo registrado: el informe de ronda guarda qué grupos
   estaban empatados y qué regla actuó.
