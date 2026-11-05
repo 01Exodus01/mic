@@ -742,7 +742,7 @@ export default function ParticipantVotePage() {
                   disabled
                   className="w-full h-[52px] rounded-[6px] bg-[#EBE7DF] border border-[#D9D5CC] text-[#5A554E] font-medium text-sm cursor-not-allowed flex items-center justify-center transition-colors"
                 >
-                  {hasVoted ? 'Guardar cambios' : 'Enviar voto'}
+                  {hasVoted ? 'Guardar cambios' : 'Enviar mi selección'}
                 </button>
                 <p className="text-xs text-[#5A554E] text-center">
                   Hay razones de más de 200 caracteres en {invalidReasonsCount}{' '}
@@ -760,7 +760,7 @@ export default function ParticipantVotePage() {
                   ? 'Guardando voto...'
                   : hasVoted
                   ? 'Guardar cambios'
-                  : 'Enviar voto'}
+                  : 'Enviar mi selección'}
               </button>
             )}
           </div>

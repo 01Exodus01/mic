@@ -102,7 +102,7 @@ async function run() {
       await textareas[i].fill(reasons[i] || 'Razón con más de veinticinco caracteres para prueba de interfaz.');
     }
     // Wait for submit button to be enabled
-    await page.waitForSelector('button:has-text("Enviar voto")', { state: 'visible', timeout: 5000 });
+    await page.waitForSelector('button:has-text("Enviar mi selección")', { state: 'visible', timeout: 5000 });
     await page.waitForTimeout(400);
 
     const file3 = path.join(outDir, `3-votacion-lista-${vp.name}.png`);

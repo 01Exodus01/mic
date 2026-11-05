@@ -195,7 +195,7 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 - Razones (enmienda E-6): bajo cada opción, dos listas "A favor" y "En contra"
   con botones para agregar y quitar, contador de 200 por razón y tope de 5 por
   lado. Enviar depende solo de haber ordenado todas las opciones.
-- Botón "Enviar voto" fijo abajo, con motivo visible si está deshabilitado.
+- Botón "Enviar mi selección" fijo abajo, con motivo visible si está deshabilitado.
 - Voto enviado: estado distinguible con mensaje persistente, resumen en solo
   lectura (orden y razones) y botón "Editar voto" que vuelve a habilitar lo ya
   escrito. Nunca se borra lo escrito. Pasada la hora límite, sin edición.
