@@ -1,0 +1,25 @@
+﻿room_id,created_at,round,type,actor,blind_code,data
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:22:41.942Z,1,room_started,HOST,,"{""minutes"":30}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:22:55.510Z,1,participant_joined,PARTICIPANT,Participante 35,"{""returning"":false}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:22:58.065Z,1,vote_submitted,PARTICIPANT,Participante 35,"{""changed"":true,""version"":1}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:08.892Z,1,participant_joined,PARTICIPANT,Participante 21,"{""returning"":false}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:13.419Z,1,vote_submitted,PARTICIPANT,Participante 21,"{""changed"":true,""version"":1}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:26.716Z,1,participant_joined,PARTICIPANT,Participante 09,"{""returning"":false}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:35.116Z,1,vote_submitted,PARTICIPANT,Participante 09,"{""changed"":true,""version"":1}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:35.149Z,1,round_closed,SYSTEM,,
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:35.150Z,1,round_processed,SYSTEM,,"{""nextStatus"":""ROUND_FEEDBACK"",""effectiveVoters"":3}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:23:35.196Z,1,report_viewed,PARTICIPANT,Participante 09,
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:24:28.759Z,2,round_opened,HOST,,"{""minutes"":15}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:24:44.414Z,2,participant_joined,PARTICIPANT,Participante 35,"{""returning"":true}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:24:44.491Z,1,report_viewed,PARTICIPANT,Participante 35,
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:25:29.413Z,2,vote_submitted,PARTICIPANT,Participante 35,"{""changed"":true,""version"":1}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:25:51.206Z,2,participant_joined,PARTICIPANT,Participante 21,"{""returning"":true}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:25:51.250Z,1,report_viewed,PARTICIPANT,Participante 21,
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:25:58.799Z,2,vote_submitted,PARTICIPANT,Participante 21,"{""changed"":true,""version"":1}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:26:14.995Z,2,participant_joined,PARTICIPANT,Participante 09,"{""returning"":true}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:26:34.680Z,2,vote_submitted,PARTICIPANT,Participante 09,"{""changed"":true,""version"":1}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:26:34.714Z,2,round_closed,SYSTEM,,
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:26:34.716Z,2,round_processed,SYSTEM,,"{""nextStatus"":""ROUND_FEEDBACK"",""effectiveVoters"":3}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:26:34.744Z,2,report_viewed,PARTICIPANT,Participante 09,
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:39:49.441Z,2,participant_joined,PARTICIPANT,Participante 36,"{""returning"":false}"
+cmw2k9rzh0001o21beu62oj5o,2026-11-04T20:39:49.533Z,2,report_viewed,PARTICIPANT,Participante 36,

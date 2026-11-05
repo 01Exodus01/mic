@@ -1,0 +1,3 @@
+﻿room_id,round,method,effective_voters,collective_tau,delta_tau,stuart_tau_c,stuart_cix,gamma_decided_pairs,gamma_cix,collective_ranking,room_status,tie_break_rule,concordance_variant,procedure_version
+cmw2k9rzh0001o21beu62oj5o,1,BORDA,3,0.5556,0,0.1111,0.5556,0.1111,0.5556,cmw2k9rzh0002o21bejgffma5:1 > cmw2k9rzh0003o21b93v8hael:2 > cmw2k9rzh0004o21b1gfcvsnt:3,ROUND_FEEDBACK,REASON_BALANCE,WITHOUT_TIES,r-fast-cr-2
+cmw2k9rzh0001o21beu62oj5o,2,BORDA,3,0.6667,0.111,0.3333,0.6667,0.3333,0.6667,cmw2k9rzh0003o21b93v8hael:1 > cmw2k9rzh0004o21b1gfcvsnt:2 > cmw2k9rzh0002o21bejgffma5:3,ROUND_FEEDBACK,REASON_BALANCE,WITHOUT_TIES,r-fast-cr-2
