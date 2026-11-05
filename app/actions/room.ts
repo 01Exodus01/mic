@@ -267,7 +267,7 @@ export async function closeRoundManually(salaId: string): Promise<ActionResult<{
       throw Errors.INVALID_STATE(room.status, 'PROCESSING');
     }
 
-    const result = await processRoundConsensus(salaId, { actor: 'HOST' });
+    const result = await processRoundConsensus(salaId, { actor: 'HOST', reason: 'HOST' });
 
     if (!result.success) {
       return { success: false, error: result.error ?? 'Error procesando consenso.' };

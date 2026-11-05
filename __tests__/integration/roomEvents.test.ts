@@ -174,4 +174,33 @@ describe.skipIf(!hasTestDb)('PT-10: bitácora de la sala (PostgreSQL)', () => {
       ['insufficient_votes', 'SYSTEM'],
     ]);
   });
+
+  it('round_closed guarda el motivo: HOST, TIMEOUT o ALL_VOTED', async () => {
+    const { processRoundConsensus, checkAndProcessExpiredDeadline, closeRoundIfAllVoted } = await import('@/lib/round-processor');
+    const reasonOf = async (roomId: string) =>
+      (await prisma.roomEvent.findFirstOrThrow({ where: { room_id: roomId, type: 'round_closed' } })).data;
+
+    const manual = await createRoomFixture(prisma, { participants: 3 });
+    fixtures.push(manual);
+    state.hostId = manual.hostId;
+    const room = await import('@/app/actions/room');
+    await room.closeRoundManually(manual.roomId);
+    expect(await reasonOf(manual.roomId)).toEqual({ reason: 'HOST' });
+
+    const timeout = await createRoomFixture(prisma, { participants: 3, room: { deadline: new Date(Date.now() - 1000) } });
+    fixtures.push(timeout);
+    await checkAndProcessExpiredDeadline(timeout.roomId);
+    expect(await reasonOf(timeout.roomId)).toEqual({ reason: 'TIMEOUT' });
+
+    const early = await createRoomFixture(prisma, { participants: 3, room: { close_when_all_voted: true, tau_threshold: 0.99 } });
+    fixtures.push(early);
+    for (let i = 0; i < 3; i++) {
+      for (let k = 0; k < 3; k++) {
+        await prisma.vote.create({ data: { participant_id: early.participantIds[i], round: 1, option_id: early.optionIds[(k + i) % 3], position: k + 1 } });
+      }
+    }
+    expect(await closeRoundIfAllVoted(early.roomId)).toBe(true);
+    expect(await reasonOf(early.roomId)).toEqual({ reason: 'ALL_VOTED' });
+    void processRoundConsensus;
+  });
 });

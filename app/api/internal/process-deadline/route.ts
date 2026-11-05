@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await processRoundConsensus(roomId);
+    const result = await processRoundConsensus(roomId, { actor: 'SYSTEM', reason: 'TIMEOUT' });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 422 });

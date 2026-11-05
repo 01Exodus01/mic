@@ -139,14 +139,18 @@ export function reasonBalanceOf(reasons: ReportReasonsMap): Record<string, numbe
   return balance;
 }
 
+export type RoundCloseReason = 'HOST' | 'TIMEOUT' | 'ALL_VOTED';
+
 export interface ProcessRoundTrigger {
-  /** HOST for a manual close; SYSTEM for deadline (lazy check or worker). */
+  /** HOST for a manual close; SYSTEM for deadline (lazy check or worker) and early close. */
   actor: EventActor;
+  /** Why the round closed; stored in the round_closed event (plan de mejora P1.3) */
+  reason: RoundCloseReason;
 }
 
 export async function processRoundConsensus(
   roomId: string,
-  trigger: ProcessRoundTrigger = { actor: 'SYSTEM' }
+  trigger: ProcessRoundTrigger = { actor: 'SYSTEM', reason: 'TIMEOUT' }
 ): Promise<ProcessRoundResult> {
   // CAS atómico: asegura que solo un ejecutor procesa la ronda
   const casResult = await prisma.room.updateMany({
@@ -380,6 +384,7 @@ export async function processRoundConsensus(
         type: 'round_closed',
         actor: trigger.actor,
         round: currentRound,
+        data: { reason: trigger.reason },
       });
       await recordRoomEvent(tx, {
         roomId,
@@ -431,7 +436,7 @@ async function markInsufficientVotes(
       where: { id: roomId },
       data: { status: RoomStatus.INSUFFICIENT_VOTES },
     });
-    await recordRoomEvent(tx, { roomId, type: 'round_closed', actor: trigger.actor, round });
+    await recordRoomEvent(tx, { roomId, type: 'round_closed', actor: trigger.actor, round, data: { reason: trigger.reason } });
     await recordRoomEvent(tx, {
       roomId,
       type: 'insufficient_votes',
@@ -457,7 +462,7 @@ export async function checkAndProcessExpiredDeadline(roomId: string): Promise<bo
   }
 
   if (new Date() > room.deadline) {
-    await processRoundConsensus(roomId);
+    await processRoundConsensus(roomId, { actor: 'SYSTEM', reason: 'TIMEOUT' });
     return true;
   }
 
@@ -526,7 +531,7 @@ export async function closeRoundIfAllVoted(roomId: string): Promise<boolean> {
   const allVoted = eligible.length > 0 && eligible.every((id) => id !== null && completeVoters.has(id));
   if (!allVoted) return false;
 
-  const result = await processRoundConsensus(roomId, { actor: 'SYSTEM' });
+  const result = await processRoundConsensus(roomId, { actor: 'SYSTEM', reason: 'ALL_VOTED' });
   return result.success;
 }
 
