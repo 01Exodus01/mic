@@ -168,6 +168,13 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   24 horas, 3 días, 1 semana, 2 semanas) más valor personalizado en minutos,
   horas, días o semanas, con rango validado (1 minuto a 30 días, 43200 minutos).
   Se muestra la nueva hora límite antes de confirmar.
+- Alternativa a la duración: fecha y hora de cierre exactas en un calendario
+  (`datetime-local`). No se muestra al mismo nivel que los presets: se abre con
+  el enlace "Prefiero elegir el día y la hora de cierre" y se vuelve con
+  "Volver a elegir una duración". El servidor recibe `{ closesAt }` y guarda ese
+  momento exacto, con la misma regla: entre 1 minuto y 30 días después de ahora
+  (o de la hora límite actual, al extender). La bitácora registra `timing`
+  (`duration` o `date`) y los minutos resultantes.
 - Extender la hora límite NO es una transición de estado: con la sala en
   ROUND_OPEN solo se actualiza el plazo.
 - Las pantallas abiertas se actualizan solas ante cambios del anfitrión (plazo,

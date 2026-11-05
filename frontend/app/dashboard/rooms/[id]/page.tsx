@@ -16,7 +16,19 @@ import {
 import { toast } from 'sonner';
 import { RoomDashboardSkeleton } from '@/components/ui/Skeleton';
 import PasswordInput from '@/components/ui/PasswordInput';
-import DurationPicker, { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
+import DurationPicker, { formatClosingMoment, formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
+import type { RoundTiming } from '@mic/backend/shared/round-timing';
+
+/** What the round actions receive: the closing date when one was chosen, otherwise the minutes. */
+function timingOf(minutes: number, closesAt: string | null): RoundTiming {
+  return closesAt ? { closesAt } : minutes;
+}
+
+/** The action button is enabled only with a valid duration or a valid closing date. */
+function timingReady(minutes: number, closesAt: string | null): boolean {
+  if (closesAt === null) return minutes >= 1 && minutes <= MAX_ROUND_MINUTES;
+  return closesAt !== '';
+}
 import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import RoomRosterManager from '@/components/RoomRosterManager';
 import ParticipationTable from '@/components/ParticipationTable';
@@ -126,6 +138,9 @@ export default function RoomHostPage() {
   const [selectedMinutes, setSelectedMinutes] = useState(15);
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
   const [extendMinutes, setExtendMinutes] = useState(15);
+  // Optional exact closing date and time instead of a duration (null = duration)
+  const [selectedClosesAt, setSelectedClosesAt] = useState<string | null>(null);
+  const [extendClosesAt, setExtendClosesAt] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<string>('');
 
   const serverOffsetRef = useRef<number>(0);
@@ -263,9 +278,14 @@ export default function RoomHostPage() {
   const handleStartRoom = async () => {
     setActionLoading(true);
     try {
-      const res = await startRoom(salaId, selectedMinutes);
+      const res = await startRoom(salaId, timingOf(selectedMinutes, selectedClosesAt));
       if (res.success) {
-        toast.success(`Ronda 1 abierta con ${selectedMinutes} minutos.`);
+        toast.success(
+          selectedClosesAt
+            ? `Ronda 1 abierta hasta el ${formatClosingMoment(new Date(selectedClosesAt))}.`
+            : `Ronda 1 abierta con ${selectedMinutes} minutos.`
+        );
+        setSelectedClosesAt(null);
         await fetchStatus();
       } else {
         toast.error(res.error || 'No fue posible abrir la ronda.');
@@ -300,9 +320,10 @@ export default function RoomHostPage() {
   const handleExtendDeadline = async () => {
     setActionLoading(true);
     try {
-      const res = await extendDeadline(salaId, selectedMinutes);
+      const res = await extendDeadline(salaId, timingOf(selectedMinutes, selectedClosesAt));
       if (res.success) {
-        toast.success(`Hora límite extendida en +${selectedMinutes} minutos.`);
+        toast.success('Hora límite extendida.');
+        setSelectedClosesAt(null);
         await fetchStatus();
       } else {
         toast.error(res.error || 'No fue posible extender la hora límite.');
@@ -315,12 +336,14 @@ export default function RoomHostPage() {
     }
   };
 
-  const handleExtendDeadlineWithMinutes = async (mins: number) => {
+  const handleExtendDeadlineWithMinutes = async (mins: number, closesAt: string | null = null) => {
     setActionLoading(true);
     try {
-      const res = await extendDeadline(salaId, mins);
+      const res = await extendDeadline(salaId, timingOf(mins, closesAt));
       if (res.success) {
         toast.success(`Hora límite extendida.`);
+        setSelectedClosesAt(null);
+        setExtendClosesAt(null);
         setExtendDialogOpen(false);
         await fetchStatus();
       } else {
@@ -356,8 +379,9 @@ export default function RoomHostPage() {
   const handleOpenNextRound = async () => {
     setActionLoading(true);
     try {
-      const res = await openNextRound(salaId, selectedMinutes);
+      const res = await openNextRound(salaId, timingOf(selectedMinutes, selectedClosesAt));
       if (res.success) {
+        setSelectedClosesAt(null);
         toast.success(`Ronda ${data ? data.room.current_round + 1 : ''} abierta.`);
         await fetchStatus();
       } else {
@@ -563,6 +587,8 @@ export default function RoomHostPage() {
             <DurationPicker
               value={selectedMinutes}
               onChange={setSelectedMinutes}
+              closesAt={selectedClosesAt}
+              onClosesAtChange={setSelectedClosesAt}
               serverTime={data?.serverTime}
               label="Duración de la Ronda 1"
             />
@@ -571,7 +597,7 @@ export default function RoomHostPage() {
               <button
                 type="button"
                 onClick={handleStartRoom}
-                disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
+                disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
                 className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1'}
@@ -646,6 +672,8 @@ export default function RoomHostPage() {
             <DurationPicker
               value={selectedMinutes}
               onChange={setSelectedMinutes}
+              closesAt={selectedClosesAt}
+              onClosesAtChange={setSelectedClosesAt}
               serverTime={data?.serverTime}
               label="Tiempo adicional para extender"
             />
@@ -653,8 +681,8 @@ export default function RoomHostPage() {
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => handleExtendDeadlineWithMinutes(selectedMinutes)}
-                disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
+                onClick={() => handleExtendDeadlineWithMinutes(selectedMinutes, selectedClosesAt)}
+                disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
                 className="px-3.5 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 Extender hora límite
@@ -689,6 +717,8 @@ export default function RoomHostPage() {
                 <DurationPicker
                   value={selectedMinutes}
                   onChange={setSelectedMinutes}
+                  closesAt={selectedClosesAt}
+                  onClosesAtChange={setSelectedClosesAt}
                   serverTime={data?.serverTime}
                   label={`Plazo para la Ronda ${sala.current_round + 1}`}
                 />
@@ -698,7 +728,7 @@ export default function RoomHostPage() {
                   <button
                     type="button"
                     onClick={handleOpenNextRound}
-                    disabled={actionLoading || selectedMinutes < 1 || selectedMinutes > MAX_ROUND_MINUTES}
+                    disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
                     className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                   >
                     {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.current_round + 1}`}
@@ -1176,12 +1206,14 @@ export default function RoomHostPage() {
           <div className="space-y-4">
             <DialogTitle>Extender hora límite</DialogTitle>
             <DialogDescription>
-              Selecciona cuántos minutos adicionales conceder para la ronda en curso.
+              Elige cuánto tiempo agregar a la ronda en curso o, si prefieres, la nueva fecha y hora de cierre.
             </DialogDescription>
             <div className="py-2">
               <DurationPicker
                 value={extendMinutes}
                 onChange={setExtendMinutes}
+                closesAt={extendClosesAt}
+                onClosesAtChange={setExtendClosesAt}
                 mode="from_deadline"
                 baseDeadline={sala.deadline}
                 serverTime={data?.serverTime}
@@ -1198,8 +1230,8 @@ export default function RoomHostPage() {
               </button>
               <button
                 type="button"
-                disabled={actionLoading || extendMinutes < 1 || extendMinutes > MAX_ROUND_MINUTES}
-                onClick={() => handleExtendDeadlineWithMinutes(extendMinutes)}
+                disabled={actionLoading || !timingReady(extendMinutes, extendClosesAt)}
+                onClick={() => handleExtendDeadlineWithMinutes(extendMinutes, extendClosesAt)}
                 className="px-4 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 {actionLoading ? 'Guardando...' : 'Confirmar extensión'}

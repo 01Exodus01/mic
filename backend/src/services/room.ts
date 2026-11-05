@@ -21,7 +21,6 @@ import { generateMemberCode, hashMemberCode, parseRosterText } from '@mic/backen
 
 import {
   CreateRoomSchema,
-  RoundDurationSchema,
   ResetPinSchema,
   MIN_PARTICIPANTS,
   RoomSettingsSchema,
@@ -31,6 +30,7 @@ import {
   type RoomSettingsInput,
 } from '@mic/backend/shared/validations';
 import type { ActionResult } from '@mic/backend/shared/actions';
+import { resolveRoundEnd, type ResolvedRoundEnd, type RoundTiming } from '@mic/backend/shared/round-timing';
 import type { RankingEntry } from '@mic/backend/shared/report';
 
 export type { ActionResult };
@@ -101,6 +101,13 @@ export interface RoomStatusData {
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
+
+/** Deadline of a round from minutes or a closing date; a clear message when out of range. */
+function roundEndOrThrow(timing: unknown, base: Date, baseLabel: 'ahora' | 'la hora límite actual' = 'ahora'): ResolvedRoundEnd {
+  const res = resolveRoundEnd(timing, base, baseLabel);
+  if (!res.ok) throw Errors.INVALID_BALLOT(res.error);
+  return res.value;
+}
 
 async function requireHost(ctx: RequestContext): Promise<string> {
   const hostId = await ctx.hostUserId();
@@ -215,13 +222,11 @@ export async function createRoom(ctx: RequestContext, input: CreateRoomInput): P
 export async function startRoom(
   ctx: RequestContext,
   salaId: string,
-  deadlineMinutes: number
+  timing: RoundTiming
 ): Promise<ActionResult> {
   try {
-    const durVal = RoundDurationSchema.safeParse(deadlineMinutes);
-    if (!durVal.success) {
-      throw Errors.INVALID_BALLOT(durVal.error.errors[0]?.message || 'Duración inválida.');
-    }
+    // A duration in minutes, or the exact closing date and time
+    const end = roundEndOrThrow(timing, new Date());
 
     const hostId = await requireHost(ctx);
     const room = await prisma.room.findUnique({ where: { id: salaId } });
@@ -231,7 +236,7 @@ export async function startRoom(
       throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
     }
 
-    const deadline = new Date(Date.now() + durVal.data * 60 * 1000);
+    const { deadline } = end;
     await prisma.$transaction(async (tx) => {
       await tx.room.update({
         where: { id: salaId },
@@ -242,7 +247,7 @@ export async function startRoom(
         type: 'room_started',
         actor: 'HOST',
         round: 1,
-        data: { minutes: durVal.data },
+        data: { minutes: end.minutes, timing: end.timing },
       });
     });
 
@@ -296,13 +301,11 @@ export async function closeRoundManually(ctx: RequestContext, salaId: string): P
 export async function extendDeadline(
   ctx: RequestContext,
   salaId: string,
-  extraMinutes: number
+  timing: RoundTiming
 ): Promise<ActionResult> {
   try {
-    const durVal = RoundDurationSchema.safeParse(extraMinutes);
-    if (!durVal.success) {
-      throw Errors.INVALID_BALLOT(durVal.error.errors[0]?.message || 'Duración inválida.');
-    }
+    // Shape first (before any database access); the deadline is resolved below
+    roundEndOrThrow(timing, new Date());
 
     const hostId = await requireHost(ctx);
     const room = await prisma.room.findUnique({ where: { id: salaId } });
@@ -311,8 +314,11 @@ export async function extendDeadline(
 
     // Extender el plazo en ROUND_OPEN no es una transición de estado: solo actualiza el plazo
     if (room.status === 'ROUND_OPEN') {
-      const baseTime = room.deadline && room.deadline.getTime() > Date.now() ? room.deadline.getTime() : Date.now();
-      const deadline = new Date(baseTime + durVal.data * 60 * 1000);
+      const extendsCurrent = Boolean(room.deadline && room.deadline.getTime() > Date.now());
+      const base = extendsCurrent ? room.deadline! : new Date();
+      // Minutes are added to the current deadline; a date must come after it
+      const end = roundEndOrThrow(timing, base, extendsCurrent ? 'la hora límite actual' : 'ahora');
+      const { deadline } = end;
       await prisma.$transaction(async (tx) => {
         await tx.room.update({
           where: { id: salaId },
@@ -323,14 +329,15 @@ export async function extendDeadline(
           type: 'deadline_extended',
           actor: 'HOST',
           round: room.current_round,
-          data: { minutes: durVal.data, reopened: false },
+          data: { minutes: end.minutes, reopened: false, timing: end.timing },
         });
       });
     } else if (room.status === 'INSUFFICIENT_VOTES') {
       if (!isValidTransition(room.status, 'ROUND_OPEN')) {
         throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
       }
-      const deadline = new Date(Date.now() + durVal.data * 60 * 1000);
+      const end = roundEndOrThrow(timing, new Date());
+      const { deadline } = end;
       await prisma.$transaction(async (tx) => {
         await tx.room.update({
           where: { id: salaId },
@@ -341,7 +348,7 @@ export async function extendDeadline(
           type: 'deadline_extended',
           actor: 'HOST',
           round: room.current_round,
-          data: { minutes: durVal.data, reopened: true },
+          data: { minutes: end.minutes, reopened: true, timing: end.timing },
         });
       });
     } else {
@@ -403,13 +410,10 @@ export async function cancelRoom(ctx: RequestContext, salaId: string): Promise<A
 export async function openNextRound(
   ctx: RequestContext,
   salaId: string,
-  deadlineMinutes: number
+  timing: RoundTiming
 ): Promise<ActionResult> {
   try {
-    const durVal = RoundDurationSchema.safeParse(deadlineMinutes);
-    if (!durVal.success) {
-      throw Errors.INVALID_BALLOT(durVal.error.errors[0]?.message || 'Duración inválida.');
-    }
+    const end = roundEndOrThrow(timing, new Date());
 
     const hostId = await requireHost(ctx);
     const room = await prisma.room.findUnique({ where: { id: salaId } });
@@ -419,7 +423,7 @@ export async function openNextRound(
       throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
     }
 
-    const deadline = new Date(Date.now() + durVal.data * 60 * 1000);
+    const { deadline } = end;
     await prisma.$transaction(async (tx) => {
       await tx.room.update({
         where: { id: salaId },
@@ -434,7 +438,7 @@ export async function openNextRound(
         type: 'round_opened',
         actor: 'HOST',
         round: room.current_round + 1,
-        data: { minutes: durVal.data },
+        data: { minutes: end.minutes, timing: end.timing },
       });
     });
 

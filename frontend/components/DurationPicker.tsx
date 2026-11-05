@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useId } from 'react';
 import { RoundDurationSchema, MAX_ROUND_MINUTES } from '@mic/backend/shared/validations';
-import { Clock } from 'lucide-react';
+import { resolveRoundEnd } from '@mic/backend/shared/round-timing';
+import { CalendarClock, Clock } from 'lucide-react';
 
 interface DurationPickerProps {
   value: number;
@@ -13,6 +14,28 @@ interface DurationPickerProps {
   disabled?: boolean;
   className?: string;
   label?: string;
+  /**
+   * Optional second way to set the round: an exact closing date and time.
+   * null = the host is choosing a duration (default); an ISO string = the
+   * chosen closing moment; '' = calendar open but no valid date yet. Only
+   * offered when onClosesAtChange is passed.
+   */
+  closesAt?: string | null;
+  onClosesAtChange?: (closesAt: string | null) => void;
+}
+
+/** 'YYYY-MM-DDTHH:mm' in local time, the value format of <input type="datetime-local">. */
+export function toLocalInputValue(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** "viernes 07/11 a las 23:59" */
+export function formatClosingMoment(d: Date): string {
+  const weekday = d.toLocaleDateString('es', { weekday: 'long' });
+  const day = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${weekday} ${day} a las ${time}`;
 }
 
 const PRESETS = [
@@ -76,13 +99,19 @@ export default function DurationPicker({
   disabled = false,
   className = '',
   label = 'Duración',
+  closesAt = null,
+  onClosesAtChange,
 }: DurationPickerProps) {
   const isPreset = PRESETS.some((p) => p.value === value);
   const [isCustom, setIsCustom] = useState(!isPreset);
   const [customInput, setCustomInput] = useState(isPreset ? '' : String(splitMinutes(value).amount));
   const [customUnit, setCustomUnit] = useState<UnitKey>(isPreset ? 'min' : splitMinutes(value).unit);
   const [customError, setCustomError] = useState<string | null>(null);
+  const [dateInput, setDateInput] = useState(closesAt ? toLocalInputValue(new Date(closesAt)) : '');
+  const [dateError, setDateError] = useState<string | null>(null);
   const inputId = useId();
+  const dateInputId = useId();
+  const byDate = closesAt !== null && Boolean(onClosesAtChange);
 
   // Keep customInput synced if value changes externally
   useEffect(() => {
@@ -162,6 +191,88 @@ export default function DurationPicker({
   })();
 
   const previewDate = !customError && value >= 1 ? new Date(baseMs + value * 60000) : null;
+
+  // ── Closing date and time (calendar) ──
+  const baseLabel = mode === 'from_deadline' && baseMs > Date.now() ? 'la hora límite actual' : 'ahora';
+  const applyDate = (raw: string) => {
+    setDateInput(raw);
+    const when = raw ? new Date(raw) : null;
+    if (!when || Number.isNaN(when.getTime())) {
+      setDateError('Elige la fecha y hora de cierre.');
+      onClosesAtChange?.('');
+      return;
+    }
+    const res = resolveRoundEnd({ closesAt: when.toISOString() }, new Date(baseMs), baseLabel);
+    if (!res.ok) {
+      setDateError(res.error);
+      onClosesAtChange?.('');
+    } else {
+      setDateError(null);
+      onClosesAtChange?.(when.toISOString());
+    }
+  };
+  const openCalendar = () => {
+    if (disabled) return;
+    // Start from what the duration would give, rounded up to the next quarter hour
+    const start = new Date(baseMs + Math.max(value, 1) * 60000);
+    start.setSeconds(0, 0);
+    start.setMinutes(Math.ceil(start.getMinutes() / 15) * 15);
+    applyDate(toLocalInputValue(start));
+  };
+  const closeCalendar = () => {
+    setDateError(null);
+    onClosesAtChange?.(null);
+  };
+  const minDate = toLocalInputValue(new Date(baseMs + 60000));
+  const maxDate = toLocalInputValue(new Date(baseMs + MAX_ROUND_MINUTES * 60000));
+  const closingDate = byDate && closesAt ? new Date(closesAt) : null;
+
+  if (byDate) {
+    return (
+      <div className={`space-y-2.5 ${className}`}>
+        <label htmlFor={dateInputId} className="block text-xs font-medium text-[#14171A]">
+          Fecha y hora de cierre
+        </label>
+        <input
+          id={dateInputId}
+          type="datetime-local"
+          min={minDate}
+          max={maxDate}
+          step={60}
+          disabled={disabled}
+          value={dateInput}
+          onChange={(e) => applyDate(e.target.value)}
+          aria-invalid={Boolean(dateError)}
+          aria-describedby={dateError ? `${dateInputId}-error` : undefined}
+          className={`h-10 px-2.5 rounded-[6px] border bg-white text-sm font-mono text-[#14171A] focus:outline-none transition-colors ${
+            dateError ? 'border-[#B42318] focus:border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+          }`}
+        />
+        {dateError ? (
+          <p id={`${dateInputId}-error`} role="alert" className="text-xs text-[#B42318]">
+            {dateError}
+          </p>
+        ) : (
+          closingDate && (
+            <div className="flex items-center gap-1.5 text-xs text-[#5A554E]">
+              <Clock className="w-3.5 h-3.5 stroke-[1.5] text-[#5A554E]" />
+              <span>
+                La ronda cierra el <strong className="font-semibold text-[#14171A]">{formatClosingMoment(closingDate)}</strong>
+              </span>
+            </div>
+          )
+        )}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={closeCalendar}
+          className="min-h-[36px] text-xs text-[#5A554E] underline underline-offset-2 hover:text-[#14171A] disabled:opacity-40"
+        >
+          Volver a elegir una duración
+        </button>
+      </div>
+    );
+  }
 
   const formatPreview = (d: Date): string => {
     const hours = String(d.getHours()).padStart(2, '0');
@@ -276,6 +387,19 @@ export default function DurationPicker({
             </strong>
           </span>
         </div>
+      )}
+
+      {/* Second way, kept discreet: pick the closing date and time on a calendar */}
+      {onClosesAtChange && (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={openCalendar}
+          className="min-h-[36px] inline-flex items-center gap-1.5 text-xs text-[#5A554E] underline underline-offset-2 hover:text-[#14171A] disabled:opacity-40"
+        >
+          <CalendarClock className="w-3.5 h-3.5 stroke-[1.5]" />
+          Prefiero elegir el día y la hora de cierre
+        </button>
       )}
     </div>
   );
