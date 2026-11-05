@@ -14,7 +14,7 @@ import {
 import { Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import RoomAdvancedSettings, { DEFAULT_ROOM_SETTINGS, type RoomSettingsValue } from '@/components/RoomAdvancedSettings';
 import RoomConsentSettings from '@/components/RoomConsentSettings';
-import { AggregationMethod } from '@prisma/client';
+import type { AggregationMethod } from '@mic/backend/shared/domain';
 
 export default function NewRoomPage() {
   const router = useRouter();

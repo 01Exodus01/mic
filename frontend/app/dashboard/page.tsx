@@ -1,7 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import prisma from '@mic/backend/db';
+import { listHostRooms } from '@mic/backend/services/host-dashboard';
+import { requestContext } from '@/lib/request-context';
 import Link from 'next/link';
 import { Plus, ArrowRight } from 'lucide-react';
 
@@ -33,21 +34,7 @@ export default async function DashboardPage() {
     redirect('/auth/login');
   }
 
-  const hostId = (session.user as { id: string }).id;
-
-  const rooms = await prisma.room.findMany({
-    where: { host_id: hostId },
-    include: {
-      options: { select: { id: true } },
-      participants: { select: { id: true } },
-      reports: {
-        orderBy: { round: 'desc' },
-        take: 1,
-        select: { round: true, obtained_tau: true },
-      },
-    },
-    orderBy: { created_at: 'desc' },
-  });
+  const rooms = await listHostRooms(requestContext());
 
   return (
     <div className="w-full">

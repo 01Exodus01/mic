@@ -5,6 +5,9 @@
 **Proyecto:** GDSS r-FAST-CR (Next.js App Router, TypeScript estricto, Prisma, PostgreSQL 16)  
 **Objetivo:** Ejecución integral de la Fase B del plan de remediación de auditoría (AUD-01 a AUD-35), garantizando corrección matemática, reproducibilidad científica para publicación académica, seguridad robusta y cumplimiento de las reglas de [AGENTS.md](file:///home/jatoapan/mic/AGENTS.md).
 
+
+> Nota (2026-11-05): las rutas de este informe son de la estructura anterior a la separación en `backend/` y `frontend/` (enmienda E-11 de AGENTS.md). Por ejemplo, `lib/…` está hoy en `backend/src/…`, `prisma/` en `backend/prisma/` y `app/…` en `frontend/app/…`.
+
 ---
 
 ## 1. Resumen Ejecutivo

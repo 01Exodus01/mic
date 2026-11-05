@@ -6,7 +6,35 @@ reproducibilidad pesan tanto como la seguridad.
 
 ## Stack
 Next.js App Router, TypeScript estricto (sin `any`), Prisma, PostgreSQL 16,
-Tailwind, shadcn/ui (Radix), zod, Docker.
+Tailwind, shadcn/ui (Radix), zod, Docker. Monorepo con npm workspaces.
+
+## Estructura y capas
+```
+backend/    @mic/backend: lógica, datos y procesos. Sin Next.js ni React.
+  src/algorithms/   motor de agregación y concordancia
+  src/services/     lógica de negocio (room, participant, auth, host-login,
+                    host-dashboard, http/* para las rutas API)
+  src/shared/       lo que también usa el navegador (validaciones, tipos)
+  src/export/  src/telemetry/  src/db.ts  src/round-processor.ts …
+  prisma/           schema, migraciones y seed
+  worker.js         cierre de rondas vencidas
+frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
+  app/actions/      server actions: adaptadores de una línea sobre services/*
+  app/api/          rutas: adaptadores sobre services/http/*
+  lib/              NextAuth, cookie del participante, request-context
+```
+- El backend no importa Next.js, NextAuth, React ni código del frontend. Lo que
+  necesita de la petición (IP, sesiones, anfitrión, revalidación) le llega como
+  `RequestContext` (`backend/src/services/context.ts`).
+- El frontend usa el backend solo por `services/*`, `shared/*`, `env` y
+  `rate-limit`; nunca la base de datos ni `@prisma/client`. Lo que corre en el
+  navegador (`'use client'`) importa solo `shared/*`.
+- Las server actions y rutas no tienen lógica. Un servicio que no debe ser
+  server action (como `host-login`) va en su propio módulo, nunca en
+  `services/{room,participant,auth}.ts`, que se exponen completos.
+- `backend/__tests__/infra/layers.test.ts` hace cumplir estas reglas.
+- Comandos desde la raíz: `npm run dev | build | start | lint | typecheck |
+  test | worker | prisma:*`.
 
 ## Reglas generales
 - Texto visible en español, directo, sin signos de exclamación.
@@ -19,16 +47,16 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
   `PARTICIPANT_SESSION_SECRET` (distinto del anterior) y `WORKER_SECRET`.
   `HOST_INVITE_CODE` habilita el registro de anfitriones; sin él, el registro
   queda cerrado.
-- Tras cada cambio: `prisma validate`, `npx tsc --noEmit`, lint, `npx vitest run`
-  y `build`.
+- Tras cada cambio: `npx prisma validate`, `npm run typecheck`, `npm run lint`,
+  `npm test` (backend y frontend) y `npm run build`.
 - Un commit por grupo de cambios, con tests nuevos por cada corrección de lógica
   o seguridad.
 - Consultar Context7 para APIs de Next.js, Tailwind y librerías.
-- No agregar dependencias sin avisar. Toda dependencia usada debe estar en
-  package.json.
+- No agregar dependencias sin avisar. Toda dependencia usada debe estar en el
+  package.json del workspace que la usa.
 
 ## Reglas intocables
-- `lib/algorithms` no se modifica sin aprobación explícita, con el test que
+- `backend/src/algorithms` no se modifica sin aprobación explícita, con el test que
   demuestre el error antes y después. Solo se renombran identificadores si se pide.
   Los valores esperados de sus tests no se cambian para "hacerlos pasar".
   Aprobación explícita vigente (enmienda E-5): regla de desempate declarada por
@@ -39,9 +67,9 @@ Tailwind, shadcn/ui (Radix), zod, Docker.
 - Las columnas de los CSV son un contrato con R/Python. Cambiarlas exige
   actualizar `docs/data-dictionary.md` y avisar.
 - Las rondas cerradas (informes de ronda) son inmutables.
-- Todo cambio en el cálculo (`lib/algorithms`, qué boletas cuentan, desempate,
+- Todo cambio en el cálculo (`backend/src/algorithms`, qué boletas cuentan, desempate,
   variante de concordancia) exige subir `PROCEDURE_VERSION` en
-  `lib/round-processor.ts`; cada informe la guarda en `__procedure` (PT-29).
+  `backend/src/round-processor.ts`; cada informe la guarda en `__procedure` (PT-29).
 
 ## Reglas de negocio
 - Mínimo de participantes: constante única MIN_PARTICIPANTS = 3, no editable ni
@@ -301,6 +329,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-8 | 2026-11-04 | Plazo máximo de ronda: 30 días | Actividades de curso de varias semanas (PT-28) |
 | E-9 | 2026-11-04 | Expulsar conserva los votos y los excluye del cálculo | No perder datos (PT-11) |
 | E-10 | 2026-11-04 | Cierre anticipado opcional cuando votan todos | Configurable por sala (PT-27) |
+| E-11 | 2026-11-05 | Frontend y backend en carpetas separadas (npm workspaces), con reglas de capas | Separar la lógica y los datos de la capa web; mismo comportamiento y mismas pruebas. Las rutas anteriores (`lib/…`, `app/…`) citadas en enmiendas e informes previos corresponden hoy a `backend/src/…` y `frontend/app/…` |
 
 ### Especificación en PDF superada
 

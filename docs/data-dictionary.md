@@ -187,4 +187,4 @@ Los envía la pantalla del participante, en lotes; cada uno guarda el momento en
 - **Separador:** Coma (`,`).
 - **Prevención de Inyección de Fórmulas:** Celdas que inician con `=`, `+`, `-` o `@` tras recortar espacios se neutralizan anteponiendo comilla simple (`'`).
 - **Escapado CSV:** Campos que contengan comas, comillas dobles o saltos de línea se encierran entre comillas dobles (`"..."`), y las comillas internas se duplican (`""`) de acuerdo a RFC 4180.
-- **Reproducibilidad:** Todas las métricas numéricas generadas son determinísticas y auditables contra el motor de agregación en `lib/algorithms`.
+- **Reproducibilidad:** Todas las métricas numéricas generadas son determinísticas y auditables contra el motor de agregación en `backend/src/algorithms`.
