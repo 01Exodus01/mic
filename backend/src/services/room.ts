@@ -30,6 +30,7 @@ import {
   type RoomSettingsInput,
 } from '@mic/backend/shared/validations';
 import type { ActionResult } from '@mic/backend/shared/actions';
+import { conclusionReason, type ConclusionReason } from '@mic/backend/conclusion';
 import { resolveRoundEnd, type ResolvedRoundEnd, type RoundTiming } from '@mic/backend/shared/round-timing';
 import type { RankingEntry } from '@mic/backend/shared/report';
 
@@ -68,6 +69,8 @@ export interface MappedReportItem {
   collective_ranking: RankingEntry[];
   /** Always {} for the host (PT-25): no per-voter metrics or signed reasons */
   arguments_json: Record<string, never>;
+  /** Which options were tied before the tie-break and how it was resolved (host only) */
+  tieBreak: { rule: string; applied: boolean; tiedGroups: string[][]; fallbackUsed: boolean } | null;
   created_at: Date;
 }
 
@@ -96,11 +99,26 @@ export interface RoomStatusData {
   voterIds: string[];
   isExpired: boolean;
   serverTime: string;
+  /** Why the process ended (only when CONCLUDED) */
+  conclusion: ConclusionReason | null;
 }
 
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
+
+/** Tie-break summary for the host panel: tied option groups and whether the title decided. */
+function hostTieBreakView(raw: unknown): MappedReportItem['tieBreak'] {
+  const tb = (raw as { __tieBreak?: Record<string, unknown> } | null)?.__tieBreak;
+  if (!tb || typeof tb !== 'object') return null;
+  const groups = Array.isArray(tb.tiedGroups) ? (tb.tiedGroups as unknown[]).filter(Array.isArray) as string[][] : [];
+  return {
+    rule: typeof tb.rule === 'string' ? tb.rule : 'NONE',
+    applied: tb.applied === true,
+    tiedGroups: groups,
+    fallbackUsed: tb.fallbackUsed === true,
+  };
+}
 
 /** Deadline of a round from minutes or a closing date; a clear message when out of range. */
 function roundEndOrThrow(timing: unknown, base: Date, baseLabel: 'ahora' | 'la hora límite actual' = 'ahora'): ResolvedRoundEnd {
@@ -508,6 +526,7 @@ export async function getRoomStatus(ctx: RequestContext, salaId: string): Promis
         ...r,
         collective_ranking: r.collective_ranking as unknown as RankingEntry[],
         arguments_json: {},
+        tieBreak: hostTieBreakView(r.arguments_json),
       })),
     };
 
@@ -519,6 +538,7 @@ export async function getRoomStatus(ctx: RequestContext, salaId: string): Promis
         voterIds,
         isExpired: room.deadline ? new Date() > room.deadline : false,
         serverTime: new Date().toISOString(),
+        conclusion: conclusionReason(room.status, room.tau_threshold, room.reports[room.reports.length - 1]),
       },
     };
   } catch (err) {

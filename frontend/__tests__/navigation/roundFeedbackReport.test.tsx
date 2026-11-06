@@ -36,8 +36,11 @@ describe('PT-19: componente de retroalimentación', () => {
     );
     expect(html).toContain('Tu nivel de concordancia');
     expect(html).toContain('73%');
-    expect(html).toContain('Grupo: 1.º y 2.º empatadas');
-    expect(html).toContain('Tú: 2.º');
+    // Algorithm 1, lines 14–16: suggested position p_i of each option and its reasons F_i
+    expect(html).toContain('Posición sugerida: 1.º y 2.º empatadas');
+    expect(html).toContain('Tu posición: 2.º');
+    // rendered open (defaultOpen), so the toggle offers to hide them all
+    expect(html).toContain('Ocultar todo');
     expect(html).toContain('<details');
     // All 40 reasons, verbatim and escaped
     for (let i = 1; i <= 40; i++) {
@@ -51,7 +54,7 @@ describe('PT-19: componente de retroalimentación', () => {
     expect(html).toContain('En contra');
   });
 
-  it('si no votó muestra un aviso y si hubo desempate dice qué regla actuó', () => {
+  it('si no votó muestra un aviso; el desempate no se muestra al participante', () => {
     const html = renderToStaticMarkup(
       <RoundFeedbackReport
         options={options}
@@ -63,8 +66,9 @@ describe('PT-19: componente de retroalimentación', () => {
       />
     );
     expect(html).toContain('No enviaste tu selección en esta ronda');
-    expect(html).toContain('se desempataron por el orden de la lista');
-    expect(html).toContain('Tú: sin selección');
+    // The tie-break is not shown to participants (host panel and CSV only)
+    expect(html).not.toContain('desempat');
+    expect(html).toContain('Tu posición: sin selección');
   });
 
   it('formatea empates de tres posiciones', () => {

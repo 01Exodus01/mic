@@ -19,6 +19,20 @@ import PasswordInput from '@/components/ui/PasswordInput';
 import DurationPicker, { formatClosingMoment, formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import type { RoundTiming } from '@mic/backend/shared/round-timing';
 
+/** How the host is told a tie was resolved. */
+function tieBreakHostNote(rule: string, fallbackUsed: boolean): string {
+  if (rule === 'PAIRWISE_MAJORITY') {
+    return fallbackUsed
+      ? 'Se ordenaron por mayoría entre ellas y, donde la mayoría no las separó, por el título.'
+      : 'Se ordenaron por mayoría entre ellas: primero la que más participantes pusieron antes que la otra.';
+  }
+  if (rule === 'LEXICOGRAPHIC') return 'Se ordenaron por el orden de la lista de opciones.';
+  if (rule === 'REASON_BALANCE') {
+    return fallbackUsed ? 'Se ordenaron por el saldo de razones y, donde siguió el empate, por sorteo.' : 'Se ordenaron por el saldo de razones.';
+  }
+  return 'Se conservaron empatadas.';
+}
+
 /** What the round actions receive: the closing date when one was chosen, otherwise the minutes. */
 function timingOf(minutes: number, closesAt: string | null): RoundTiming {
   return closesAt ? { closesAt } : minutes;
@@ -70,6 +84,8 @@ interface ReportItem {
   effective_voters?: number;
   obtained_tau: number;
   collective_ranking: RankingEntry[];
+  /** Host only: tied option groups before the tie-break and how they were resolved */
+  tieBreak?: { rule: string; applied: boolean; tiedGroups: string[][]; fallbackUsed: boolean } | null;
 }
 
 interface RoomDetails {
@@ -100,6 +116,8 @@ interface RoomDashboardData {
   voterIds?: string[];
   isExpired: boolean;
   serverTime?: string;
+  /** Why the process ended (only when CONCLUDED) */
+  conclusion?: 'CONSENSUS' | 'MAX_ROUNDS' | null;
 }
 
 const STATE_LABELS: Record<string, string> = {
@@ -759,8 +777,13 @@ export default function RoomHostPage() {
             <h2 className="text-sm font-semibold text-[#14171A]">
               Actividad finalizada
             </h2>
-            <p className="text-xs text-[#5A554E]">
-              El proceso concluyó tras {sala.current_round} rondas. Los datos y argumentos recopilados se conservan en modo de lectura.
+            <p className="text-sm text-[#14171A]">
+              {data?.conclusion === 'CONSENSUS'
+                ? `Terminó porque el grupo alcanzó el acuerdo requerido (${Math.round((latestReport?.obtained_tau ?? 0) * 100)}% de ${Math.round(sala.tau_threshold * 100)}%) en la ronda ${sala.current_round}.`
+                : data?.conclusion === 'MAX_ROUNDS'
+                  ? `Terminó porque se ${sala.max_rounds === 1 ? 'completó la única ronda prevista' : `completaron las ${sala.max_rounds} rondas previstas`} sin alcanzar el acuerdo requerido (${Math.round((latestReport?.obtained_tau ?? 0) * 100)}% de ${Math.round(sala.tau_threshold * 100)}%).`
+                  : `El proceso concluyó tras ${sala.current_round} rondas.`}{' '}
+              Los participantes ven el motivo y el resultado final; los datos se conservan en modo de lectura.
             </p>
           </div>
         )}
@@ -874,6 +897,22 @@ export default function RoomHostPage() {
               : 'Opciones registradas que los participantes ordenarán.'}
           </p>
         </div>
+
+        {latestReport?.tieBreak?.applied && latestReport.tieBreak.tiedGroups.length > 0 && (
+          <div className="p-3 rounded-[6px] border border-[#B7791F]/40 bg-[#B7791F]/[0.07] text-xs text-[#14171A] space-y-1">
+            <p className="font-semibold">Hubo empates en la ronda {latestReport.round}</p>
+            {latestReport.tieBreak.tiedGroups.map((group, i) => (
+              <p key={i}>
+                Empatadas:{' '}
+                {group.map((id) => sala.options.find((o) => o.id === id)?.title ?? id).join(', ')}
+              </p>
+            ))}
+            <p className="text-[#14171A]/80">
+              {tieBreakHostNote(latestReport.tieBreak.rule, latestReport.tieBreak.fallbackUsed)} Los participantes no ven este aviso; queda en el
+              export (round_metrics.csv: tie_detected, tie_resolved_by).
+            </p>
+          </div>
+        )}
 
         {latestReport ? (
           <div className="overflow-x-auto border border-[#D9D5CC] rounded-[6px] bg-white">

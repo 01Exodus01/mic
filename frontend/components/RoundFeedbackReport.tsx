@@ -5,14 +5,17 @@
  * Round feedback for a participant (PT-19), shared by the feedback screen and
  * the "results of the previous round" panel on the vote screen (PT-20).
  *
- * Shows the participant's own concordance and, per option (collapsible), their
- * position, the group position (ties as "1.º y 2.º empatadas", or the declared
- * tie-break rule) and every reason for and against, verbatim, as a plain list
- * per side: not signed and not grouped by participant. Nothing is summarized or
- * shortened.
+ * Follows the feedback step of r-FAST-CR (Algorithm 1, lines 12–16): first the
+ * participant's own level of concordance, then, for each option in the order
+ * of the collective ranking, "the suggested position is p_i due to F_i": the
+ * option's place in the group order and its reasons, for and against, verbatim,
+ * as plain lists per side (not signed, not grouped by participant). The
+ * tie-break is not shown to participants (it is in the host panel and the CSV).
+ * When the process has finished, the same order is the final result.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Minus, Plus } from 'lucide-react';
 
 export interface FeedbackOption {
   id: string;
@@ -39,12 +42,6 @@ export interface FeedbackReportData {
   myPositions?: Record<string, number>;
 }
 
-const TIE_BREAK_NOTE: Record<string, string> = {
-  PAIRWISE_MAJORITY: 'Hubo empates y se desempataron por mayoría: va primero la opción que más participantes pusieron antes que la otra.',
-  LEXICOGRAPHIC: 'Hubo empates y se desempataron por el orden de la lista de opciones.',
-  REASON_BALANCE: 'Hubo empates y se desempataron por las razones (más a favor que en contra).',
-};
-
 /** "Participante 04" from the stored blind code. */
 export function formatParticipantSignature(rawCode?: string): string {
   if (!rawCode) return 'Participante';
@@ -67,18 +64,43 @@ export function formatRankPosition(
   return { label: `${Math.round(midRank)}.º`, isTied: false };
 }
 
-function ReasonList({ title, reasons }: { title: string; reasons: FeedbackReason[] }) {
+const SIDE_STYLE = {
+  FOR: {
+    title: 'A favor',
+    empty: 'Nadie escribió razones a favor.',
+    Icon: Plus,
+    box: 'border-[#2F7D4F]/40 bg-[#2F7D4F]/[0.06]',
+    head: 'text-[#2F7D4F]',
+    item: 'border-l-[#2F7D4F]',
+  },
+  AGAINST: {
+    title: 'En contra',
+    empty: 'Nadie escribió razones en contra.',
+    Icon: Minus,
+    box: 'border-[#B42318]/40 bg-[#B42318]/[0.05]',
+    head: 'text-[#B42318]',
+    item: 'border-l-[#B42318]',
+  },
+} as const;
+
+/** One side of the reasons of an option: green "+" for, red "−" against. */
+export function ReasonSideBlock({ side, reasons }: { side: 'FOR' | 'AGAINST'; reasons: FeedbackReason[] }) {
+  const st = SIDE_STYLE[side];
   return (
-    <div>
-      <h4 className="text-xs font-semibold text-[#14171A] mb-1.5">
-        {title} <span className="font-mono font-normal text-[#5A554E]">({reasons.length})</span>
+    <div className={`rounded-[6px] border p-3 ${st.box}`}>
+      <h4 className={`flex items-center gap-1.5 text-xs font-semibold mb-2 ${st.head}`}>
+        <st.Icon className="w-3.5 h-3.5 stroke-[2]" aria-hidden="true" />
+        {st.title} <span className="font-mono font-normal">({reasons.length})</span>
       </h4>
       {reasons.length === 0 ? (
-        <p className="text-xs text-[#5A554E]">Nadie escribió razones {title === 'A favor' ? 'a favor' : 'en contra'}.</p>
+        <p className="text-xs text-[#14171A]/80">{st.empty}</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-1.5">
           {reasons.map((r, i) => (
-            <li key={i} className="p-3 rounded-[6px] border border-[#D9D5CC] bg-[#F6F4EF] text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words">
+            <li
+              key={i}
+              className={`px-2.5 py-2 rounded-[4px] border border-[#D9D5CC] border-l-4 ${st.item} bg-white text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words`}
+            >
               {r.text}
             </li>
           ))}
@@ -89,8 +111,8 @@ function ReasonList({ title, reasons }: { title: string; reasons: FeedbackReason
 }
 
 /**
- * Compact line next to an option on the vote screen (PT-20): group position in
- * the previous round and, on demand, its reasons for and against.
+ * Compact line next to an option on the vote screen (PT-20): the position the
+ * previous round suggests for it and, on demand, its reasons for and against.
  */
 export function OptionPreviousRound({
   optionId,
@@ -114,12 +136,12 @@ export function OptionPreviousRound({
         if (e.currentTarget.open) onOpen?.(optionId);
       }}
     >
-      <summary className="cursor-pointer select-none min-h-[44px] flex items-center text-[#5A554E]">
-        Ronda anterior: grupo {formatRankPosition(midRank, ranking).label} · {total} {total === 1 ? 'razón' : 'razones'}
+      <summary className="cursor-pointer select-none min-h-[40px] flex items-center text-[#14171A]">
+        Ronda anterior: posición sugerida {formatRankPosition(midRank, ranking).label} · {total} {total === 1 ? 'razón' : 'razones'}
       </summary>
-      <div className="space-y-3 pt-1">
-        <ReasonList title="A favor" reasons={reasons.reasonsFor} />
-        <ReasonList title="En contra" reasons={reasons.reasonsAgainst} />
+      <div className="space-y-2 pt-1">
+        <ReasonSideBlock side="FOR" reasons={reasons.reasonsFor} />
+        <ReasonSideBlock side="AGAINST" reasons={reasons.reasonsAgainst} />
       </div>
     </details>
   );
@@ -129,11 +151,14 @@ export default function RoundFeedbackReport({
   options,
   report,
   defaultOpen = false,
+  final = false,
   onSectionOpen,
 }: {
   options: FeedbackOption[];
   report: FeedbackReportData;
   defaultOpen?: boolean;
+  /** The process finished: the order is the final result, not a suggestion */
+  final?: boolean;
   /** P2.1 / P2.3 telemetry: called when the participant expands one option */
   onSectionOpen?: (optionId: string) => void;
 }) {
@@ -142,63 +167,90 @@ export default function RoundFeedbackReport({
     (a, b) => (ranking.find((r) => r.id === a.id)?.midRank ?? 99) - (ranking.find((r) => r.id === b.id)?.midRank ?? 99)
   );
   const own = report.myConcordance;
-  const tieNote = report.tieBreak?.applied
-    ? `${TIE_BREAK_NOTE[report.tieBreak.rule] ?? ''}${report.tieBreak.fallbackUsed ? (report.tieBreak.rule === 'PAIRWISE_MAJORITY' ? ' Las que seguían igualadas se ordenaron por el título.' : ' Las que seguían igualadas se ordenaron por sorteo.') : ''}`.trim() || undefined
-    : undefined;
+  const [open, setOpen] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(options.map((o) => [o.id, defaultOpen]))
+  );
+  const allOpen = sorted.length > 0 && sorted.every((o) => open[o.id]);
+  const toggleAll = () => setOpen(Object.fromEntries(sorted.map((o) => [o.id, !allOpen])));
+  const positionWord = final ? 'Posición final' : 'Posición sugerida';
 
   return (
     <div className="space-y-4">
       <section className="p-4 rounded-[6px] border border-[#D9D5CC] bg-white">
         <h3 className="font-heading text-base font-bold text-[#14171A]">Tu nivel de concordancia</h3>
         {own?.voted && own.cix !== null ? (
-          <p className="mt-1 text-xs text-[#5A554E]">
+          <p className="mt-1 text-sm text-[#14171A]">
             Qué tanto se parece tu orden al orden del grupo:{' '}
-            <span className="font-mono text-base font-bold text-[#14171A]">{Math.round(own.cix * 100)}%</span>
+            <span className="font-mono text-base font-bold">{Math.round(own.cix * 100)}%</span>
           </p>
         ) : (
-          <p className="mt-1 text-xs text-[#5A554E]">No enviaste tu selección en esta ronda, así que no hay un nivel de concordancia tuyo.</p>
+          <p className="mt-1 text-sm text-[#14171A]">No enviaste tu selección en esta ronda, así que no hay un nivel de concordancia tuyo.</p>
         )}
       </section>
 
-      {tieNote && <p className="text-xs text-[#14171A] p-3 rounded-[6px] border border-[#D9D5CC] bg-white">{tieNote}</p>}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={toggleAll}
+          className="min-h-[40px] px-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+        >
+          {allOpen ? 'Ocultar todo' : 'Expandir todo'}
+        </button>
+      </div>
 
       <div className="space-y-2">
         {sorted.map((option) => {
           const title = option.title;
           const description = option.description;
           const midRank = ranking.find((r) => r.id === option.id)?.midRank;
-          const group = midRank !== undefined ? formatRankPosition(midRank, ranking).label : 'Sin posición';
+          const position = midRank !== undefined ? formatRankPosition(midRank, ranking).label : 'Sin posición';
           const mine = report.myPositions?.[option.id];
           const reasons = report.reasonsByOption?.[option.id] ?? { reasonsFor: [], reasonsAgainst: [] };
           const legacy = (report.arguments_json?.[option.id] ?? []).filter((a) => a.justification);
           const total = reasons.reasonsFor.length + reasons.reasonsAgainst.length + legacy.length;
+          const isOpen = Boolean(open[option.id]);
 
           return (
             <details
               key={option.id}
-              open={defaultOpen}
+              open={isOpen}
               onToggle={(e) => {
-                if (e.currentTarget.open && !defaultOpen) onSectionOpen?.(option.id);
+                const next = e.currentTarget.open;
+                if (next === isOpen) return;
+                setOpen((prev) => ({ ...prev, [option.id]: next }));
+                if (next && !defaultOpen) onSectionOpen?.(option.id);
               }}
               className="rounded-[6px] border border-[#D9D5CC] bg-white"
             >
-              <summary className="cursor-pointer select-none p-4 min-h-[44px]">
-                <span className="font-sans font-semibold text-sm text-[#14171A]">{title}</span>
-                <span className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[#5A554E] font-mono">
-                  <span>Grupo: {group}</span>
-                  <span>Tú: {mine ? `${mine}.º` : 'sin selección'}</span>
-                  <span>Razones: {total}</span>
+              <summary className="cursor-pointer select-none px-3 py-2.5 min-h-[44px] flex items-start gap-3">
+                <span className="font-mono text-lg font-bold text-[#14171A] w-9 shrink-0 leading-tight">{position}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block font-sans font-semibold text-sm text-[#14171A]">{title}</span>
+                  <span className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[#14171A]/80 font-mono">
+                    <span>{positionWord}: {position}</span>
+                    <span>Tu posición: {mine ? `${mine}.º` : 'sin selección'}</span>
+                    <span>Razones: {total}</span>
+                  </span>
                 </span>
               </summary>
-              <div className="px-4 pb-4 space-y-4 border-t border-[#D9D5CC] pt-3">
-                {description && <p className="text-xs text-[#5A554E] leading-relaxed">{description}</p>}
-                <ReasonList title="A favor" reasons={reasons.reasonsFor} />
-                <ReasonList title="En contra" reasons={reasons.reasonsAgainst} />
+              <div className="px-3 pb-3 space-y-2.5 border-t border-[#D9D5CC] pt-2.5">
+                {description && <p className="text-xs text-[#14171A]/80 leading-relaxed">{description}</p>}
+                <p className="text-xs font-medium text-[#14171A]">
+                  {final ? `Quedó en la posición ${position} con estas razones:` : `Se sugiere la posición ${position} por estas razones:`}
+                </p>
+                <ReasonSideBlock side="FOR" reasons={reasons.reasonsFor} />
+                <ReasonSideBlock side="AGAINST" reasons={reasons.reasonsAgainst} />
                 {legacy.length > 0 && (
-                  <ReasonList
-                    title="Razones"
-                    reasons={legacy.map((a) => ({ text: a.justification || '' }))}
-                  />
+                  <div className="rounded-[6px] border border-[#D9D5CC] p-3">
+                    <h4 className="text-xs font-semibold text-[#14171A] mb-2">Razones ({legacy.length})</h4>
+                    <ul className="space-y-1.5">
+                      {legacy.map((a, i) => (
+                        <li key={i} className="px-2.5 py-2 rounded-[4px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words">
+                          {a.justification}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
             </details>

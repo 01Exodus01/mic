@@ -64,7 +64,20 @@ interface FeedbackRoomData {
     blindCode: string;
   };
   latestReport: RoundReportData | null;
+  /** Why the process ended (only when CONCLUDED) */
+  conclusion?: 'CONSENSUS' | 'MAX_ROUNDS' | null;
   consent?: { required: boolean; accepted: boolean; text: string | null };
+}
+
+/** One clear reason why the process ended (stop_reason). */
+function conclusionText(reason: FeedbackRoomData['conclusion'], maxRounds: number): string {
+  if (reason === 'CONSENSUS') return 'El grupo alcanzó el acuerdo requerido.';
+  if (reason === 'MAX_ROUNDS') {
+    return maxRounds === 1
+      ? 'Se completó la única ronda prevista sin alcanzar el acuerdo requerido.'
+      : `Se completaron las ${maxRounds} rondas previstas sin alcanzar el acuerdo requerido.`;
+  }
+  return 'El proceso de consenso concluyó.';
 }
 
 export default function ParticipantFeedbackPage() {
@@ -178,10 +191,11 @@ export default function ParticipantFeedbackPage() {
 
         {/* Mensaje de estado directo y sin exclamaciones */}
         {isConcluded ? (
-          <div className="mt-4 p-3.5 rounded-[6px] border border-[#2F7D4F] bg-[#2F7D4F]/5 text-xs text-[#14171A] flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 stroke-[1.5] text-[#2F7D4F] shrink-0" />
+          <div role="status" className="mt-4 p-4 rounded-[6px] border-2 border-[#2F7D4F] bg-[#2F7D4F]/5 text-sm text-[#14171A] flex items-start gap-2.5">
+            <CheckCircle2 className="w-5 h-5 stroke-[1.5] text-[#2F7D4F] shrink-0 mt-0.5" />
             <span>
-              Actividad finalizada. Se alcanzó el acuerdo requerido o el máximo de rondas.
+              <strong className="block font-semibold">La actividad terminó.</strong>
+              {conclusionText(roomData.conclusion, sala.maxRounds)}
             </span>
           </div>
         ) : (
@@ -198,14 +212,16 @@ export default function ParticipantFeedbackPage() {
       <section>
         <div className="mb-3">
           <h2 className="font-heading text-lg font-bold text-[#14171A]">
-            Argumentos del grupo por opción
+            {isConcluded ? 'Resultado final' : 'Posición sugerida y razones del grupo'}
           </h2>
-          <p className="text-xs text-[#5A554E] mt-0.5">
-            Abre cada opción para ver tu posición, la del grupo y todas las razones a favor y en contra que escribió el grupo.
+          <p className="text-sm text-[#14171A] mt-1 leading-relaxed">
+            {isConcluded
+              ? 'Las opciones en el orden final del grupo. Abre cada una para ver las razones a favor y en contra.'
+              : 'Las opciones están en el orden que sugiere el grupo. Abre cada una para ver tu posición, la posición sugerida y las razones a favor y en contra que escribió el grupo. Úsalo para revisar tu orden en la próxima ronda.'}
           </p>
         </div>
         {latestReport ? (
-          <RoundFeedbackReport options={options || []} report={latestReport} onSectionOpen={onReportSectionOpen} />
+          <RoundFeedbackReport options={options || []} report={latestReport} final={isConcluded} onSectionOpen={onReportSectionOpen} />
         ) : (
           <p className="text-xs text-[#5A554E]">Todavía no hay resultados de esta ronda.</p>
         )}

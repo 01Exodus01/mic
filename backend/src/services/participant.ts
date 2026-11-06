@@ -33,6 +33,7 @@ import { buildVoteSnapshot, isSameSnapshot } from '@mic/backend/vote-revision';
 import { recordRoomEvent } from '@mic/backend/room-events';
 import { hashMemberCode, isWellFormedMemberCode } from '@mic/backend/shared/member-codes';
 import { displayOrderFor, displayedPositions } from '@mic/backend/option-order';
+import { conclusionReason, type ConclusionReason } from '@mic/backend/conclusion';
 import type { RequestContext, ParticipantSession as ParticipantSessionPayload } from './context';
 
 export interface ParticipantRoomViewData {
@@ -67,6 +68,8 @@ export interface ParticipantRoomViewData {
     reasonsAgainst: string[];
   }>;
   latestReport: ParticipantReportView | null;
+  /** Why the process ended (only when CONCLUDED): required agreement reached or last round used */
+  conclusion: ConclusionReason | null;
   /** PT-24: informed consent of the room; text only when it is required */
   consent: { required: boolean; accepted: boolean; version: number; text: string | null };
   isExpired: boolean;
@@ -1095,6 +1098,7 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
         session,
         myVotes: mappedVotes,
         latestReport: mappedReport,
+        conclusion: conclusionReason(room.status, room.tau_threshold, room.reports[room.reports.length - 1]),
         consent: {
           required: room.consent_required,
           accepted: !room.consent_required || (await hasAcceptedConsent(session.participantId, room.consent_version)),

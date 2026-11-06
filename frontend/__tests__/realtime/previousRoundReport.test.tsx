@@ -28,7 +28,7 @@ vi.mock('@/lib/participant-session', () => ({
 }));
 
 describe('PT-20: línea de la ronda anterior junto a cada opción', () => {
-  it('muestra la posición de grupo y las razones al abrirla', () => {
+  it('muestra la posición sugerida y las razones al abrirla', () => {
     const html = renderToStaticMarkup(
       <OptionPreviousRound
         optionId="a"
@@ -38,7 +38,7 @@ describe('PT-20: línea de la ronda anterior junto a cada opción', () => {
         }}
       />
     );
-    expect(html).toContain('Ronda anterior: grupo 1.º y 2.º empatadas · 1 razón');
+    expect(html).toContain('Ronda anterior: posición sugerida 1.º y 2.º empatadas · 1 razón');
     expect(html).toContain('<details');
     expect(html).toContain('Barata');
   });
