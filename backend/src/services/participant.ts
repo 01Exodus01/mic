@@ -621,10 +621,11 @@ export async function joinRoom(
     const participant = await prisma.$transaction(async (tx) => {
       const existing = await tx.participant.findMany({
         where: { room_id: room.id },
-        select: { blind_code: true },
+        select: { blind_code: true, is_retired: true },
       });
 
-      if (existing.length >= room.max_members) {
+      // Removed participants keep their data and code but no longer take a seat
+      if (existing.filter((p) => !p.is_retired).length >= room.max_members) {
         await failJoin('room_full');
         throw Errors.ROOM_FULL(room.max_members);
       }

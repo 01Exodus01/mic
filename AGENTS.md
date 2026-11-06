@@ -113,9 +113,16 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   tardíos, consentimiento, cierre anticipado) no cambia una vez iniciada.
 - Estado de sala cancelada: CANCELLED, distinto de CONCLUDED. Las actividades
   canceladas se distinguen en los datos y los CSV.
-- Participante retirado por el anfitrión: borrado lógico. Sus votos de rondas
-  cerradas se conservan; queda excluido de rondas futuras y no puede reingresar
-  con ese nombre.
+- Participante retirado por el anfitrión: borrado lógico. Sus selecciones de
+  rondas cerradas se conservan; queda excluido de rondas futuras. En salas con
+  nombres, su cupo y su nombre quedan libres (el nombre original pasa a
+  `retired_nickname` y en su lugar queda `~<id>`, que no se puede escribir):
+  otra persona, por ejemplo la verdadera si fue un troll, puede entrar con ese
+  nombre como participante nueva. El límite de la sala cuenta solo
+  participantes activos. El anfitrión puede "Reincorporar" al mismo
+  participante (mismo código ciego e historial) mientras la actividad sigue, si
+  hay cupo y nadie tomó su nombre (evento `participant_reinstated`). En salas
+  con lista, se vuelve a agregar a la persona desde la lista.
 
 ## Seguridad
 - Toda entrada se valida en el servidor con un esquema zod compartido con el

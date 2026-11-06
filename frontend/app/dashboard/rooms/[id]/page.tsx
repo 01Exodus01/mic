@@ -12,6 +12,7 @@ import {
   openNextRound,
   resetParticipantPin,
   expelParticipant,
+  reinstateParticipant,
 } from '@/app/actions/room';
 import { toast } from 'sonner';
 import { RoomDashboardSkeleton } from '@/components/ui/Skeleton';
@@ -106,6 +107,8 @@ interface RoomDetails {
   tie_break_rule?: 'NONE' | 'LEXICOGRAPHIC' | 'REASON_BALANCE';
   concordance_variant?: 'WITH_TIES' | 'WITHOUT_TIES';
   access_mode?: 'OPEN_PIN' | 'ROSTER';
+  /** Removed participants (rooms with names), for "Reincorporar" */
+  removedParticipants?: Array<{ id: string; nickname: string }>;
   allow_late_join?: boolean;
   close_when_all_voted?: boolean;
   consent_required?: boolean;
@@ -442,6 +445,24 @@ export default function RoomHostPage() {
       const msg = err instanceof Error ? err.message : 'Error al actualizar el PIN.';
       setResetPinServerError(msg);
       resetPinInputRef.current?.focus();
+    }
+  };
+
+  const [reinstatingId, setReinstatingId] = useState<string | null>(null);
+  const handleReinstate = async (participantId: string, nickname: string) => {
+    setReinstatingId(participantId);
+    try {
+      const res = await reinstateParticipant(salaId, participantId);
+      if (res.success) {
+        toast.success(`${nickname} volvió a la sala. Puede entrar con su nombre y su PIN.`);
+        await fetchStatus();
+      } else {
+        toast.error(res.error || 'No fue posible reincorporar al participante.');
+      }
+    } catch {
+      toast.error('No fue posible reincorporar al participante.');
+    } finally {
+      setReinstatingId(null);
     }
   };
 
@@ -1090,6 +1111,36 @@ export default function RoomHostPage() {
         )}
       </section>
 
+      {/* 6b. Retirados: se pueden reincorporar mientras la actividad sigue */}
+      {(sala.removedParticipants?.length ?? 0) > 0 && (
+        <section className="pb-6 border-b border-[#D9D5CC] space-y-2">
+          <div>
+            <h2 className="text-sm font-semibold text-[#14171A]">Retirados ({sala.removedParticipants!.length})</h2>
+            <p className="text-xs text-[#14171A]/80 mt-0.5">
+              No ocupan cupo y su nombre quedó libre. Reincorporar devuelve a la misma persona, con su historial, si hay
+              cupo y nadie tomó su nombre.
+            </p>
+          </div>
+          <ul className="divide-y divide-[#D9D5CC] border border-[#D9D5CC] rounded-[6px] bg-white">
+            {sala.removedParticipants!.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
+                <span className="font-medium text-[#14171A]">{p.nickname}</span>
+                {sala.status !== 'CONCLUDED' && sala.status !== 'CANCELLED' && (
+                  <button
+                    type="button"
+                    onClick={() => handleReinstate(p.id, p.nickname)}
+                    disabled={reinstatingId !== null}
+                    className="min-h-[36px] px-2 text-xs font-medium text-[#14171A] hover:underline hover:text-[#E4572E] disabled:opacity-40"
+                  >
+                    {reinstatingId === p.id ? 'Reincorporando...' : 'Reincorporar'}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* 7. Exportaciones (plan de mejora P3) */}
       <ExportDownloads roomId={salaId} />
 
@@ -1308,7 +1359,7 @@ export default function RoomHostPage() {
               Expulsar a {expelModal.nickname}
             </DialogTitle>
             <DialogDescription>
-              El participante quedará excluido de la sala y no podrá volver a ingresar. Sus selecciones se conservan, pero la de la ronda activa no cuenta para el resultado.
+              Saldrá de la sala y su lugar y su nombre quedarán libres: otra persona podrá entrar con ese nombre. Sus selecciones se conservan, pero la de la ronda activa no cuenta para el resultado. Si fue un error, podrás reincorporarlo desde la lista de retirados.
             </DialogDescription>
 
             {/* D3: Advertencia crítica si quedan menos de 3 participantes */}

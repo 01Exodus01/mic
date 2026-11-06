@@ -19,6 +19,7 @@ export const ROOM_EVENT_TYPES = [
   'room_cancelled',
   'pin_reset',
   'participant_expelled',
+  'participant_reinstated',
   'participant_joined',
   'vote_submitted',
   'round_processed',

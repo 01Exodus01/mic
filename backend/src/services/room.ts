@@ -90,6 +90,8 @@ export interface MappedRoomDetails {
   updated_at: Date;
   options: Array<{ id: string; room_id: string; title: string; description: string; order_index: number }>;
   participants: MappedParticipantItem[];
+  /** Removed participants of rooms that use names, with the name they had (for "Reincorporar") */
+  removedParticipants: Array<{ id: string; nickname: string }>;
   reports: MappedReportItem[];
 }
 
@@ -517,8 +519,21 @@ export async function getRoomStatus(ctx: RequestContext, salaId: string): Promis
     const voterIds = votesThisRound.map((v) => v.participant_id);
 
     // Map room object to expose both English and legacy fields for compatibility
+    // Removed participants of rooms that use names, shown so the host can reinstate them
+    const removedParticipants =
+      room.access_mode === 'OPEN_PIN'
+        ? (
+            await prisma.participant.findMany({
+              where: { room_id: room.id, is_retired: true },
+              select: { id: true, nickname: true, retired_nickname: true },
+              orderBy: { created_at: 'asc' },
+            })
+          ).map((p) => ({ id: p.id, nickname: p.retired_nickname ?? p.nickname }))
+        : [];
+
     const mappedRoom: MappedRoomDetails = {
       ...room,
+      removedParticipants,
       // PT-25: the host gets group results only. arguments_json carries per-voter
       // metrics (participant id + cix) and blind-signed reasons; the panel does not
       // use it and it must not let the host link a named person to a cix.
@@ -629,7 +644,14 @@ export async function expelParticipant(
       await prisma.$transaction(async (tx) => {
         await tx.participant.update({
           where: { id: participantId },
-          data: { is_retired: true },
+          data: {
+            is_retired: true,
+            // Open PIN rooms: free the name (someone else, e.g. the real person when
+            // a troll used it, can join with it). '~' cannot be typed in a name.
+            ...(room.access_mode === 'OPEN_PIN' && !targetParticipant.retired_nickname
+              ? { retired_nickname: targetParticipant.nickname, nickname: `~${targetParticipant.id}`.slice(0, 30) }
+              : {}),
+          },
         });
 
         await recordRoomEvent(tx, {
@@ -650,6 +672,71 @@ export async function expelParticipant(
     ctx.revalidate('/participant/vote');
 
     return { success: true, data: { activeCount: remainingActive } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+/**
+ * Brings back a removed participant (same blind code, same history) in a room
+ * that uses names. Only while the activity runs, with a free seat, and if
+ * nobody took their name in the meantime. They log in again with their name
+ * and their PIN. Their selection of the current round counts again.
+ */
+export async function reinstateParticipant(
+  ctx: RequestContext,
+  salaId: string,
+  participantId: string
+): Promise<ActionResult<{ activeCount: number }>> {
+  try {
+    const hostId = await requireHost(ctx);
+    const room = await prisma.room.findUnique({ where: { id: salaId } });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+    if (room.host_id !== hostId) throw Errors.UNAUTHORIZED();
+    if (isTerminalState(room.status)) {
+      throw Errors.INVALID_BALLOT('La actividad ya terminó; no se puede reincorporar a nadie.');
+    }
+    if (room.access_mode !== 'OPEN_PIN') {
+      throw Errors.INVALID_BALLOT('En salas con lista, vuelve a agregar a la persona desde la lista.');
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Serialize with joins and other reinstatements of the room (seats, names)
+      await tx.$queryRaw`SELECT "id" FROM "Room" WHERE "id" = ${salaId} FOR UPDATE`;
+      const target = await tx.participant.findFirst({ where: { id: participantId, room_id: salaId } });
+      if (!target) throw Errors.PARTICIPANT_NOT_FOUND();
+      if (!target.is_retired) return;
+
+      const active = await tx.participant.findMany({
+        where: { room_id: salaId, is_retired: false },
+        select: { nickname: true },
+      });
+      if (active.length >= room.max_members) {
+        throw Errors.INVALID_BALLOT('No hay cupos libres en la sala para reincorporar a esta persona.');
+      }
+      const name = target.retired_nickname ?? target.nickname;
+      if (active.some((p) => p.nickname.toLowerCase() === name.toLowerCase())) {
+        throw Errors.INVALID_BALLOT(`El nombre ${name} ya lo usa otra persona en la sala; no se puede reincorporar.`);
+      }
+
+      await tx.participant.update({
+        where: { id: participantId },
+        data: { is_retired: false, nickname: name, retired_nickname: null },
+      });
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'participant_reinstated',
+        actor: 'HOST',
+        round: room.current_round,
+        participantId,
+      });
+    });
+
+    const activeCount = await prisma.participant.count({ where: { room_id: salaId, is_retired: false } });
+    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate('/participant/vote');
+    return { success: true, data: { activeCount } };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };

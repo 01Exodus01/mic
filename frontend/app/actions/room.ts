@@ -51,6 +51,10 @@ export async function expelParticipant(...args: Args<typeof service.expelPartici
   return service.expelParticipant(requestContext(), ...args);
 }
 
+export async function reinstateParticipant(...args: Args<typeof service.reinstateParticipant>) {
+  return service.reinstateParticipant(requestContext(), ...args);
+}
+
 export async function addRoomMember(...args: Args<typeof service.addRoomMember>) {
   return service.addRoomMember(requestContext(), ...args);
 }

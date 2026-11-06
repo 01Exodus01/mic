@@ -119,6 +119,8 @@ model Participant {
   pin_hash   String   // bcrypt cost=10
   blind_code String   @db.VarChar(30) // e.g. "Participante 01"
   is_retired Boolean  @default(false)
+  /// Name the participant had before being removed (the name is freed for others; restored on reinstatement)
+  retired_nickname String? @db.VarChar(30)
   joined_round Int    @default(1)
   session_version Int @default(0) // raised on PIN reset / code regeneration: older sessions stop working
   created_at DateTime @default(now())
