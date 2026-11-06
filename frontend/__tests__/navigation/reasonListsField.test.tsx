@@ -64,7 +64,8 @@ describe('PT-14: render del campo', () => {
       <ReasonListsField optionId="o1" value={{ for: ['1', '2', '3', '4', '5'], against: [] }} onChange={() => undefined} />
     );
     expect(html).toContain('Llegaste al máximo de 5.');
-    expect(html).toMatch(/disabled=""[^>]*>.*Agregar razón a favor/s);
+    // the add button of a full side is disabled (its accessible name stays the same)
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*aria-label="Agregar razón a favor"/);
   });
 
   it('el resumen muestra todas las razones textuales y escapa el contenido', () => {

@@ -17,7 +17,8 @@ import RetiredNotice from '@/components/RetiredNotice';
 import { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
-import { GripVertical, ArrowUp, ArrowDown, Clock, LogOut, AlertCircle, Edit3, CheckCircle2 } from 'lucide-react';
+import { Clock, LogOut, AlertCircle, AlertTriangle, ChevronDown, Edit3, CheckCircle2, RefreshCw } from 'lucide-react';
+import RankingList, { type MoveMethod } from '@/components/RankingList';
 
 interface OptionItem {
   id: string;
@@ -71,7 +72,8 @@ export default function ParticipantVotePage() {
   const [legacyJustifications, setLegacyJustifications] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isExpiredLocally, setIsExpiredLocally] = useState<boolean>(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  // Option whose reasons and details are open (one at a time)
+  const [openId, setOpenId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [retired, setRetired] = useState<boolean>(false);
   const isEditingRef = useRef<boolean>(false);
@@ -82,7 +84,6 @@ export default function ParticipantVotePage() {
   // P2 telemetry: reorders and reason fields of this round, never their text
   const reorderCountRef = useRef(0);
   const typedFieldsRef = useRef<Set<string>>(new Set());
-  const dragFromRef = useRef<{ optionId: string; from: number } | null>(null);
   const [previousOpen, setPreviousOpen] = useState(false);
   const onReportSectionOpen = useReportReadTracker(
     roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 ? roomData.latestReport.round : null,
@@ -90,9 +91,6 @@ export default function ParticipantVotePage() {
     previousOpen
   );
 
-  // Mobile touch references
-  const touchStartY = useRef<number>(0);
-  const touchCurrentIndex = useRef<number | null>(null);
 
   const syncReasonsFromVotes = (myVotes: ParticipantRoomData['myVotes']) => {
     const reasonMap: Record<string, OptionReasons> = {};
@@ -153,6 +151,11 @@ export default function ParticipantVotePage() {
         initialLoadDoneRef.current = false;
         reorderCountRef.current = 0;
         typedFieldsRef.current = new Set();
+        // A new round starts from a clean ballot: nothing typed in the previous
+        // round stays in the fields (the same as after reloading the page)
+        setReasonsByOption({});
+        setLegacyJustifications({});
+        setOpenId(null);
         setIsEditing(false);
         isEditingRef.current = false;
       }
@@ -267,81 +270,14 @@ export default function ParticipantVotePage() {
     });
   };
 
-  // Reordering helpers
-  const moveUp = (index: number, method: 'buttons' | 'touch' = 'buttons') => {
-    if (index === 0) return;
-    trackReorder(method, orderedOptions[index].id, index, index - 1);
+  // Reorder: buttons, mouse drag or touch drag (RankingList animates the change)
+  const handleMove = (from: number, to: number, method: MoveMethod) => {
+    if (from === to || to < 0 || to >= orderedOptions.length) return;
+    trackReorder(method, orderedOptions[from].id, from, to);
     const next = [...orderedOptions];
-    const temp = next[index - 1];
-    next[index - 1] = next[index];
-    next[index] = temp;
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
     setOrderedOptions(next);
-  };
-
-  const moveDown = (index: number, method: 'buttons' | 'touch' = 'buttons') => {
-    if (index === orderedOptions.length - 1) return;
-    trackReorder(method, orderedOptions[index].id, index, index + 1);
-    const next = [...orderedOptions];
-    const temp = next[index + 1];
-    next[index + 1] = next[index];
-    next[index] = temp;
-    setOrderedOptions(next);
-  };
-
-  const handleDragStart = (index: number) => {
-    dragFromRef.current = { optionId: orderedOptions[index].id, from: index };
-    setDraggedIndex(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-    const next = [...orderedOptions];
-    const draggedItem = next[draggedIndex];
-    next.splice(draggedIndex, 1);
-    next.splice(index, 0, draggedItem);
-    setDraggedIndex(index);
-    setOrderedOptions(next);
-  };
-
-  const handleDragEnd = () => {
-    const start = dragFromRef.current;
-    dragFromRef.current = null;
-    if (start) {
-      const to = orderedOptions.findIndex((o) => o.id === start.optionId);
-      if (to >= 0) trackReorder('drag', start.optionId, start.from, to);
-    }
-    setDraggedIndex(null);
-  };
-
-  const handleTouchStart = (index: number, e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-    touchCurrentIndex.current = index;
-    setDraggedIndex(index);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchCurrentIndex.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
-    const threshold = 60;
-
-    if (diff > threshold && touchCurrentIndex.current < orderedOptions.length - 1) {
-      moveDown(touchCurrentIndex.current, 'touch');
-      touchCurrentIndex.current += 1;
-      touchStartY.current = currentY;
-      setDraggedIndex(touchCurrentIndex.current);
-    } else if (diff < -threshold && touchCurrentIndex.current > 0) {
-      moveUp(touchCurrentIndex.current, 'touch');
-      touchCurrentIndex.current -= 1;
-      touchStartY.current = currentY;
-      setDraggedIndex(touchCurrentIndex.current);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchCurrentIndex.current = null;
-    setDraggedIndex(null);
   };
 
   const handleReasonsChange = (optionId: string, next: OptionReasons) => {
@@ -363,7 +299,10 @@ export default function ParticipantVotePage() {
   const handleSubmit = async () => {
     const invalidField = firstReasonErrorField();
     if (invalidField) {
-      document.getElementById(invalidField)?.focus();
+      // The reasons of that option may be collapsed: open them, then focus the field
+      const optionId = orderedOptions.find((o) => invalidField.startsWith(`reason-${o.id}-`))?.id ?? null;
+      setOpenId(optionId);
+      setTimeout(() => document.getElementById(invalidField)?.focus(), 0);
       return;
     }
 
@@ -522,29 +461,41 @@ export default function ParticipantVotePage() {
             <span>Selección enviada. Puedes editarla mientras la ronda siga abierta.</span>
           </div>
         ) : (
-          <p className="text-xs text-[#5A554E] mt-2 leading-relaxed">
+          <p className="text-sm text-[#14171A] mt-2 leading-relaxed">
             Ordena las opciones de mayor a menor preferencia arrastrando o con las flechas. Si quieres, escribe razones a favor o en contra de cada una.
           </p>
         )}
       </div>
 
-      {/* PT-20: results of the previous round, collapsible, only from round 2 on */}
+      {/* New round + results of the previous round (PT-20), prominent so nobody misses them */}
       {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
-        <details
-          className="mb-6 rounded-[6px] border border-[#D9D5CC] bg-white"
-          onToggle={(e) => setPreviousOpen(e.currentTarget.open)}
+        <section
+          aria-label="Resultados de la ronda anterior"
+          className="mb-5 rounded-[6px] border-2 border-[#E4572E] bg-[#E4572E]/[0.06]"
         >
-          <summary className="cursor-pointer select-none p-4 min-h-[44px] text-sm font-semibold text-[#14171A]">
-            Resultados de la ronda anterior
-          </summary>
-          <div className="px-4 pb-4">
-            <RoundFeedbackReport
-              options={roomData.options}
-              report={roomData.latestReport}
-              onSectionOpen={onReportSectionOpen}
-            />
-          </div>
-        </details>
+          {!hasVoted && !isClosed && (
+            <div role="status" className="flex items-start gap-2 px-4 pt-3 text-sm text-[#14171A]">
+              <RefreshCw className="w-4 h-4 stroke-[2] text-[#E4572E] shrink-0 mt-0.5" aria-hidden="true" />
+              <p>
+                <strong className="font-semibold">Se abrió la Ronda {roomData.sala.currentRound}.</strong> Revisa los
+                resultados de la Ronda {roomData.sala.currentRound - 1} y vuelve a ordenar las opciones.
+              </p>
+            </div>
+          )}
+          <details onToggle={(e) => setPreviousOpen(e.currentTarget.open)}>
+            <summary className="cursor-pointer select-none px-4 py-3 min-h-[48px] flex items-center justify-between gap-2 text-sm font-semibold text-[#14171A]">
+              <span>Ver resultados de la Ronda {roomData.sala.currentRound - 1}</span>
+              <ChevronDown className="w-4 h-4 stroke-[2] text-[#E4572E] shrink-0" aria-hidden="true" />
+            </summary>
+            <div className="px-3 pb-3">
+              <RoundFeedbackReport
+                options={roomData.options}
+                report={roomData.latestReport}
+                onSectionOpen={onReportSectionOpen}
+              />
+            </div>
+          </details>
+        </section>
       )}
 
       {/* READ-ONLY SUMMARY (AUD-06) */}
@@ -559,7 +510,7 @@ export default function ParticipantVotePage() {
               return (
                 <div
                   key={option.id}
-                  className="rounded-[6px] border border-[#D9D5CC] bg-white p-4 space-y-2.5"
+                  className="rounded-[6px] border border-[#D9D5CC] bg-white p-3 space-y-2"
                 >
                   <div className="flex items-start gap-3">
                     <span className="font-mono text-xl font-bold text-[#14171A] w-7 shrink-0">
@@ -570,7 +521,7 @@ export default function ParticipantVotePage() {
                         {title}
                       </h2>
                       {description && (
-                        <p className="text-xs text-[#5A554E] mt-0.5 leading-relaxed">
+                        <p className="text-xs text-[#14171A]/75 mt-0.5 leading-relaxed">
                           {description}
                         </p>
                       )}
@@ -606,110 +557,48 @@ export default function ParticipantVotePage() {
           )}
         </div>
       ) : (
-        /* EDITABLE FORM (AUD-06 / AUD-12) */
-        <div className="space-y-4">
-          {orderedOptions.map((option, index) => {
-            const rank = index + 1;
-            const isDragging = draggedIndex === index;
-            const title = option.title;
-            const description = option.description;
-
-            return (
-              <div
-                key={option.id}
-                draggable={!isClosed}
-                onDragStart={() => handleDragStart(index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                className={`rounded-[6px] border border-[#D9D5CC] bg-white p-4 transition-colors ${
-                  isDragging ? 'border-[#E4572E] shadow-sm relative z-20' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Large rank number and drag handle */}
-                  <div className="flex flex-col items-center shrink-0 w-[44px]">
-                    <span className="font-mono text-2xl font-bold text-[#14171A] leading-none">
-                      {rank}
-                    </span>
-
-                    {!isClosed && (
-                      <div
-                        className="mt-1 text-[#5A554E] cursor-grab active:cursor-grabbing touch-none min-w-[44px] min-h-[44px] flex items-center justify-center"
-                        onTouchStart={(e) => handleTouchStart(index, e)}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                        title="Arrastrar para ordenar"
-                      >
-                        <GripVertical className="w-5 h-5 stroke-[1.5]" />
-                      </div>
-                    )}
-
-                    {!isClosed && (
-                      <div className="flex flex-col gap-1 mt-1">
-                        <button
-                          type="button"
-                          onClick={() => moveUp(index)}
-                          disabled={index === 0}
-                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#5A554E] hover:text-[#14171A] disabled:opacity-20 transition-colors"
-                          title="Subir opción"
-                        >
-                          <ArrowUp className="w-4 h-4 stroke-[1.5]" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveDown(index)}
-                          disabled={index === orderedOptions.length - 1}
-                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#5A554E] hover:text-[#14171A] disabled:opacity-20 transition-colors"
-                          title="Bajar opción"
-                        >
-                          <ArrowDown className="w-4 h-4 stroke-[1.5]" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Option title, description, and reason textarea */}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-sans font-semibold text-base text-[#14171A] leading-snug">
-                      {title}
-                    </h2>
-                    {description && (
-                      <p className="text-xs text-[#5A554E] mt-1 leading-relaxed">
-                        {description}
-                      </p>
-                    )}
-
-                    {legacyJustifications[option.id] && (
-                      <p className="mt-3 text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words">
-                        {legacyJustifications[option.id]}
-                      </p>
-                    )}
-                    {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
-                      <OptionPreviousRound
-                        optionId={option.id}
-                        report={roomData.latestReport}
-                        onOpen={onReportSectionOpen}
-                      />
-                    )}
-                    <ReasonListsField
-                      optionId={option.id}
-                      value={reasonsByOption[option.id] ?? EMPTY_REASONS}
-                      onChange={(next) => handleReasonsChange(option.id, next)}
-                      disabled={isClosed}
-                      onFieldAdded={(side) => trackEvent({ type: 'reason_field_added', option_id: option.id, side })}
-                      onTyping={(side) => {
-                        const key = `${option.id}:${side}`;
-                        if (typedFieldsRef.current.has(key)) return;
-                        typedFieldsRef.current.add(key);
-                        trackEvent({ type: 'reason_typing_started', option_id: option.id, side });
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        /* EDITABLE FORM (AUD-06 / AUD-12): compact rows, reasons on demand */
+        <RankingList
+          items={orderedOptions}
+          onMove={handleMove}
+          disabled={isClosed}
+          openId={openId}
+          onOpenChange={setOpenId}
+          reasonCounts={Object.fromEntries(
+            orderedOptions.map((o) => {
+              const v = reasonsByOption[o.id] ?? EMPTY_REASONS;
+              return [o.id, { for: cleanReasons(v.for).length, against: cleanReasons(v.against).length }];
+            })
+          )}
+          renderDetails={(option) => (
+            <div className="space-y-2.5">
+              {option.description && (
+                <p className="text-sm text-[#14171A] leading-relaxed break-words">{option.description}</p>
+              )}
+              {legacyJustifications[option.id] && (
+                <p className="text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words">
+                  {legacyJustifications[option.id]}
+                </p>
+              )}
+              {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
+                <OptionPreviousRound optionId={option.id} report={roomData.latestReport} onOpen={onReportSectionOpen} />
+              )}
+              <ReasonListsField
+                optionId={option.id}
+                value={reasonsByOption[option.id] ?? EMPTY_REASONS}
+                onChange={(next) => handleReasonsChange(option.id, next)}
+                disabled={isClosed}
+                onFieldAdded={(side) => trackEvent({ type: 'reason_field_added', option_id: option.id, side })}
+                onTyping={(side) => {
+                  const key = `${option.id}:${side}`;
+                  if (typedFieldsRef.current.has(key)) return;
+                  typedFieldsRef.current.add(key);
+                  trackEvent({ type: 'reason_typing_started', option_id: option.id, side });
+                }}
+              />
+            </div>
+          )}
+        />
       )}
 
       {/* Bottom action bar when in edit mode and voting is open */}
@@ -717,8 +606,9 @@ export default function ParticipantVotePage() {
         <div className="fixed bottom-0 left-0 right-0 bg-[#F6F4EF] border-t border-[#D9D5CC] p-4 z-40">
           <div className="max-w-[540px] mx-auto w-full space-y-2">
             {roomData?.sala?.closeWhenAllVoted && (
-              <p className="text-xs text-[#5A554E] text-center">
-                Si eres la última persona en enviar su selección, la ronda se cierra al enviar y ya no podrás editarla.
+              <p className="flex items-start gap-2 p-2 rounded-[6px] border border-[#B7791F]/50 bg-[#B7791F]/10 text-xs text-[#14171A]">
+                <AlertTriangle className="w-4 h-4 stroke-[1.75] text-[#B7791F] shrink-0" aria-hidden="true" />
+                <span>Si eres la última persona en enviar su selección, la ronda se cierra al enviar y ya no podrás editarla.</span>
               </p>
             )}
             {hasVoted && (
