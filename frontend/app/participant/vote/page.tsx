@@ -105,9 +105,18 @@ export default function ParticipantVotePage() {
     setLegacyJustifications(legacyMap);
   };
 
-  const loadData = useCallback(async () => {
+  // Polling guard: one request at a time, and a late answer never overwrites a
+  // newer one (with a slow server an old round could otherwise come back)
+  const inFlightRef = useRef(false);
+  const seqRef = useRef(0);
+
+  const loadData = useCallback(async (force = false) => {
+    if (inFlightRef.current && !force) return;
+    inFlightRef.current = true;
+    const seq = ++seqRef.current;
     try {
       const res = await getParticipantRoomView();
+      if (seq !== seqRef.current) return;
       if (!res.success && res.code === 'RETIRED') {
         setRetired(true);
         return;
@@ -147,6 +156,10 @@ export default function ParticipantVotePage() {
       const currentRound = data.sala?.currentRound ?? 1;
 
       if (currentRoundRef.current !== currentRound) {
+        // The round changed while this screen was open: say it clearly
+        if (currentRoundRef.current !== null && currentRound > currentRoundRef.current) {
+          toast.info(`Se abrió la Ronda ${currentRound}. Vuelve a ordenar las opciones.`);
+        }
         currentRoundRef.current = currentRound;
         initialLoadDoneRef.current = false;
         reorderCountRef.current = 0;
@@ -195,6 +208,7 @@ export default function ParticipantVotePage() {
       const msg = err instanceof Error ? err.message : 'Error al cargar los datos.';
       toast.error(msg);
     } finally {
+      if (seq === seqRef.current) inFlightRef.current = false;
       setLoading(false);
     }
   }, [router]);
@@ -324,14 +338,14 @@ export default function ParticipantVotePage() {
         toast.success('Selección guardada.');
         setIsEditing(false);
         isEditingRef.current = false;
-        await loadData();
+        await loadData(true);
       } else if (res.code === 'RETIRED') {
         setRetired(true);
       } else if (res.code === 'ROOM_CLOSED') {
         // The round closed while this screen still showed time: block and refresh now
         setIsExpiredLocally(true);
         toast.error(res.error || 'La ronda ya se cerró.');
-        await loadData();
+        await loadData(true);
       } else {
         toast.error(res.error || 'No fue posible guardar la selección.');
       }
@@ -617,7 +631,7 @@ export default function ParticipantVotePage() {
                 onClick={() => {
                   isEditingRef.current = false;
                   setIsEditing(false);
-                  loadData();
+                  loadData(true);
                 }}
                 className="w-full text-xs text-[#5A554E] hover:text-[#14171A] text-center py-1 transition-colors"
               >

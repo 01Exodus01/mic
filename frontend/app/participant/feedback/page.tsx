@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getParticipantRoomView, logoutParticipant } from '@/app/actions/participant';
 import { ParticipantFeedbackSkeleton } from '@/components/ui/Skeleton';
@@ -88,9 +88,17 @@ export default function ParticipantFeedbackPage() {
   // P2.1: real reading time of the report shown on this screen
   const onReportSectionOpen = useReportReadTracker(roomData?.latestReport?.round, 'feedback', !retired);
 
+  // Polling guard: one request at a time, and a late answer never overwrites a newer one
+  const inFlightRef = useRef(false);
+  const seqRef = useRef(0);
+
   const loadData = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    const seq = ++seqRef.current;
     try {
       const res = await getParticipantRoomView();
+      if (seq !== seqRef.current) return;
       if (!res.success && res.code === 'RETIRED') {
         setRetired(true);
         return;
@@ -108,22 +116,36 @@ export default function ParticipantFeedbackPage() {
       const data = res.data as unknown as FeedbackRoomData;
       setRoomData(data);
 
-      // Si el anfitrión abre la siguiente ronda, volver a la votación
+      // The host opened the next round: say it and go to the selection screen
       if (data.sala.status === 'ROUND_OPEN') {
+        toast.info(`Se abrió la Ronda ${data.sala.currentRound}. Vuelve a ordenar las opciones.`);
         router.push('/participant/vote');
         return;
       }
     } catch (err) {
       console.error(err);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }, [router]);
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
+    // Only while the screen is visible; at once when it becomes visible again
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') loadData();
+    }, 5000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onVisible);
+    };
   }, [loadData]);
 
   const handleLogout = async () => {
