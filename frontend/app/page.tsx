@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { RoomPinSchema } from '@mic/backend/shared/validations';
+import { verifyRoomPin } from '@/app/actions/participant';
 
 export default function HomePage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function HomePage() {
   const [pin, setPin] = useState('');
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
   const validatePin = (val: string): string | null => {
     const result = RoomPinSchema.safeParse(val);
@@ -33,7 +35,7 @@ export default function HomePage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     const err = validatePin(pin);
@@ -43,7 +45,21 @@ export default function HomePage() {
       return;
     }
     const cleanPin = pin.trim().replace(/\s+/g, '').toUpperCase();
-    router.push(`/room/${cleanPin}`);
+    // Check the room here, so a wrong PIN is reported on this page and not after leaving it
+    setChecking(true);
+    try {
+      const res = await verifyRoomPin(cleanPin);
+      if (!res.success) {
+        setError(res.error || 'No se puede ingresar a esa sala. Revisa el PIN.');
+        pinInputRef.current?.focus();
+        return;
+      }
+      router.push(`/room/${cleanPin}`);
+    } catch {
+      setError('No se pudo comprobar el PIN. Revisa tu conexión e intenta de nuevo.');
+    } finally {
+      setChecking(false);
+    }
   };
 
   const isInvalid = touched && !!error;
@@ -91,10 +107,10 @@ export default function HomePage() {
               />
               <button
                 type="submit"
-                disabled={isInvalid}
+                disabled={isInvalid || checking}
                 className="w-full sm:w-auto h-14 min-h-[56px] px-6 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shrink-0 flex items-center justify-center"
               >
-                Ingresar a la sala
+                {checking ? 'Comprobando...' : 'Ingresar a la sala'}
               </button>
             </div>
             {isInvalid && (

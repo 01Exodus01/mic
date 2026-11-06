@@ -9,14 +9,24 @@ export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
 
+  // Ingreso a una sala: solo el logo, que lleva al inicio (una acción por pantalla)
+  if (pathname === '/join' || pathname.startsWith('/room')) {
+    return (
+      <header className="border-b border-[#D9D5CC] bg-[#F6F4EF]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center">
+          <Link href="/" className="flex items-center gap-2 min-h-[44px]" aria-label="Volver al inicio">
+            <span className="font-heading text-lg font-bold text-[#14171A] tracking-tight">GDSS</span>
+            <span className="text-xs font-mono uppercase tracking-wider text-[#5A554E] border border-[#D9D5CC] px-2 py-0.5 rounded-[999px]">
+              r-FAST-CR
+            </span>
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
   // En las pantallas de participante no se muestra barra de navegación (móvil primero, una acción por pantalla)
-  if (
-    pathname === '/join' ||
-    pathname.startsWith('/sala') ||
-    pathname.startsWith('/room') ||
-    pathname.startsWith('/student') ||
-    pathname.startsWith('/participant')
-  ) {
+  if (pathname.startsWith('/sala') || pathname.startsWith('/student') || pathname.startsWith('/participant')) {
     return null;
   }
 
