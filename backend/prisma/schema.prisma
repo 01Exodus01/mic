@@ -79,7 +79,7 @@ model Room {
 
   // Per-room configuration. Defaults reproduce the behaviour before PT-08.
   access_mode          AccessMode         @default(OPEN_PIN)
-  allow_late_join      Boolean            @default(false)
+  allow_late_join      Boolean            @default(true)
   consent_required     Boolean            @default(false)
   consent_text         String?            @db.VarChar(4000)
   consent_version      Int                @default(1)

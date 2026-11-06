@@ -14,7 +14,7 @@ export type RoomSettingsValue = RoomSettings;
 
 export const DEFAULT_ROOM_SETTINGS: RoomSettingsValue = {
   accessMode: 'OPEN_PIN',
-  allowLateJoin: false,
+  allowLateJoin: true,
   closeWhenAllVoted: false,
   consentRequired: false,
   consentText: '',
@@ -148,14 +148,15 @@ export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdv
         <label className="flex items-start gap-3 text-xs cursor-pointer">
           <input
             type="checkbox"
-            checked={value.allowLateJoin}
-            onChange={(e) => set('allowLateJoin', e.target.checked)}
+            checked={!value.allowLateJoin}
+            onChange={(e) => set('allowLateJoin', !e.target.checked)}
             className="mt-0.5 accent-[#E4572E] w-4 h-4"
           />
           <span>
-            <span className="block font-medium text-[#14171A]">Permitir que se sumen personas en rondas posteriores</span>
+            <span className="block font-medium text-[#14171A]">Bloquear el ingreso de personas en rondas posteriores</span>
             <span className="block text-[#5A554E] mt-0.5">
-              Si no lo marcas, solo participan en las rondas siguientes quienes enviaron su selección en la primera.
+              Si lo marcas, solo participan en las rondas siguientes quienes enviaron su selección en la primera. Si no, quien
+              llegue tarde puede sumarse en cualquier ronda abierta.
             </span>
           </span>
         </label>
@@ -195,7 +196,7 @@ export function RoomSettingsSummary({
     ['Empates', TIE_BREAK_LABELS[room.tie_break_rule ?? 'NONE'].name],
     ['Nivel de acuerdo', VARIANT_LABELS[room.concordance_variant ?? 'WITH_TIES'].name],
     ['Ingreso', ACCESS_LABELS[room.access_mode ?? 'OPEN_PIN'].name],
-    ['Personas en rondas posteriores', room.allow_late_join ? 'Se pueden sumar' : 'Solo quienes enviaron su selección en la primera'],
+    ['Personas en rondas posteriores', room.allow_late_join ? 'Se pueden sumar (ingreso tardío permitido)' : 'Bloqueado: solo quienes enviaron su selección en la primera'],
     ['Cierre de ronda', room.close_when_all_voted ? 'Cuando todos envían su selección o a la hora límite' : 'A la hora límite o a mano'],
     ['Consentimiento', room.consent_required ? 'Se pide aceptar antes de la primera selección' : 'No se pide'],
   ];

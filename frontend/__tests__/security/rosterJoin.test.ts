@@ -107,7 +107,7 @@ describe.skipIf(!hasTestDb)('PT-22: ingreso con código personal (PostgreSQL)', 
     const { joinRoomWithCode } = await import('@/app/actions/participant');
     const code = generateMemberCode();
     await prisma.roomMember.create({ data: { room_id: roster.roomId, label: 'A010', access_code_hash: hashMemberCode(code), added_round: 2 } });
-    await prisma.room.update({ where: { id: roster.roomId }, data: { current_round: 2 } });
+    await prisma.room.update({ where: { id: roster.roomId }, data: { current_round: 2, allow_late_join: false } });
     expect(await joinRoomWithCode(roster.pin, code)).toEqual({ success: false, error: GENERIC, code: 'CANNOT_JOIN' });
     // A member who joined in round 1 still resumes
     expect((await joinRoomWithCode(roster.pin, codes.A001)).success).toBe(true);

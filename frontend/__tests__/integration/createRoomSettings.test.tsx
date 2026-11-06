@@ -57,6 +57,8 @@ describe('PT-18: componentes', () => {
     expect(html).toContain('orden alfabético del título');
     expect(html).toContain('Solo personas de una lista');
     expect(html).toContain('Cerrar la ronda en cuanto todos envíen su selección');
+    // E-13: late participants allowed by default; the option blocks them (unchecked)
+    expect(html).toMatch(/<input type="checkbox"(?![^>]*checked)[^>]*\/?>\s*<span><span[^>]*>Bloquear el ingreso de personas en rondas posteriores/);
     for (const banned of ['τ', 'tau', 'cohorte', 'Kendall', 'mid-rank', 'quórum']) {
       expect(html.toLowerCase()).not.toContain(banned.toLowerCase());
     }
@@ -108,7 +110,7 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
       tie_break_rule: 'PAIRWISE_MAJORITY',
       concordance_variant: 'WITHOUT_TIES',
       access_mode: 'OPEN_PIN',
-      allow_late_join: false,
+      allow_late_join: true,
       close_when_all_voted: false,
       consent_required: false,
     });

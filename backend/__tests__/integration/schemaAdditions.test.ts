@@ -126,7 +126,8 @@ describe('PT-08: configuración por sala, lista y consentimiento', () => {
   it('los valores por defecto reproducen el comportamiento anterior', () => {
     const room = modelBlock('Room');
     expect(room).toMatch(/access_mode\s+AccessMode\s+@default\(OPEN_PIN\)/);
-    expect(room).toMatch(/allow_late_join\s+Boolean\s+@default\(false\)/);
+    // E-13: late participants allowed unless the host blocks them
+    expect(room).toMatch(/allow_late_join\s+Boolean\s+@default\(true\)/);
     expect(room).toMatch(/consent_required\s+Boolean\s+@default\(false\)/);
     expect(room).toMatch(/close_when_all_voted\s+Boolean\s+@default\(false\)/);
     // E-12: every new room breaks ties (pairwise majority, then title) and measures without ties
@@ -144,7 +145,7 @@ describe('PT-08: configuración por sala, lista y consentimiento', () => {
 });
 
 describe.skipIf(!dbUrl)('PT-08: valores por defecto en la base (PostgreSQL)', () => {
-  it('una sala creada sin configuración queda abierta, cerrada a tardíos, sin consentimiento y con el desempate fijo', async () => {
+  it('una sala creada sin configuración queda abierta, con ingreso tardío permitido, sin consentimiento y con el desempate fijo', async () => {
     const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
     const suffix = (Date.now() + 1).toString(36);
     try {
@@ -156,7 +157,7 @@ describe.skipIf(!dbUrl)('PT-08: valores por defecto en la base (PostgreSQL)', ()
       });
       expect(room).toMatchObject({
         access_mode: 'OPEN_PIN',
-        allow_late_join: false,
+        allow_late_join: true,
         consent_required: false,
         consent_text: null,
         close_when_all_voted: false,

@@ -81,11 +81,13 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
 - Acuerdo requerido: entero de 1 a 100 (%), convertido siempre a fracción
   dividiendo entre 100.
 - Rondas máximas: entero de 1 a 10, sin valor oculto.
-- Cohorte configurable por sala (enmienda E-3). Por defecto, cerrada: solo quien
-  votó en la ronda 1 participa en las siguientes. Si la sala permite
-  participantes tardíos, se puede ingresar o votar por primera vez en cualquier
-  ronda abierta y queda registrada la ronda de ingreso. En ambos casos, sin
-  arrastre de votos de rondas anteriores.
+- Cohorte configurable por sala (enmiendas E-3 y E-13). Por defecto, abierta:
+  quien llegue tarde puede ingresar o enviar su selección por primera vez en
+  cualquier ronda abierta y queda registrada la ronda de ingreso. El anfitrión
+  puede bloquearlo al crear la sala ("Bloquear el ingreso de personas en rondas
+  posteriores"): entonces solo participa en las rondas siguientes quien envió
+  su selección en la ronda 1. En ambos casos, sin arrastre de selecciones de
+  rondas anteriores.
 - Métodos de agregación de una sala nueva: Borda o Schulze (enmienda E-12).
   Kemeny-Young queda solo para salas creadas antes.
 - Desempate siempre activo y no configurable (enmienda E-12, reemplaza a E-1 y
@@ -361,6 +363,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-10 | 2026-11-04 | Cierre anticipado opcional cuando votan todos | Configurable por sala (PT-27) |
 | E-11 | 2026-11-05 | Frontend y backend en carpetas separadas (npm workspaces), con reglas de capas | Separar la lógica y los datos de la capa web; mismo comportamiento y mismas pruebas. Las rutas anteriores (`lib/…`, `app/…`) citadas en enmiendas e informes previos corresponden hoy a `backend/src/…` y `frontend/app/…` |
 | E-12 | 2026-11-05 | Solo Borda y Schulze en salas nuevas; desempate fijo (mayoría pareada en la ronda, luego título) y medición sin empates; sin opciones de desempate ni variante al crear la sala | Pedido del equipo; evita combinaciones redundantes ("desempatar" con "con empates" medía lo mismo). Procedimiento r-fast-cr-4 |
+| E-13 | 2026-11-06 | Ingreso tardío permitido por defecto; la opción de la sala lo bloquea | Pedido del equipo tras el testeo; reemplaza el valor por defecto de E-3. Las salas ya creadas conservan su configuración |
 
 ### Especificación en PDF superada
 

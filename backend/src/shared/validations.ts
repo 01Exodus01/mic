@@ -345,7 +345,8 @@ export const RoomSettingsSchema = z
     accessMode: z.enum(['OPEN_PIN', 'ROSTER'], {
       invalid_type_error: 'Elige una forma de ingreso válida.',
     }).default('OPEN_PIN'),
-    allowLateJoin: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
+    // Late participants are welcome by default; the host can block them (E-13)
+    allowLateJoin: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(true),
     closeWhenAllVoted: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),
     // PT-24: informed consent written by the host; no default legal text
     consentRequired: z.boolean({ invalid_type_error: 'Valor no válido.' }).default(false),

@@ -254,7 +254,7 @@ describe.skipIf(!hasTestDb)('PT-23: participantes tardíos (PostgreSQL)', () => 
   const ballot = (fx: RoomFixture) => fx.optionIds.map((optionId, i) => ({ optionId, position: i + 1 }));
 
   it('apagada: no se puede ingresar ni votar por primera vez en la ronda 2', async () => {
-    const fx = await createRoomFixture(prisma, { participants: 1, status: 'ROUND_OPEN', currentRound: 2 });
+    const fx = await createRoomFixture(prisma, { participants: 1, status: 'ROUND_OPEN', currentRound: 2, room: { allow_late_join: false } });
     fixtures.push(fx);
     const { joinRoom, submitVote } = await import('@/app/actions/participant');
     expect((await joinRoom(fx.pin, 'Persona Tardía', '1234')).success).toBe(false);
