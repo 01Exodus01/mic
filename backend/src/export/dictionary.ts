@@ -124,7 +124,7 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
     type: { type: 'categoría', description: 'Tipo de evento (ver la tabla de eventos más abajo).' },
     actor: { type: 'categoría', range: 'HOST, PARTICIPANT, SYSTEM', description: 'Quién originó el evento.' },
     // flattened data keys
-    reason: { type: 'categoría', description: 'round_closed: HOST, TIMEOUT, ALL_VOTED. join_failed: wrong_pin, locked_out, retired, room_unavailable, late_join_closed, room_full, invalid_code, removed_member.' },
+    reason: { type: 'categoría', description: 'round_closed: HOST, TIMEOUT, ALL_VOTED. join_failed: wrong_pin, locked_out, retired, room_unavailable, room_concluded, late_join_closed, room_full, invalid_code, removed_member.' },
     minutes: { type: 'entero', unit: 'min', description: 'Duración configurada o agregada (round_opened, deadline_extended); con una fecha de cierre, los minutos hasta ella.' },
     reopened: { type: 'booleano', description: 'round_opened: la ronda se reabrió tras selecciones insuficientes.' },
     timing: { type: 'categoría', range: 'duration, date', description: 'round_opened / deadline_extended: el anfitrión eligió una duración o la fecha y hora de cierre en el calendario (minutes es entonces la diferencia, redondeada).' },

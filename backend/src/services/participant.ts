@@ -351,7 +351,7 @@ async function runSerializableWithRetry<T>(run: () => Promise<T>): Promise<T> {
 export async function verifyRoomPin(
   ctx: RequestContext,
   roomPin: string
-): Promise<ActionResult<{ pin: string; title: string; accessMode: 'OPEN_PIN' | 'ROSTER' }>> {
+): Promise<ActionResult<{ pin: string; title: string; accessMode: 'OPEN_PIN' | 'ROSTER'; concluded: boolean }>> {
   try {
     const ip = await ctx.clientIp();
     const rl = checkRateLimit(`room_query:${ip}`, 30, 60);
@@ -372,11 +372,15 @@ export async function verifyRoomPin(
     });
 
     // Unified message: does not disclose whether room exists or is in an invalid state
-    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT') {
+    // A finished room stays reachable so its participants can see the final results
+    if (!room || room.status === 'CANCELLED' || room.status === 'DRAFT') {
       return { success: false, error: 'No se puede ingresar a esa sala. Revisa el PIN.' };
     }
 
-    return { success: true, data: { pin: room.pin, title: room.title, accessMode: room.access_mode } };
+    return {
+      success: true,
+      data: { pin: room.pin, title: room.title, accessMode: room.access_mode, concluded: room.status === 'CONCLUDED' },
+    };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };
@@ -409,7 +413,7 @@ export async function checkNicknameInRoom(
     });
 
     // Roster rooms (PT-22) do not use names: same generic message
-    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
+    if (!room || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
       return { success: false, error: 'No se puede ingresar a esa sala. Revisa tus datos.' };
     }
 
@@ -423,6 +427,9 @@ export async function checkNicknameInRoom(
     const exists = room.participants.some(
       (p) => !p.is_retired && p.nickname.toLowerCase() === nickVal.data.toLowerCase()
     );
+    if (!exists && room.status === 'CONCLUDED') {
+      return { success: false, error: 'La actividad ya terminó. Solo pueden entrar quienes participaron, para ver los resultados finales.' };
+    }
 
     return { success: true, data: { exists } };
   } catch (err) {
@@ -442,6 +449,7 @@ function cleanDeviceTag(tag: unknown): string | null {
 
 type JoinFailureReason =
   | 'room_unavailable'
+  | 'room_concluded'
   | 'retired'
   | 'locked_out'
   | 'wrong_pin'
@@ -505,7 +513,8 @@ export async function joinRoom(
 
     // Unified generic message according to D4 and AGENTS.md (no disclosure of room state).
     // Roster rooms (PT-22) only accept a personal code.
-    if (!room || room.status === 'CONCLUDED' || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
+    // Finished rooms: only their participants come back, to see the final results
+    if (!room || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
       if (room) await recordJoinFailure(room, 'room_unavailable', { deviceTag, mode: 'pin' });
       throw Errors.CANNOT_JOIN();
     }
@@ -569,8 +578,12 @@ export async function joinRoom(
       };
     }
 
-    // 5. New registration. Closed cohort by default: only in round 1, unless
-    // the room allows late participants (PT-23)
+    // 5. New registration. Never once the activity finished
+    if (room.status === 'CONCLUDED') {
+      await failJoin('room_concluded');
+      throw new AppError('CANNOT_JOIN', 'La actividad ya terminó. Solo pueden entrar quienes participaron, para ver los resultados finales.', 400);
+    }
+    // Closed cohort by default: only in round 1, unless the room allows late participants (PT-23)
     if (room.current_round > 1 && !room.allow_late_join) {
       await failJoin('late_join_closed');
       throw Errors.CANNOT_JOIN();
@@ -674,7 +687,7 @@ export async function joinRoomWithCode(
     const pinVal = RoomPinSchema.safeParse(roomPin);
     if (pinVal.success) room = await prisma.room.findUnique({ where: { pin: pinVal.data } });
     if (!pinVal.success || !room) await fail();
-    if (room!.access_mode !== 'ROSTER' || ['CONCLUDED', 'CANCELLED', 'DRAFT'].includes(room!.status)) {
+    if (room!.access_mode !== 'ROSTER' || ['CANCELLED', 'DRAFT'].includes(room!.status)) {
       await fail('room_unavailable');
     }
     if (typeof accessCode !== 'string' || !isWellFormedMemberCode(accessCode)) await fail('invalid_code');
@@ -704,6 +717,8 @@ export async function joinRoomWithCode(
         return existing;
       }
 
+      // A finished activity takes no new identities; its members come back to see the results
+      if (room!.status === 'CONCLUDED') return { refused: 'room_concluded' as const, participantId: undefined };
       // Closed cohort: new identities only in round 1, unless late participants are allowed (PT-23)
       if (room!.current_round > 1 && !room!.allow_late_join) return { refused: 'late_join_closed' as const, participantId: undefined };
 
