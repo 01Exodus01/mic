@@ -357,7 +357,7 @@ export async function verifyRoomPin(
 ): Promise<ActionResult<{ pin: string; title: string; accessMode: 'OPEN_PIN' | 'ROSTER'; concluded: boolean }>> {
   try {
     const ip = await ctx.clientIp();
-    const rl = checkRateLimit(`room_query:${ip}`, 30, 60);
+    const rl = checkRateLimit(`room_query:${ip}`, CLASS_IP_LIMIT, 60);
     if (!rl.allowed) throw Errors.RATE_LIMITED(rl.resetIn);
 
     const validation = RoomPinSchema.safeParse(roomPin);
@@ -401,7 +401,7 @@ export async function checkNicknameInRoom(
 ): Promise<ActionResult<{ exists: boolean }>> {
   try {
     const ip = await ctx.clientIp();
-    const rl = checkRateLimit(`nick_query:${ip}`, 30, 60);
+    const rl = checkRateLimit(`nick_query:${ip}`, CLASS_IP_LIMIT, 60);
     if (!rl.allowed) throw Errors.RATE_LIMITED(rl.resetIn);
 
     const pinVal = RoomPinSchema.safeParse(roomPin);
@@ -444,6 +444,17 @@ export async function checkNicknameInRoom(
 // ─────────────────────────────────────────────
 // Join Room
 // ─────────────────────────────────────────────
+
+/**
+ * Per-IP limits of the join steps (PIN check, name check, join). A whole class
+ * often reaches the server from one public IP (school network, NAT): 70 people
+ * make ~210 of these calls within a couple of minutes, so the limit is per
+ * minute and generous. Guessing stays hard: 5 wrong PINs lock a name for
+ * 15 minutes, and personal codes have ~2^50 values.
+ */
+export const CLASS_IP_LIMIT = 300;
+/** Wrong personal codes from one IP for one room before a 15-minute lockout of that IP */
+export const ROSTER_FAILS_PER_IP = 150;
 
 /** P2.4: random, non-identifying tag the browser keeps to count retries per device. */
 function cleanDeviceTag(tag: unknown): string | null {
@@ -496,7 +507,7 @@ export async function joinRoom(
   try {
     // 1. Rate limit by IP
     const ip = await ctx.clientIp();
-    const rl = checkRateLimit(`join:${ip}`, 30, 60);
+    const rl = checkRateLimit(`join:${ip}`, CLASS_IP_LIMIT, 60);
     if (!rl.allowed) throw Errors.RATE_LIMITED(rl.resetIn);
 
     // 2. Validate inputs with Zod
@@ -669,7 +680,7 @@ export async function joinRoomWithCode(
     const ip = await ctx.clientIp();
     // A whole class often shares one public IP: limits are generous, and a
     // 10-character random code (~2^50) makes guessing infeasible anyway.
-    const rl = checkRateLimit(`join_code:${ip}`, 60, 60);
+    const rl = checkRateLimit(`join_code:${ip}`, CLASS_IP_LIMIT, 60);
     if (!rl.allowed) throw Errors.RATE_LIMITED(rl.resetIn);
 
     const lockoutKey = `join_code_fail:${ip}:${String(roomPin).toUpperCase().slice(0, 6)}`;
@@ -678,7 +689,7 @@ export async function joinRoomWithCode(
 
     let room: Awaited<ReturnType<typeof prisma.room.findUnique>> = null;
     const fail = async (reason?: JoinFailureReason, participantId?: string): Promise<never> => {
-      const attempt = recordFailedAttempt(lockoutKey, 30, 900);
+      const attempt = recordFailedAttempt(lockoutKey, ROSTER_FAILS_PER_IP, 900);
       // P2.4: logged only when the room exists; the code typed is never stored
       if (room && reason) {
         await recordJoinFailure(room, attempt.isLocked ? 'locked_out' : reason, { participantId, deviceTag, mode: 'roster' });
