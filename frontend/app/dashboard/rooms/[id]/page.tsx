@@ -48,6 +48,7 @@ import RoomRosterManager from '@/components/RoomRosterManager';
 import ParticipationTable from '@/components/ParticipationTable';
 import ExportDownloads from '@/components/ExportDownloads';
 import { rankingHasTies } from '@/lib/ranking';
+import AgreementChart from '@/components/AgreementChart';
 import {
   Dialog,
   DialogContent,
@@ -856,6 +857,17 @@ export default function RoomHostPage() {
         ) : (
           <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-4 text-xs text-[#5A554E]">
             El nivel de acuerdo se calculará cuando se cierre la ronda y se procesen las selecciones recibidas.
+          </div>
+        )}
+
+        {/* Progress of the group's agreement over the rounds */}
+        {(sala.reports?.length ?? 0) > 0 && (
+          <div className="border border-[#D9D5CC] rounded-[6px] bg-white p-3">
+            <AgreementChart
+              points={sala.reports.map((r) => ({ round: r.round, value: r.obtained_tau }))}
+              threshold={sala.tau_threshold}
+              maxRounds={sala.max_rounds}
+            />
           </div>
         )}
 
