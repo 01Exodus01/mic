@@ -95,6 +95,8 @@ export interface ParticipantArgumentView {
 /** A reason as participants see it: text only, not grouped or signed by author. */
 export interface ParticipantReasonView {
   text: string;
+  /** The requesting participant wrote it (only that flag; authors of other reasons are never sent) */
+  mine?: true;
 }
 
 export interface ParticipantOptionReasonsView {
@@ -171,7 +173,8 @@ function toArgumentsView(
 function toReasonsView(
   raw: unknown,
   optionIds: string[],
-  reportId: string
+  reportId: string,
+  myBlindCode: string | null
 ): Record<string, ParticipantOptionReasonsView> {
   const source = isRecord(raw) && isRecord(raw.__reasons) ? raw.__reasons : {};
   const pick = (optionId: string, side: string, list: unknown): ParticipantReasonView[] =>
@@ -179,7 +182,15 @@ function toReasonsView(
       ? list
           .flatMap((r, i) =>
             isRecord(r) && typeof r.text === 'string'
-              ? [{ key: mixedOrderKey(reportId, optionId, side, i), view: { text: r.text } }]
+              ? [
+                  {
+                    key: mixedOrderKey(reportId, optionId, side, i),
+                    view:
+                      myBlindCode !== null && r.blindCode === myBlindCode
+                        ? { text: r.text, mine: true as const }
+                        : { text: r.text },
+                  },
+                ]
               : []
           )
           .sort((a, b) => a.key.localeCompare(b.key))
@@ -222,7 +233,8 @@ function toParticipantReportView(
   },
   optionIds: string[],
   participantId: string,
-  myPositions: Record<string, number>
+  myPositions: Record<string, number>,
+  myBlindCode: string | null = null
 ): ParticipantReportView {
   const ranking = toRankingView(report.collective_ranking);
   const args = toArgumentsView(report.arguments_json, optionIds, report.id);
@@ -232,7 +244,7 @@ function toParticipantReportView(
     obtained_tau: report.obtained_tau,
     collective_ranking: ranking,
     arguments_json: args,
-    reasonsByOption: toReasonsView(report.arguments_json, optionIds, report.id),
+    reasonsByOption: toReasonsView(report.arguments_json, optionIds, report.id, myBlindCode),
     tieBreak: toTieBreakView(report.arguments_json),
     myConcordance: toOwnConcordance(report.arguments_json, participantId),
     myPositions,
@@ -1069,7 +1081,8 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
           latestReport,
           room.options.map((o) => o.id),
           session.participantId,
-          myPositions
+          myPositions,
+          participant.blind_code
         )
       : null;
 

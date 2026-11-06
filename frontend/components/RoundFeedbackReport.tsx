@@ -26,6 +26,8 @@ export interface FeedbackOption {
 /** Reasons are shown as a plain list per side, without the author (not grouped by participant). */
 export interface FeedbackReason {
   text: string;
+  /** Written by the participant who is reading (marked "Tu razón") */
+  mine?: boolean;
 }
 
 export interface FeedbackLegacyArgument {
@@ -99,8 +101,15 @@ export function ReasonSideBlock({ side, reasons }: { side: 'FOR' | 'AGAINST'; re
           {reasons.map((r, i) => (
             <li
               key={i}
-              className={`px-2.5 py-2 rounded-[4px] border border-[#D9D5CC] border-l-4 ${st.item} bg-white text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words`}
+              className={`px-2.5 py-2 rounded-[4px] border-l-4 ${st.item} bg-white text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words ${
+                r.mine ? 'border-2 border-[#14171A]' : 'border border-[#D9D5CC]'
+              }`}
             >
+              {r.mine && (
+                <span className="inline-block mr-1.5 mb-0.5 px-1.5 py-px rounded-[3px] bg-[#14171A] text-white text-[10px] font-semibold tracking-wide align-middle">
+                  Tu razón
+                </span>
+              )}
               {r.text}
             </li>
           ))}
