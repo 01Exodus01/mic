@@ -13,10 +13,12 @@ import { LogOut } from 'lucide-react';
 import { acceptConsent, getParticipantRoomView, logoutParticipant } from '@/app/actions/participant';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import RetiredNotice from '@/components/RetiredNotice';
+import ParticipantIdentity from '@/components/ParticipantIdentity';
 
 interface ConsentView {
   sala: { title: string };
   session: { blindCode: string };
+  displayName?: string | null;
   consent: { required: boolean; accepted: boolean; text: string | null };
 }
 
@@ -81,9 +83,7 @@ export default function ParticipantConsentPage() {
     <main className="flex-1 max-w-[540px] w-full mx-auto px-4 pt-6 pb-16">
       <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#D9D5CC] text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[#5A554E]">{data.session.blindCode}</span>
-          <span className="text-[#D9D5CC]">·</span>
-          <span className="text-[#5A554E]">Conectado como participante</span>
+          <ParticipantIdentity displayName={data.displayName} />
         </div>
         <button type="button" onClick={leave} className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1.5 text-[#5A554E] hover:text-[#B42318]">
           <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />

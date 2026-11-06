@@ -318,7 +318,7 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 | justification | Razón |
 | collective ranking | Orden del grupo |
 | tie (weak order) | Empatadas (ej. "1.º y 2.º empatadas") |
-| blind code | Participante 04 (solo donde sea anónimo para el grupo) |
+| blind code | No se muestra en pantalla (solo en los CSV). El participante ve "Conectado como <su nombre>" o, en salas con lista, "Conectado como participante" |
 | Borda / Schulze | Nombre + una línea, ej. "Borda: suma puntos según la posición" |
 
 - "Faltan selecciones": "Enviaron su selección X de Y participantes. Se necesitan

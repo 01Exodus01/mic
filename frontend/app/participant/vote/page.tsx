@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { Clock, LogOut, AlertCircle, AlertTriangle, ChevronDown, Edit3, CheckCircle2, RefreshCw } from 'lucide-react';
 import RankingList, { type MoveMethod } from '@/components/RankingList';
+import ParticipantIdentity from '@/components/ParticipantIdentity';
 
 interface OptionItem {
   id: string;
@@ -56,6 +57,7 @@ interface ParticipantRoomData {
     reasonsAgainst?: string[];
   }>;
   latestReport: FeedbackReportData | null;
+  displayName?: string | null;
   consent?: { required: boolean; accepted: boolean; text: string | null };
   isExpired: boolean;
   serverTime?: string;
@@ -413,11 +415,7 @@ export default function ParticipantVotePage() {
       {/* Top bar: Role & Logout */}
       <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#D9D5CC] text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[#5A554E]">
-            {roomData?.session?.blindCode || 'Participante'}
-          </span>
-          <span className="text-[#D9D5CC]">·</span>
-          <span className="text-[#5A554E]">Conectado como participante</span>
+          <ParticipantIdentity displayName={roomData?.displayName} />
         </div>
         {roomData?.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
         <button

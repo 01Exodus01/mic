@@ -70,6 +70,12 @@ export interface ParticipantRoomViewData {
   latestReport: ParticipantReportView | null;
   /** Why the process ended (only when CONCLUDED): required agreement reached or last round used */
   conclusion: ConclusionReason | null;
+  /**
+   * Name shown on the participant's own screens: the name they typed (rooms with
+   * names), or null in rooms with a list (no name is typed there, and the list
+   * label is never shown). The blind code is not shown on screen: it is for the data.
+   */
+  displayName: string | null;
   /** PT-24: informed consent of the room; text only when it is required */
   consent: { required: boolean; accepted: boolean; version: number; text: string | null };
   isExpired: boolean;
@@ -1124,6 +1130,7 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
         myVotes: mappedVotes,
         latestReport: mappedReport,
         conclusion: conclusionReason(room.status, room.tau_threshold, room.reports[room.reports.length - 1]),
+        displayName: room.access_mode === 'OPEN_PIN' ? participant.nickname : null,
         consent: {
           required: room.consent_required,
           accepted: !room.consent_required || (await hasAcceptedConsent(session.participantId, room.consent_version)),

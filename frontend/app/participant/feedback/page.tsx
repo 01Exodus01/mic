@@ -7,11 +7,11 @@ import { ParticipantFeedbackSkeleton } from '@/components/ui/Skeleton';
 import { CheckCircle2, Clock, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import RoundFeedbackReport, {
-  formatParticipantSignature,
   type FeedbackReportData,
 } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
 import RetiredNotice from '@/components/RetiredNotice';
+import ParticipantIdentity from '@/components/ParticipantIdentity';
 import { useReportReadTracker } from '@/lib/telemetry/client';
 
 interface OptionItem {
@@ -66,6 +66,7 @@ interface FeedbackRoomData {
   latestReport: RoundReportData | null;
   /** Why the process ended (only when CONCLUDED) */
   conclusion?: 'CONSENSUS' | 'MAX_ROUNDS' | null;
+  displayName?: string | null;
   consent?: { required: boolean; accepted: boolean; text: string | null };
 }
 
@@ -180,11 +181,7 @@ export default function ParticipantFeedbackPage() {
       {/* Barra superior con datos de sesión y botón de salida (AUD-34, AUD-35) */}
       <div className="flex items-center justify-between pb-3 mb-6 border-b border-[#D9D5CC] text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[#6B6860]">
-            {roomData?.session?.blindCode || 'Participante'}
-          </span>
-          <span className="text-[#D9D5CC]">·</span>
-          <span className="text-[#6B6860]">Conectado como participante</span>
+          <ParticipantIdentity displayName={roomData.displayName} />
         </div>
         {roomData.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
         <button
@@ -201,9 +198,6 @@ export default function ParticipantFeedbackPage() {
         <div className="flex items-center justify-between text-xs text-[#5A554E] font-mono mb-2">
           <span>
             {isConcluded ? 'Finalizada' : `Revisión de argumentos • Ronda ${sala.currentRound}`}
-          </span>
-          <span className="border border-[#D9D5CC] px-2 py-0.5 rounded-[999px] text-[#14171A]">
-            {formatParticipantSignature(roomData.session.blindCode)}
           </span>
         </div>
 
