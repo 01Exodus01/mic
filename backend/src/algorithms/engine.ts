@@ -6,7 +6,7 @@
  *  1. Algorithm selection (Borda / Schulze / Kemeny-Young)
  *  2. Quorum guard (effectiveVoters < minMembers → INSUFFICIENT_VOTES)
  *  3. Collective ranking computation
- *  4. Kendall Tau-c CIX computation for all voters
+ *  4. Stuart Tau-c CIX computation for all voters (Kendall Tau-b and Gamma for sensitivity)
  *  5. Group consensus τ* and stop criterion evaluation
  *
  * Reference: Specification §4 — Pipeline de Cómputo
@@ -16,7 +16,13 @@ import type { Ballot, RoundResult, WeakOrder } from './types';
 import { bordaCount } from './borda';
 import { schulzeMethod } from './schulze';
 import { kemenyYoung } from './kemenyYoung';
-import { computeGroupConsensus, computeGroupConsensusForVariant, type ConcordanceVariant } from './kendallTau';
+import {
+  computeGroupConsensus,
+  computeGroupConsensusForVariant,
+  PRIMARY_CONCORDANCE_INDEX,
+  type ConcordanceIndex,
+  type ConcordanceVariant,
+} from './kendallTau';
 import { applyTieBreak, type TieBreakInput } from './tieBreak';
 
 export type AggregationMethod = 'BORDA' | 'SCHULZE' | 'KEMENY_YOUNG';
@@ -44,9 +50,14 @@ export interface EngineInput {
   tieBreak?: TieBreakInput;
   /**
    * Concordance variant (PT-17). WITHOUT_TIES requires a tie-break rule other
-   * than NONE. Omitted: tau-b as before.
+   * than NONE. Omitted: computed on the order as aggregated.
    */
   concordanceVariant?: ConcordanceVariant;
+  /**
+   * Coefficient of the primary CIX and τ*. Omitted: Stuart tau-c, the current
+   * procedure (AGENTS.md E-14). TAU_B only reproduces reports before r-fast-cr-5.
+   */
+  concordanceIndex?: ConcordanceIndex;
 }
 
 export interface EngineOutput {
@@ -115,10 +126,11 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
     }
   }
 
-  // Compute CIX and group consensus τ* (primary Kendall tau-b and sensitivity metrics)
+  // Compute CIX and group consensus τ* (primary Stuart tau-c, plus sensitivity metrics)
+  const concordanceIndex = input.concordanceIndex ?? PRIMARY_CONCORDANCE_INDEX;
   const { voterCIX, tauStar, stuartTauStar, gammaTauStar } = input.concordanceVariant
-    ? computeGroupConsensusForVariant(ballots, ranking, input.concordanceVariant)
-    : computeGroupConsensus(ballots, ranking);
+    ? computeGroupConsensusForVariant(ballots, ranking, input.concordanceVariant, concordanceIndex)
+    : computeGroupConsensus(ballots, ranking, concordanceIndex);
 
   const result: RoundResult = {
     method,
@@ -130,6 +142,7 @@ export function runAggregationEngine(input: EngineInput): EngineOutput {
     stuartTauStar,
     gammaTauStar,
     quorumMet: true,
+    concordanceIndex,
   };
   if (tieBreakReport) result.tieBreak = tieBreakReport;
   if (input.concordanceVariant) result.concordanceVariant = input.concordanceVariant;

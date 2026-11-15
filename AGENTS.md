@@ -64,6 +64,8 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   (PT-33). Con la regla "ninguna" el resultado debe ser idéntico al actual.
   Aprobación explícita del equipo (2026-11-05, enmienda E-12): regla de desempate
   fija PAIRWISE_MAJORITY.
+  Aprobación explícita del investigador (2026-11-15, enmienda E-14): coeficiente
+  principal tau-c de Stuart.
 - La BD solo cambia con migraciones de Prisma (nunca SQL manual directo).
   Mostrar el SQL antes de aplicar. Prohibido DROP de tablas con datos.
 - Las columnas de los CSV son un contrato con R/Python. Cambiarlas exige
@@ -364,6 +366,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-11 | 2026-11-05 | Frontend y backend en carpetas separadas (npm workspaces), con reglas de capas | Separar la lógica y los datos de la capa web; mismo comportamiento y mismas pruebas. Las rutas anteriores (`lib/…`, `app/…`) citadas en enmiendas e informes previos corresponden hoy a `backend/src/…` y `frontend/app/…` |
 | E-12 | 2026-11-05 | Solo Borda y Schulze en salas nuevas; desempate fijo (mayoría pareada en la ronda, luego título) y medición sin empates; sin opciones de desempate ni variante al crear la sala | Pedido del equipo; evita combinaciones redundantes ("desempatar" con "con empates" medía lo mismo). Procedimiento r-fast-cr-4 |
 | E-13 | 2026-11-06 | Ingreso tardío permitido por defecto; la opción de la sala lo bloquea | Pedido del equipo tras el testeo; reemplaza el valor por defecto de E-3. Las salas ya creadas conservan su configuración |
+| E-14 | 2026-11-15 | El CIX y τ* se calculan con tau-c de Stuart; tau-b de Kendall y gamma quedan como sensibilidad | Pedido explícito del investigador. Procedimiento r-fast-cr-5 (`__procedure.concordanceIndex = 'TAU_C'`). Los informes anteriores conservan tau-b; el export indica el coeficiente de cada ronda en `round_metrics.concordance_index` |
 
 ### Especificación en PDF superada
 

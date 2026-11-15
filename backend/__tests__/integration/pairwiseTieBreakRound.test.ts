@@ -57,8 +57,8 @@ describe.skipIf(!hasTestDb)('E-12: ronda procesada con desempate fijo (PostgreSQ
     const { ranking, json } = await roomWith(['Torneo', 'biblioteca', 'Huerto'], [[0, 1, 2], [1, 2, 0], [2, 0, 1]]);
     expect(ranking).toEqual([1, 2, 0]);
     expect(json.__tieBreak).toMatchObject({ rule: 'PAIRWISE_MAJORITY', applied: true, fallbackUsed: true });
-    expect(json.__procedure).toMatchObject({ version: 'r-fast-cr-4', tieBreakRule: 'PAIRWISE_MAJORITY', concordanceVariant: 'WITHOUT_TIES' });
-    expect(json.__concordance).toEqual({ variant: 'WITHOUT_TIES' });
+    expect(json.__procedure).toMatchObject({ version: 'r-fast-cr-5', tieBreakRule: 'PAIRWISE_MAJORITY', concordanceVariant: 'WITHOUT_TIES', concordanceIndex: 'TAU_C' });
+    expect(json.__concordance).toEqual({ variant: 'WITHOUT_TIES', index: 'TAU_C' });
   });
 
   it('empate de Borda con mayoría clara: decide la mayoría aunque el título diga lo contrario', async () => {

@@ -7,7 +7,7 @@
  * The builders are pure functions of an ExportDataset.
  */
 
-import { computeVoterCIX } from '@mic/backend/algorithms/kendallTau';
+import { computeVoterCIX, type ConcordanceIndex } from '@mic/backend/algorithms/kendallTau';
 import type { WeakOrder } from '@mic/backend/algorithms/types';
 import { PROCEDURE_VERSION } from '@mic/backend/round-processor';
 import { APP_VERSION, EXPORT_TIMEZONE, bool, isoUtc, metric, snakeCase, type Cell, type CsvTable } from './format';
@@ -19,7 +19,7 @@ interface ReportExtras {
   countedVoters: Set<string>;
   tieBreak: { rule?: string; applied?: boolean; tiedGroups?: string[][]; seed?: number; fallbackUsed?: boolean; weakOrder?: Array<{ id: string; midRank: number }> } | null;
   variant: string | null;
-  procedure: { version?: string; tauThreshold?: number; maxRounds?: number } | null;
+  procedure: { version?: string; tauThreshold?: number; maxRounds?: number; concordanceIndex?: ConcordanceIndex } | null;
 }
 
 function extras(report: ExportReport): ReportExtras {
@@ -31,6 +31,11 @@ function extras(report: ExportReport): ReportExtras {
     variant: ((json.__concordance as { variant?: string } | undefined)?.variant) ?? null,
     procedure: (json.__procedure as ReportExtras['procedure']) ?? null,
   };
+}
+
+/** Coefficient the report's CIX and tau* were computed with: tau-c since r-fast-cr-5, tau-b before. */
+export function concordanceIndexOf(report: ExportReport): ConcordanceIndex {
+  return extras(report).procedure?.concordanceIndex ?? 'TAU_B';
 }
 
 function finalRanking(report: ExportReport): WeakOrder[] {
@@ -316,13 +321,20 @@ export function kendallDistance(a: Ballot, b: Ballot): number {
 export interface VoterRoundMetric {
   participantId: string;
   round: number;
+  /** Coefficient of the report's primary CIX (E-14) */
+  index: ConcordanceIndex;
+  /** Value of that coefficient: tauC when index is TAU_C, tauB otherwise; cix = (tau + 1) / 2 */
+  tau: number;
   tauB: number;
   cix: number;
   tauC: number;
   gamma: number;
   counted: boolean;
-  /** tau-b against the order before the tie-break rule (P1.6); null when the room has no rule */
+  /** tau-b and tau-c against the order before the tie-break rule (P1.6); null when the room has no rule */
   tauBWeak: number | null;
+  tauCWeak: number | null;
+  /** The primary coefficient against that order */
+  tauWeak: number | null;
 }
 
 /** Stored metrics (RoundVoterMetric) first; otherwise recomputed against the report's ranking. */
@@ -334,26 +346,36 @@ export function voterMetricsOf(ds: ExportDataset, ctx: Ctx): VoterRoundMetric[] 
     const report = ctx.reportByRound.get(r);
     if (!report) continue;
     const counted = extras(report).countedVoters;
+    const index = concordanceIndexOf(report);
     const weak = hasRule
       ? weakOrderOf(report).map((w) => ({ id: w.id, midRank: w.midRank, score: 0 }))
       : null;
     for (const [pid, ballot] of ctx.ballots.get(r) ?? []) {
-      const tauBWeak = weak ? computeVoterCIX(ballot, weak, pid).tauB ?? 0 : null;
+      const w = weak ? computeVoterCIX(ballot, weak, pid, index) : null;
+      const tauBWeak = w ? w.tauB ?? 0 : null;
+      const tauCWeak = w ? w.stuartTauC ?? 0 : null;
+      const tauWeak = index === 'TAU_C' ? tauCWeak : tauBWeak;
+      const weakFields = { tauBWeak, tauCWeak, tauWeak };
       const s = stored.get(`${r}:${pid}`);
       if (s) {
-        out.push({ participantId: pid, round: r, tauB: s.tau_b, cix: s.cix, tauC: s.stuart_tau_c, gamma: s.gamma, counted: true, tauBWeak });
+        const tau = index === 'TAU_C' ? s.stuart_tau_c : s.tau_b;
+        out.push({ participantId: pid, round: r, index, tau, tauB: s.tau_b, cix: s.cix, tauC: s.stuart_tau_c, gamma: s.gamma, counted: true, ...weakFields });
         continue;
       }
-      const m = computeVoterCIX(ballot, finalRanking(report), pid);
+      const m = computeVoterCIX(ballot, finalRanking(report), pid, index);
+      const tauB = m.tauB ?? 0;
+      const tauC = m.stuartTauC ?? 0;
       out.push({
         participantId: pid,
         round: r,
-        tauB: m.tauB ?? 0,
+        index,
+        tau: index === 'TAU_C' ? tauC : tauB,
+        tauB,
         cix: m.cix,
-        tauC: m.stuartTauC ?? 0,
+        tauC,
         gamma: m.gamma ?? 0,
         counted: counted.has(pid),
-        tauBWeak,
+        ...weakFields,
       });
     }
   }
@@ -370,10 +392,11 @@ export function voterRoundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
     for (const r of v.reasons) r.side === 'FOR' ? c.for++ : c.against++;
     reasonCount.set(key, c);
   }
-  const headers = ['blind_code', 'round', 'counted_in_round', 'tau_b', 'cix'];
-  if (withTies) headers.push('tau_c', 'gamma');
+  // E-14: cix is (tau_c + 1) / 2 since r-fast-cr-5 and (tau_b + 1) / 2 before (round_metrics.concordance_index)
+  const headers = ['blind_code', 'round', 'counted_in_round', 'tau_b', 'tau_c', 'cix'];
+  if (withTies) headers.push('gamma');
   // P1.6: with a tie-break rule, also the variant against the order with ties
-  if (hasRule) headers.push('tau_b_weak_order', 'cix_weak_order');
+  if (hasRule) headers.push('tau_b_weak_order', 'tau_c_weak_order', 'cix_weak_order');
   headers.push('kendall_distance_to_prev_round', 'reasons_for_count', 'reasons_against_count');
 
   const rows = voterMetricsOf(ds, ctx)
@@ -382,9 +405,9 @@ export function voterRoundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       const now = ctx.ballots.get(m.round)?.get(m.participantId);
       const prev = ctx.ballots.get(m.round - 1)?.get(m.participantId);
       const c = reasonCount.get(`${m.round}:${m.participantId}`) ?? { for: 0, against: 0 };
-      const row: Cell[] = [ctx.blindCode.get(m.participantId) ?? '', m.round, bool(m.counted), metric(m.tauB), metric(m.cix)];
-      if (withTies) row.push(metric(m.tauC), metric(m.gamma));
-      if (hasRule) row.push(metric(m.tauBWeak), metric(m.tauBWeak === null ? null : (m.tauBWeak + 1) / 2));
+      const row: Cell[] = [ctx.blindCode.get(m.participantId) ?? '', m.round, bool(m.counted), metric(m.tauB), metric(m.tauC), metric(m.cix)];
+      if (withTies) row.push(metric(m.gamma));
+      if (hasRule) row.push(metric(m.tauBWeak), metric(m.tauCWeak), metric(m.tauWeak === null ? null : (m.tauWeak + 1) / 2));
       row.push(now && prev ? kendallDistance(now, prev) : '', c.for, c.against);
       return row;
     });
@@ -450,14 +473,15 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
     if (!report) {
       const stop = ds.room.status === 'CANCELLED' && r === ds.room.current_round ? 'CANCELLED' : 'INSUFFICIENT_VOTES';
       const pending = r === ds.room.current_round && ['ROUND_OPEN', 'DRAFT', 'PROCESSING'].includes(ds.room.status);
-      rows.push([r, '', '', '', '', '', '', '', '', '', pending ? '' : stop, '', '', ...(hasRule ? ['', ''] : [])]);
+      rows.push([r, '', '', '', '', '', '', '', '', '', pending ? '' : stop, '', '', '', ...(hasRule ? ['', ''] : [])]);
       continue;
     }
     const ex = extras(report);
     const counted = metrics.filter((m) => m.round === r && m.counted);
-    const meanTau = counted.length ? counted.reduce((s, m) => s + m.tauB, 0) / counted.length : null;
+    // Mean of the coefficient the report's CIX is based on (tau-c since r-fast-cr-5)
+    const meanTau = counted.length ? counted.reduce((s, m) => s + m.tau, 0) / counted.length : null;
     const meanTauWeak =
-      hasRule && counted.length ? counted.reduce((s, m) => s + (m.tauBWeak ?? 0), 0) / counted.length : null;
+      hasRule && counted.length ? counted.reduce((s, m) => s + (m.tauWeak ?? 0), 0) / counted.length : null;
     const cix = report.obtained_tau;
     const threshold = ex.procedure?.tauThreshold ?? ds.room.tau_threshold;
     const maxRounds = ex.procedure?.maxRounds ?? ds.room.max_rounds;
@@ -481,6 +505,7 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
       stop,
       procedureVersionOf(report),
       ex.variant ?? ds.room.concordance_variant,
+      concordanceIndexOf(report),
       ...(hasRule ? [metric(meanTauWeak), metric(meanTauWeak === null ? null : (meanTauWeak + 1) / 2)] : []),
     ]);
     prevCix = cix;
@@ -490,7 +515,7 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
     headers: [
       'round', 'effective_voters', 'mean_tau', 'collective_cix', 'delta_cix', 'collective_ranking',
       'tie_detected', 'tie_resolved_by', 'tie_seed', 'consensus_reached', 'stop_reason',
-      'procedure_version', 'concordance_variant',
+      'procedure_version', 'concordance_variant', 'concordance_index',
       ...(hasRule ? ['mean_tau_weak_order', 'collective_cix_weak_order'] : []),
     ],
     rows,

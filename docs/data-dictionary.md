@@ -10,50 +10,54 @@ Este documento especifica la estructura, formato, tipos de datos, fórmulas mate
 
 ## 1. Métricas de Consenso y Concordancia Ordinal
 
-### 1.1 Métrica Principal: Kendall Tau-b Normalizado (CIX)
-La métrica principal del nivel de acuerdo individual y colectivo se basa en el coeficiente **Kendall $\tau_b$** entre la boleta individual estricta ($1..n$) y el orden débil colectivo del grupo (con posibles empates en rangos medios fraccionarios):
+### 1.1 Métrica Principal: Tau-c de Stuart Normalizado (CIX)
+Desde el procedimiento `r-fast-cr-5` (enmienda E-14, 2026-11-15) el nivel de acuerdo individual y colectivo se basa en el coeficiente **$\tau_c$ de Stuart** entre la selección individual estricta ($1..n$) y el orden colectivo del grupo:
 
-$$\tau_b = \frac{C - D}{\sqrt{(T - t_{\text{boleta}}) \cdot (T - t_{\text{grupo}})}}$$
+$$\tau_c = \frac{2 \cdot q \cdot (C - D)}{n^2 \cdot (q - 1)}$$
 
 donde:
-- $n$: Número de opciones o alternativas evaluadas ($3 \le n \le 8$).
-- $T = \frac{n(n-1)}{2}$: Número total de pares no ordenados posibles.
-- $C$: Número de pares concordantes entre la boleta del participante y el orden colectivo del grupo.
+- $n$: Número de opciones evaluadas ($3 \le n \le 8$).
+- $C$: Número de pares concordantes entre la selección del participante y el orden colectivo.
 - $D$: Número de pares discordantes.
-- $t_{\text{boleta}} = 0$: Pares empatados en la boleta individual (la boleta del participante es estrictamente ordinal, sin empates permitidos).
-- $t_{\text{grupo}}$: Pares empatados en el orden colectivo del grupo (donde el rango medio de ambas opciones es idéntico). Por tanto, $T - t_{\text{grupo}} = C + D$.
+- $q = \min(\text{lugares distintos de la selección}, \text{lugares distintos del orden colectivo}) = \min(n, k_{\text{grupo}})$, donde $k_{\text{grupo}}$ es el número de rangos medios distintos en el orden del grupo. Como la selección es estricta, tiene $n$ lugares distintos.
+
+Los pares empatados en el orden colectivo no cuentan como concordantes ni discordantes.
 
 #### Índice de Concordancia Normalizado (CIX)
-El coeficiente se normaliza al intervalo $[0, 1]$ mediante la transformación afín:
-
-$$CIX = \frac{\tau_b + 1}{2}$$
+$$CIX = \frac{\tau_c + 1}{2}$$
 
 #### Convención de Empate Total
-Si todas las alternativas resultan empatadas en el orden del grupo ($T = t_{\text{grupo}}$, es decir, $C + D = 0$), se aplica por convención matemática documentada:
-$$\tau_b = 0 \implies CIX = 0.50$$
+Si el orden del grupo tiene un solo lugar ($q \le 1$): $\tau_c = 0 \implies CIX = 0.50$.
 
 #### Nivel de Acuerdo de la Ronda ($\tau^*$)
-El nivel de acuerdo colectivo de la ronda es el promedio simple de los índices de concordancia de todos los votantes efectivos:
-
 $$\tau^* = \frac{1}{m_{\text{efectivo}}} \sum_{j=1}^{m_{\text{efectivo}}} CIX_j$$
 
+$\tau^*$ es el valor que se compara con el acuerdo requerido de la sala y el que se guarda en `obtained_tau` (`round_metrics.collective_cix`). El CIX individual es el que ve cada participante como "Tu nivel de concordancia".
+
 > [!NOTE]
-> **Equivalencia de escala:** Un umbral de parada de consenso $\tau_{\text{umbral}} = 0.80$ en la escala CIX equivale a una correlación de Kendall $\tau = 0.60$ en la escala estándar de correlación ($\tau = 2 \cdot CIX - 1$).
+> **Equivalencia de escala:** un umbral $\tau_{\text{umbral}} = 0.80$ en la escala CIX equivale a $\tau_c = 0.60$ ($\tau_c = 2 \cdot CIX - 1$).
+
+> [!NOTE]
+> **Salas sin empates (todas las salas nuevas desde `r-fast-cr-4`).** La selección y el orden colectivo son estrictos, así que $q = n$ y $\tau_c = \frac{2(C - D)}{n(n-1)}$, que coincide exactamente con $\tau_b$ y con $\gamma$. El cambio de coeficiente solo da valores distintos cuando el orden colectivo tiene empates (variante `WITH_TIES` de salas anteriores, o las columnas `*_weak_order`).
+
+#### Informes anteriores a `r-fast-cr-5`
+Hasta `r-fast-cr-4`, el CIX y $\tau^*$ se calcularon con **$\tau_b$ de Kendall**:
+
+$$\tau_b = \frac{C - D}{\sqrt{(T - t_{\text{boleta}}) \cdot (T - t_{\text{grupo}})}}, \qquad CIX = \frac{\tau_b + 1}{2}$$
+
+con $T = n(n-1)/2$, $t_{\text{boleta}} = 0$ y $t_{\text{grupo}}$ los pares empatados en el orden colectivo (convención de empate total: $\tau_b = 0$, CIX = 0.50). Los informes de rondas cerradas son inmutables y conservan ese valor. La columna `round_metrics.concordance_index` indica con qué coeficiente se calculó cada ronda (`TAU_C` o `TAU_B`), y `cix`, `mean_tau` y `collective_cix` siempre corresponden a ese coeficiente.
 
 ---
 
 ### 1.2 Métricas Secundarias para Análisis de Sensibilidad
-Estas métricas se persisten y exportan en los archivos de datos para estudios comparativos de sensibilidad metodológica (no intervienen en el criterio de parada de la sala):
+Se guardan y exportan para estudios comparativos; no intervienen en el criterio de parada:
 
-1. **Stuart Kendall $\tau_c$:**
-   $$\tau_c = \frac{2 \cdot m \cdot (C - D)}{n^2 \cdot (m - 1)}$$
-   con $m = \min(\text{categorías boleta}, \text{categorías grupo}) = \min(n, k_{\text{grupo}})$, donde $k_{\text{grupo}}$ es el número de rangos medios distintos en el orden del grupo. Convención de empate total ($m \le 1$): $\tau_c = 0$, $CIX_{\text{stuart}} = 0.50$.
-
-2. **Goodman & Kruskal's Gamma (Pares Decididos):**
+1. **Kendall $\tau_b$** (fórmula de arriba): columna `tau_b` de `voter_round_metrics.csv`, siempre presente.
+2. **Goodman & Kruskal's Gamma (pares decididos):**
    $$\gamma = \frac{C - D}{C + D}$$
-   evaluado únicamente sobre pares no empatados en el orden colectivo. Convención de empate total ($C + D = 0$): $\gamma = 0$, $CIX_{\text{gamma}} = 0.50$.
+   evaluado únicamente sobre pares no empatados en el orden colectivo. Convención de empate total ($C + D = 0$): $\gamma = 0$, $CIX_{\text{gamma}} = 0.50$. Columna `gamma`, solo en la variante con empates.
 
-Cuando no existen empates en el orden colectivo ($t_{\text{grupo}} = 0$), las tres métricas ($\tau_b$, $\tau_c$, $\gamma$) coinciden numéricamente de forma exacta.
+Cuando no existen empates en el orden colectivo, las tres métricas ($\tau_c$, $\tau_b$, $\gamma$) coinciden numéricamente de forma exacta.
 
 ---
 

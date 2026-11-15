@@ -13,7 +13,8 @@
 
 import { describe, it, expect } from 'vitest';
 // PT-33: kendallTauC.ts was only a re-export of kendallTau.ts and has been removed
-import { computeVoterCIX, computeGroupConsensus } from '@mic/backend/algorithms/kendallTau';
+import { computeVoterCIX, computeGroupConsensus, PRIMARY_CONCORDANCE_INDEX } from '@mic/backend/algorithms/kendallTau';
+import { runAggregationEngine } from '@mic/backend/algorithms/engine';
 import type { Ballot, WeakOrder } from '@mic/backend/algorithms/types';
 
 const makeBallot = (pairs: [string, number][]): Ballot => new Map(pairs);
@@ -124,5 +125,76 @@ describe('computeGroupConsensus', () => {
     expect(ids).toContain('v1');
     expect(ids).toContain('v2');
     expect(ids).toContain('v3');
+  });
+});
+
+/**
+ * AGENTS.md E-14 (r-fast-cr-5): the CIX and τ* are based on Stuart's tau-c.
+ * Collective A = B (mid-rank 1.5) > C, ballot A > B > C: pairs (A,C) and (B,C)
+ * concordant, (A,B) tied in the group. C = 2, D = 0, n = 3, q = min(3, 2) = 2.
+ *   tau_c = 2·2·2 / (3²·1) = 8/9        → CIX = 17/18 ≈ 0.9444
+ *   tau_b = 2 / √(3·2)     = 0.81650   → CIX ≈ 0.9082 (different on purpose)
+ */
+describe('E-14: el índice principal es tau-c de Stuart', () => {
+  const tied = makeCollective([['A', 1.5], ['B', 1.5], ['C', 3]]);
+  const ballot = makeBallot([['A', 1], ['B', 2], ['C', 3]]);
+
+  it('la métrica principal del procedimiento es TAU_C', () => {
+    expect(PRIMARY_CONCORDANCE_INDEX).toBe('TAU_C');
+  });
+
+  it('cix = (tau_c + 1) / 2, no (tau_b + 1) / 2, cuando el orden del grupo tiene empates', () => {
+    const v = computeVoterCIX(ballot, tied, 'p1');
+    expect(v.stuartTauC).toBeCloseTo(8 / 9, 12);
+    expect(v.tauB).toBeCloseTo(2 / Math.sqrt(6), 12);
+    expect(v.cix).toBeCloseTo(17 / 18, 12);
+    expect(v.cix).toBe(v.stuartCix);
+    expect(v.cix).not.toBeCloseTo((v.tauB! + 1) / 2, 3);
+  });
+
+  it('τ* es el promedio del CIX de tau-c', () => {
+    const ballots = new Map<string, Ballot>([
+      ['p1', ballot],
+      ['p2', makeBallot([['B', 1], ['A', 2], ['C', 3]])],
+      ['p3', makeBallot([['C', 1], ['A', 2], ['B', 3]])],
+    ]);
+    const { voterCIX, tauStar, stuartTauStar } = computeGroupConsensus(ballots, tied);
+    // p3: (A,C) and (B,C) discordant → tau_c = −8/9, CIX = 1/18
+    expect(voterCIX.map((v) => v.cix)).toEqual(voterCIX.map((v) => v.stuartCix));
+    expect(tauStar).toBeCloseTo((17 / 18 + 17 / 18 + 1 / 18) / 3, 12);
+    expect(tauStar).toBe(stuartTauStar);
+  });
+
+  it('TAU_B solo reproduce informes anteriores a r-fast-cr-5', () => {
+    const v = computeVoterCIX(ballot, tied, 'p1', 'TAU_B');
+    expect(v.cix).toBeCloseTo((2 / Math.sqrt(6) + 1) / 2, 12);
+    expect(v.stuartCix).toBeCloseTo(17 / 18, 12);
+  });
+
+  it('el motor decide el consenso con tau-c: τ* de tau-c sobre el umbral aunque el de tau-b quede debajo', () => {
+    // Borda on these 4 ballots: A = 6, B = 6, C = 0 → A and B tied (variant with ties, no rule)
+    const ballots = new Map<string, Ballot>([
+      ['p1', makeBallot([['A', 1], ['B', 2], ['C', 3]])],
+      ['p2', makeBallot([['B', 1], ['A', 2], ['C', 3]])],
+      ['p3', makeBallot([['A', 1], ['B', 2], ['C', 3]])],
+      ['p4', makeBallot([['B', 1], ['A', 2], ['C', 3]])],
+    ]);
+    const base = { optionIds: ['A', 'B', 'C'], ballots, method: 'BORDA' as const, minMembers: 3, currentRound: 1, maxRounds: 3 };
+    // Every ballot: C = 2, D = 0 → CIX tau-c = 17/18 ≈ 0.944; CIX tau-b ≈ 0.908
+    const threshold = 0.93;
+    const out = runAggregationEngine({ ...base, tauThreshold: threshold, tieBreak: { rule: 'NONE', optionOrder: ['A', 'B', 'C'] }, concordanceVariant: 'WITH_TIES' });
+    expect(out.result!.concordanceIndex).toBe('TAU_C');
+    expect(out.result!.tauStar).toBeCloseTo(17 / 18, 12);
+    expect(out.shouldConclude).toBe(true);
+    const legacy = runAggregationEngine({ ...base, tauThreshold: threshold, tieBreak: { rule: 'NONE', optionOrder: ['A', 'B', 'C'] }, concordanceVariant: 'WITH_TIES', concordanceIndex: 'TAU_B' });
+    expect(legacy.result!.tauStar).toBeCloseTo((2 / Math.sqrt(6) + 1) / 2, 12);
+    expect(legacy.shouldConclude).toBe(false);
+  });
+
+  it('sin empates en el orden del grupo (salas nuevas), tau-c = tau-b = gamma', () => {
+    const strict = makeCollective([['A', 1], ['B', 2], ['C', 3], ['D', 4]]);
+    const v = computeVoterCIX(makeBallot([['B', 1], ['A', 2], ['D', 3], ['C', 4]]), strict, 'p1');
+    expect(v.stuartTauC).toBeCloseTo(v.tauB!, 12);
+    expect(v.gamma).toBeCloseTo(v.tauB!, 12);
   });
 });

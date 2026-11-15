@@ -36,6 +36,10 @@ const ALGORITHMS_FINGERPRINTS: Record<string, string[]> = {
     // E-12: PAIRWISE_MAJORITY tie-break (pairwise majority, then option title)
     'fc45e22cea6334d3552964b031f6476af199e29a2464172fc0fbb45523c40143',
   ],
+  'r-fast-cr-5': [
+    // E-14: the CIX and tau* are based on Stuart's tau-c instead of Kendall's tau-b
+    '8c4449bc1cb81e5b9300adf650e8b56016600419fcec361fb287293dc5506b6b',
+  ],
 };
 
 function algorithmsFingerprint(): string {
@@ -91,6 +95,7 @@ describe.skipIf(!hasTestDb)('PT-29: el informe guarda la configuración usada (P
       minParticipants: 3,
       tieBreakRule: 'LEXICOGRAPHIC',
       concordanceVariant: 'WITHOUT_TIES',
+      concordanceIndex: 'TAU_C',
     });
     // Configuration changes after the round do not rewrite the stored report
     await prisma.room.update({ where: { id: fx!.roomId }, data: { tau_threshold: 0.5 } });

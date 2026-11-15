@@ -6,7 +6,7 @@
  *  1. Quorum verification (effective_voters >= MIN_PARTICIPANTS = 3)
  *  2. Loading strict ballots for the current round
  *  3. Dispatching to r-FAST-CR mathematical engine (Borda, Schulze, Kemeny-Young)
- *  4. Computing Stuart Kendall Tau-c CIX and group consensus tau*
+ *  4. Computing the Stuart Tau-c CIX and group consensus tau*
  *  5. Generating immutable RoundReport snapshot with blind feedback
  *  6. Transitioning room state (CONCLUDED or ROUND_FEEDBACK or INSUFFICIENT_VOTES)
  */
@@ -33,8 +33,10 @@ export type EstadoSala = RoomStatus;
  *                (seed stored in __tieBreak.seed) instead of the host's list order
  *   r-fast-cr-4: PAIRWISE_MAJORITY tie-break (pairwise majority among the tied
  *                options in the round, then option title), fixed for new rooms
+ *   r-fast-cr-5: the CIX and tau* are based on Stuart's tau-c instead of
+ *                Kendall's tau-b (__procedure.concordanceIndex = 'TAU_C')
  */
-export const PROCEDURE_VERSION = 'r-fast-cr-4';
+export const PROCEDURE_VERSION = 'r-fast-cr-5';
 
 export type BlindArgumentItem = BlindArgumentEntry;
 export type BlindArgumentsByOption = BlindArgumentsMap;
@@ -297,8 +299,11 @@ export async function processRoundConsensus(
       __reasons: reasonsByOption,
       // PT-16: which groups were tied and whether the declared rule resolved them
       __tieBreak: tieBreak ?? { rule: 'NONE', applied: false, tiedGroups: [] },
-      // PT-17: concordance variant used for tau* (cix = (tau + 1) / 2 in both)
-      __concordance: { variant: engineOutput.result.concordanceVariant ?? 'WITH_TIES' },
+      // PT-17: concordance variant used for tau*; E-14: coefficient, cix = (tau_c + 1) / 2
+      __concordance: {
+        variant: engineOutput.result.concordanceVariant ?? 'WITH_TIES',
+        index: engineOutput.result.concordanceIndex,
+      },
       // PT-29: configuration and procedure version used to compute this round
       __procedure: {
         version: PROCEDURE_VERSION,
@@ -308,6 +313,7 @@ export async function processRoundConsensus(
         minParticipants: minRequired,
         tieBreakRule: room.tie_break_rule,
         concordanceVariant: room.concordance_variant,
+        concordanceIndex: engineOutput.result.concordanceIndex,
       },
       __metrics: {
         tauStar,

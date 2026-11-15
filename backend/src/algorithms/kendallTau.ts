@@ -1,18 +1,19 @@
 /**
  * kendallTau.ts
- * Primary consensus metric: Kendall Tau-b concordance index (CIX).
- * Also computes Stuart's Tau-c and Goodman & Kruskal's Gamma for sensitivity analysis.
+ * Primary consensus metric (since r-fast-cr-5, AGENTS.md E-14): CIX based on
+ * Stuart's Tau-c. Kendall's Tau-b (primary up to r-fast-cr-4) and Goodman &
+ * Kruskal's Gamma are still computed for sensitivity analysis.
  *
  * Formulas (Decision D1 / AGENTS.md):
  *
- * 1. Kendall Tau-b (Métrica principal):
+ * 1. Kendall Tau-b (sensibilidad; métrica principal hasta r-fast-cr-4):
  *    tau_b = (C - D) / sqrt((T - t_boleta) * (T - t_grupo))
  *    con T = n(n-1)/2, t_boleta = 0 (boleta estricta 1..n),
  *    t_grupo = pares empatados en el orden colectivo del grupo.
  *    CIX = (tau_b + 1) / 2
  *    Convención de empate total (T = t_grupo): tau_b = 0, CIX = 0.50
  *
- * 2. Stuart Tau-c (Análisis de sensibilidad):
+ * 2. Stuart Tau-c (Métrica principal desde r-fast-cr-5):
  *    tau_c = (2 * m * (C - D)) / (n² * (m - 1))
  *    con m = min(valores distintos boleta, valores distintos grupo) = min(n, k_grupo)
  *    CIX_stuart = (tau_c + 1) / 2
@@ -23,20 +24,32 @@
  *    CIX_gamma = (gamma + 1) / 2
  *    Convención de empate total (C + D = 0): gamma = 0, CIX_gamma = 0.50
  *
+ * Índice de concordancia individual (cix): el de la métrica principal,
+ *    CIX = (tau_c + 1) / 2 desde r-fast-cr-5; (tau_b + 1) / 2 en versiones anteriores.
+ *
  * Nivel de acuerdo de la ronda (tau*):
  *    tau* = (1 / m_efectivo) * sum(CIX_j)
  */
 
 import type { Ballot, VoterCIX, WeakOrder } from './types';
 
+/** Coefficient the primary CIX (and tau*) is based on. */
+export type ConcordanceIndex = 'TAU_B' | 'TAU_C';
+
+/** Primary coefficient of the current procedure (AGENTS.md E-14). */
+export const PRIMARY_CONCORDANCE_INDEX: ConcordanceIndex = 'TAU_C';
+
 /**
  * Computes concordance metrics (Kendall tau-b, Stuart tau-c, Gamma)
  * for an individual voter's ballot relative to the collective weak order.
+ * `cix` is based on `index` (tau-c by default; tau-b only to reproduce
+ * reports computed before r-fast-cr-5).
  */
 export function computeVoterCIX(
   ballot: Ballot,
   collectiveRanking: WeakOrder[],
-  participantId: string
+  participantId: string,
+  index: ConcordanceIndex = PRIMARY_CONCORDANCE_INDEX
 ): VoterCIX {
   const n = collectiveRanking.length;
   const T = (n * (n - 1)) / 2;
@@ -103,21 +116,21 @@ export function computeVoterCIX(
     }
   }
 
-  // 1. Primary metric: Kendall tau-b
+  // 1. Kendall tau-b (sensitivity; primary up to r-fast-cr-4)
   let tauB = 0;
-  let cix = 0.5;
+  let tauBCix = 0.5;
 
   if (T === t_grupo) {
     // Total tie in group ranking
     tauB = 0;
-    cix = 0.5;
+    tauBCix = 0.5;
   } else {
     const denom = Math.sqrt(T * (T - t_grupo));
     tauB = denom > 0 ? (C - D) / denom : 0;
-    cix = (tauB + 1) / 2;
+    tauBCix = (tauB + 1) / 2;
   }
 
-  // 2. Sensitivity metric: Stuart tau-c
+  // 2. Primary metric: Stuart tau-c
   const m = Math.min(n, k);
   let stuartTauC = 0;
   let stuartCix = 0.5;
@@ -144,7 +157,7 @@ export function computeVoterCIX(
 
   return {
     participantId,
-    cix,
+    cix: index === 'TAU_C' ? stuartCix : tauBCix,
     concordant: C,
     discordant: D,
     tied: t_grupo,
@@ -166,30 +179,32 @@ export function isStrictRanking(collectiveRanking: WeakOrder[]): boolean {
 
 /**
  * Group consensus for a declared concordance variant (PT-17, AGENTS.md E-2).
- * WITH_TIES: Kendall tau-b, exactly computeGroupConsensus.
- * WITHOUT_TIES: standard Kendall tau, (C - D) / (n(n-1)/2). It is only defined
- * on a strict collective order, where tau-b's tie term t_grupo is 0 and tau-b
- * reduces to that same expression, so the existing function is reused as is.
+ * WITH_TIES: computeGroupConsensus on the order with ties.
+ * WITHOUT_TIES: only defined on a strict collective order, which is checked
+ * here; then computeGroupConsensus is reused as is. The coefficient (tau-c or
+ * tau-b) is chosen by `index`, independently of the variant.
  */
 export function computeGroupConsensusForVariant(
   ballots: Map<string, Ballot>,
   collectiveRanking: WeakOrder[],
-  variant: ConcordanceVariant
+  variant: ConcordanceVariant,
+  index: ConcordanceIndex = PRIMARY_CONCORDANCE_INDEX
 ): ReturnType<typeof computeGroupConsensus> {
   if (variant === 'WITHOUT_TIES' && !isStrictRanking(collectiveRanking)) {
     throw new Error('WITHOUT_TIES concordance requires a strict collective ranking (declare a tie-break rule).');
   }
-  return computeGroupConsensus(ballots, collectiveRanking);
+  return computeGroupConsensus(ballots, collectiveRanking, index);
 }
 
 /**
  * Computes group consensus for all voters in a round.
- * Primary consensus metric is the average of Kendall tau-b CIX.
- * Sensitivity metrics (Stuart tau-c and Gamma) are also computed.
+ * tau* is the average of the primary CIX (Stuart tau-c since r-fast-cr-5).
+ * stuartTauStar and gammaTauStar average the tau-c and Gamma CIX.
  */
 export function computeGroupConsensus(
   ballots: Map<string, Ballot>,
-  collectiveRanking: WeakOrder[]
+  collectiveRanking: WeakOrder[],
+  index: ConcordanceIndex = PRIMARY_CONCORDANCE_INDEX
 ): {
   voterCIX: VoterCIX[];
   tauStar: number;
@@ -199,7 +214,7 @@ export function computeGroupConsensus(
   const voterCIX: VoterCIX[] = [];
 
   for (const [participantId, ballot] of ballots.entries()) {
-    const res = computeVoterCIX(ballot, collectiveRanking, participantId);
+    const res = computeVoterCIX(ballot, collectiveRanking, participantId, index);
     voterCIX.push(res);
   }
 

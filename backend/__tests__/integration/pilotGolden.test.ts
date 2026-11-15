@@ -122,9 +122,13 @@ describe('Piloto R7PUEM: valores de referencia', () => {
     expect(rowsOf('voter_round_metrics.csv').find((r) => r.blind_code === 'Participante 35' && r.round === 1)!.kendall_distance_to_prev_round).toBe('');
   });
 
-  it('P1.6 parcial: la variante sin empates no exporta tau_c ni gamma', () => {
-    expect(table('voter_round_metrics.csv').headers).not.toContain('tau_c');
+  it('P1.6 parcial: la variante sin empates no exporta gamma; tau_c siempre (E-14)', () => {
+    expect(table('voter_round_metrics.csv').headers).toContain('tau_c');
     expect(table('voter_round_metrics.csv').headers).not.toContain('gamma');
+  });
+
+  it('E-14: el piloto (r-fast-cr-1) se reporta con tau-b, el coeficiente con que se calculó', () => {
+    expect(rowsOf('round_metrics.csv').map((r) => r.concordance_index)).toEqual(['TAU_B', 'TAU_B']);
   });
 
   it('P2.5: eventos con nombres unificados y datos aplanados, sin JSON', () => {
@@ -153,8 +157,12 @@ describe('Invariantes del export (piloto)', () => {
     for (const r of rm) expect(Math.abs(Number(r.collective_cix) - (Number(r.mean_tau) + 1) / 2)).toBeLessThanOrEqual(0.0001);
   });
 
-  it('2. cix del votante = (tau + 1) / 2', () => {
-    for (const r of vm) expect(Math.abs(Number(r.cix) - (Number(r.tau_b) + 1) / 2)).toBeLessThanOrEqual(0.0001);
+  it('2. cix del votante = (tau + 1) / 2, con el coeficiente de concordance_index', () => {
+    const index = new Map(rm.map((r) => [r.round, r.concordance_index]));
+    for (const r of vm) {
+      const tau = index.get(r.round) === 'TAU_C' ? r.tau_c : r.tau_b;
+      expect(Math.abs(Number(r.cix) - (Number(tau) + 1) / 2)).toBeLessThanOrEqual(0.0001);
+    }
   });
 
   it('3. suma de Borda por ronda = votantes × m(m−1)/2', () => {

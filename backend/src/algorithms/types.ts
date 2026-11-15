@@ -20,10 +20,10 @@ export interface WeakOrder {
   score: number;     // Raw score for auditability
 }
 
-/** Per-voter CIX (Kendall Tau-b normalized concordance index, with sensitivity metrics) */
+/** Per-voter CIX (normalized concordance index, with sensitivity metrics) */
 export interface VoterCIX {
   participantId: string;
-  cix: number;   // Primary CIX (based on Kendall Tau-b) ∈ [0, 1]
+  cix: number;   // Primary CIX ∈ [0, 1]: Stuart Tau-c since r-fast-cr-5 (Kendall Tau-b before)
   concordant: number;
   discordant: number;
   tied?: number; // Pairs tied in collective ranking
@@ -41,10 +41,12 @@ export interface RoundResult {
   effectiveVoters: number;      // Number of voters who actually cast ballots
   mEfectivo: number;            // Alias for effectiveVoters
   voterCIX: VoterCIX[];         // Individual concordance metrics for each voter
-  tauStar: number;              // Group consensus τ* ∈ [0, 1] (average of Kendall tau-b CIX)
+  tauStar: number;              // Group consensus τ* ∈ [0, 1] (average of the primary CIX)
   stuartTauStar?: number;       // Sensitivity: Group consensus based on Stuart tau-c
   gammaTauStar?: number;        // Sensitivity: Group consensus based on Gamma
   quorumMet: boolean;           // effectiveVoters >= minMembers
+  /** Coefficient the primary CIX and τ* are based on */
+  concordanceIndex: 'TAU_B' | 'TAU_C';
   /** Present only when the caller declared a concordance variant (PT-17) */
   concordanceVariant?: 'WITH_TIES' | 'WITHOUT_TIES';
   /** Present only when the caller declared a tie-break rule (PT-16) */
