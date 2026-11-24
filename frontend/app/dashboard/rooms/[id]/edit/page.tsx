@@ -71,6 +71,6 @@ export default function EditRoomPage() {
     };
   }, [roomId, router]);
 
-  if (!initial) return <div className="h-40 rounded-[6px] bg-[#EBE7DF]" aria-hidden="true" />;
+  if (!initial) return <div className="h-40 rounded-[6px] bg-subtle" aria-hidden="true" />;
   return <RoomForm roomId={roomId} initial={initial} />;
 }

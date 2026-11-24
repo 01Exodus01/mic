@@ -140,14 +140,14 @@ const STATE_LABELS: Record<string, string> = {
 };
 
 const STATE_CLASSES: Record<string, string> = {
-  DRAFT: 'text-[#5A554E]',
-  ROUND_OPEN: 'text-[#2F7D4F] font-semibold',
-  INSUFFICIENT_VOTES: 'text-[#B42318] font-semibold',
-  QUORUM_UNMET: 'text-[#B42318] font-semibold',
-  PROCESSING: 'text-[#B7791F] font-semibold',
-  ROUND_FEEDBACK: 'text-[#14171A] font-semibold',
-  CONCLUDED: 'text-[#2F7D4F] font-semibold',
-  CANCELLED: 'text-[#B42318] font-semibold',
+  DRAFT: 'text-ink-2',
+  ROUND_OPEN: 'text-good font-semibold',
+  INSUFFICIENT_VOTES: 'text-danger font-semibold',
+  QUORUM_UNMET: 'text-danger font-semibold',
+  PROCESSING: 'text-warn font-semibold',
+  ROUND_FEEDBACK: 'text-ink font-semibold',
+  CONCLUDED: 'text-good font-semibold',
+  CANCELLED: 'text-danger font-semibold',
 };
 
 export default function RoomHostPage() {
@@ -497,9 +497,9 @@ export default function RoomHostPage() {
 
   if (!data) {
     return (
-      <div className="p-8 text-center border border-[#D9D5CC] bg-white rounded-[6px]">
-        <p className="text-xs text-[#5A554E]">Sala no encontrada.</p>
-        <Link href="/dashboard" className="text-xs text-[#E4572E] font-medium mt-2 inline-block hover:underline">
+      <div className="p-8 text-center border border-line bg-paper rounded-[6px]">
+        <p className="text-xs text-ink-2">Sala no encontrada.</p>
+        <Link href="/dashboard" className="text-xs text-brand font-medium mt-2 inline-block hover:underline">
           Volver a salas
         </Link>
       </div>
@@ -510,7 +510,7 @@ export default function RoomHostPage() {
   const totalParticipants = sala.participants?.length || 0;
   const minRequired = MIN_PARTICIPANTS;
   const stateLabel = STATE_LABELS[sala.status] || sala.status;
-  const stateClass = STATE_CLASSES[sala.status] || 'text-[#14171A]';
+  const stateClass = STATE_CLASSES[sala.status] || 'text-ink';
 
   const deadlineDate = sala.deadline ? new Date(sala.deadline) : null;
   const deadlineHour = deadlineDate ? formatDeadlineLabel(deadlineDate) : '';
@@ -536,24 +536,24 @@ export default function RoomHostPage() {
   return (
     <div className="w-full space-y-6">
       {/* 1. Barra superior: Volver y Estado siempre visible arriba */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D9D5CC]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-line">
         <nav aria-label="Migas de pan" className="flex items-center gap-2 text-xs">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1 text-[#5A554E] hover:text-[#14171A] hover:underline transition-colors"
+            className="inline-flex items-center gap-1 text-ink-2 hover:text-ink hover:underline transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
             <span>Volver a salas</span>
           </Link>
-          <span className="text-[#D9D5CC]" aria-hidden="true">/</span>
-          <span className="font-mono font-bold text-[#14171A]" aria-current="page">
+          <span className="text-line" aria-hidden="true">/</span>
+          <span className="font-mono font-bold text-ink" aria-current="page">
             Sala {sala.pin}
           </span>
         </nav>
 
         {/* Estado siempre visible como etiqueta de texto con cronómetro */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#5A554E]">Estado:</span>
+          <span className="text-xs text-ink-2">Estado:</span>
           <span className={`text-xs ${stateClass}`}>
             {stateLabel}
           </span>
@@ -561,8 +561,8 @@ export default function RoomHostPage() {
             <span
               className={`font-mono text-xs font-bold px-2 py-0.5 rounded-[4px] border ${
                 remainingTime === 'Ronda cerrada'
-                  ? 'bg-[#B42318]/10 text-[#B42318] border-[#B42318]/30'
-                  : 'bg-[#2F7D4F]/10 text-[#2F7D4F] border-[#2F7D4F]/30'
+                  ? 'bg-danger/10 text-danger border-danger/30'
+                  : 'bg-good/10 text-good border-good/30'
               }`}
             >
               {remainingTime}
@@ -572,13 +572,13 @@ export default function RoomHostPage() {
       </div>
 
       {/* 2. Cabecera de la sala: Título, PIN, Enlace y Metadatos */}
-      <div className="pb-6 border-b border-[#D9D5CC]">
+      <div className="pb-6 border-b border-line">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="space-y-1.5 flex-1">
-            <h1 className="font-heading text-2xl font-bold text-[#14171A] tracking-tight">
+            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight">
               {sala.title}
             </h1>
-            <p className="text-xs text-[#5A554E]">
+            <p className="text-xs text-ink-2">
               Regla de agregación: {sala.method} · {sala.options.length} opciones · Ronda {sala.current_round} de {sala.max_rounds}
               {deadlineHour ? ` · Hora límite: ${deadlineHour}` : ''}
             </p>
@@ -590,18 +590,18 @@ export default function RoomHostPage() {
             <button
               type="button"
               onClick={copyPin}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-mono text-[#14171A] hover:bg-[#EBE7DF] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-line bg-paper text-xs font-mono text-ink hover:bg-subtle transition-colors"
             >
-              {copiedPin ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-[#2F7D4F]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
+              {copiedPin ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-good" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
               <span>PIN {sala.pin}</span>
             </button>
 
             <button
               type="button"
               onClick={copyLink}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-sans text-[#14171A] hover:bg-[#EBE7DF] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-line bg-paper text-xs font-sans text-ink hover:bg-subtle transition-colors"
             >
-              {copiedLink ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-[#2F7D4F]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
+              {copiedLink ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-good" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
               <span>Copiar enlace</span>
             </button>
           </div>
@@ -609,23 +609,23 @@ export default function RoomHostPage() {
       </div>
 
       {sala.access_mode === 'ROSTER' && (
-        <div className="py-6 border-b border-[#D9D5CC]">
+        <div className="py-6 border-b border-line">
           <RoomRosterManager roomId={sala.id} roomPin={sala.pin} readOnly={sala.status === 'CONCLUDED' || sala.status === 'CANCELLED'} />
         </div>
       )}
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
-      <div className="pb-6 border-b border-[#D9D5CC]">
+      <div className="pb-6 border-b border-line">
         {/* BORRADOR (DRAFT): PIN destacado, sala de espera, editar, abrir o programar la Ronda 1 */}
         {sala.status === 'DRAFT' && (
           <div className="space-y-5">
-            <div className="rounded-[8px] border-2 border-[#E4572E] bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div className="rounded-[8px] border-2 border-brand bg-paper p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#5A554E]">PIN del grupo</p>
-                <p className="font-mono text-4xl sm:text-5xl font-bold tracking-[0.2em] text-[#14171A] mt-1" aria-label={`PIN ${sala.pin.split('').join(' ')}`}>
+                <p className="text-xs font-semibold uppercase tracking-wider text-ink-2">PIN del grupo</p>
+                <p className="font-mono text-4xl sm:text-5xl font-bold tracking-[0.2em] text-ink mt-1" aria-label={`PIN ${sala.pin.split('').join(' ')}`}>
                   {sala.pin}
                 </p>
-                <p className="text-xs text-[#5A554E] mt-1.5">
+                <p className="text-xs text-ink-2 mt-1.5">
                   {sala.access_mode === 'ROSTER'
                     ? 'Compártelo junto con el código personal de cada persona. Pueden entrar ya y esperar a que abras la Ronda 1.'
                     : 'Compártelo con los participantes. Pueden entrar ya y esperar a que abras la Ronda 1.'}
@@ -635,7 +635,7 @@ export default function RoomHostPage() {
                 <button
                   type="button"
                   onClick={copyPin}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 h-10 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 h-10 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold"
                 >
                   {copiedPin ? <Check className="w-3.5 h-3.5 stroke-[2]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
                   Copiar PIN
@@ -643,26 +643,26 @@ export default function RoomHostPage() {
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 h-10 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 h-10 rounded-[6px] border border-line bg-paper text-xs font-medium text-ink hover:bg-subtle"
                 >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-[#2F7D4F]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
+                  {copiedLink ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-good" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
                   Copiar enlace
                 </button>
               </div>
             </div>
 
             <div className="space-y-2" aria-live="polite">
-              <h2 className="text-sm font-semibold text-[#14171A]">
+              <h2 className="text-sm font-semibold text-ink">
                 Sala de espera: {totalParticipants} {totalParticipants === 1 ? 'persona' : 'personas'}
               </h2>
               {sala.access_mode === 'ROSTER' ? (
-                <p className="text-xs text-[#5A554E]">En la lista de participantes ves quién ya ingresó.</p>
+                <p className="text-xs text-ink-2">En la lista de participantes ves quién ya ingresó.</p>
               ) : totalParticipants === 0 ? (
-                <p className="text-xs text-[#5A554E]">Todavía no ha entrado nadie.</p>
+                <p className="text-xs text-ink-2">Todavía no ha entrado nadie.</p>
               ) : (
                 <ul className="flex flex-wrap gap-1.5">
                   {sala.participants.map((p) => (
-                    <li key={p.id} className="px-2 py-1 rounded-[4px] border border-[#D9D5CC] bg-white text-xs text-[#14171A]">
+                    <li key={p.id} className="px-2 py-1 rounded-[4px] border border-line bg-paper text-xs text-ink">
                       {p.nickname}
                     </li>
                   ))}
@@ -673,18 +673,18 @@ export default function RoomHostPage() {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <Link
                 href={`/dashboard/rooms/${sala.id}/edit`}
-                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-[6px] border border-line bg-paper text-xs font-medium text-ink hover:bg-subtle"
               >
                 <Pencil className="w-3.5 h-3.5 stroke-[1.5]" aria-hidden="true" />
                 Editar título, opciones y configuración
               </Link>
-              <span className="text-xs text-[#5A554E]">Solo hasta abrir la Ronda 1.</span>
+              <span className="text-xs text-ink-2">Solo hasta abrir la Ronda 1.</span>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-[#D9D5CC]">
+            <div className="space-y-4 pt-4 border-t border-line">
               <div>
-                <h2 className="text-sm font-semibold text-[#14171A]">Abrir la Ronda 1</h2>
-                <p className="text-xs text-[#5A554E] mt-0.5">
+                <h2 className="text-sm font-semibold text-ink">Abrir la Ronda 1</h2>
+                <p className="text-xs text-ink-2 mt-0.5">
                   Ábrela ahora con un plazo, o prográmala para que se abra y se cierre sola.
                 </p>
               </div>
@@ -713,7 +713,7 @@ export default function RoomHostPage() {
                   type="button"
                   onClick={handleStartRoom}
                   disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
-                  className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                  className="px-4 py-2 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                 >
                   {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1 ahora'}
                 </button>
@@ -726,10 +726,10 @@ export default function RoomHostPage() {
         {sala.status === 'ROUND_OPEN' && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#14171A]">
+              <h2 className="text-sm font-semibold text-ink">
                 Ronda {sala.current_round} en curso
               </h2>
-              <p className="text-xs text-[#5A554E] mt-0.5">
+              <p className="text-xs text-ink-2 mt-0.5">
                 Selecciones recibidas: {votesCount} de {totalParticipants} participantes. Hora límite fijada: {deadlineHour || 'Sin hora límite'}.
               </p>
             </div>
@@ -740,7 +740,7 @@ export default function RoomHostPage() {
                 type="button"
                 onClick={() => setConfirmCloseOpen(true)}
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                className="px-4 py-2 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 Cerrar la ronda
               </button>
@@ -753,7 +753,7 @@ export default function RoomHostPage() {
                   setExtendDialogOpen(true);
                 }}
                 disabled={actionLoading}
-                className="text-xs text-[#5A554E] hover:text-[#14171A] hover:underline"
+                className="text-xs text-ink-2 hover:text-ink hover:underline"
               >
                 Extender hora límite
               </button>
@@ -762,7 +762,7 @@ export default function RoomHostPage() {
                 type="button"
                 onClick={() => setConfirmCancelOpen(true)}
                 disabled={actionLoading}
-                className="text-xs text-[#B42318] hover:underline ml-auto"
+                className="text-xs text-danger hover:underline ml-auto"
               >
                 Cancelar actividad
               </button>
@@ -772,14 +772,14 @@ export default function RoomHostPage() {
 
         {/* FALTAN VOTOS (INSUFFICIENT_VOTES / QUORUM_UNMET) */}
         {(sala.status === 'INSUFFICIENT_VOTES' || sala.status === 'QUORUM_UNMET') && (
-          <div className="p-4 rounded-[6px] border border-[#B42318]/30 bg-white space-y-4">
+          <div className="p-4 rounded-[6px] border border-danger/30 bg-paper space-y-4">
             <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 stroke-[1.5] text-[#B42318] shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 stroke-[1.5] text-danger shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-[#B42318] block">
+                <span className="text-xs font-semibold text-danger block">
                   Faltan selecciones
                 </span>
-                <p className="text-xs text-[#14171A] leading-relaxed">
+                <p className="text-xs text-ink leading-relaxed">
                   Enviaron su selección {votesCount} de {totalParticipants} participantes. Se necesitan al menos {minRequired} para calcular el resultado.
                 </p>
               </div>
@@ -799,7 +799,7 @@ export default function RoomHostPage() {
                 type="button"
                 onClick={() => handleExtendDeadlineWithMinutes(selectedMinutes, selectedClosesAt)}
                 disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
-                className="px-3.5 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                className="px-3.5 py-1.5 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 Extender hora límite
               </button>
@@ -808,7 +808,7 @@ export default function RoomHostPage() {
                 type="button"
                 onClick={() => setConfirmCancelOpen(true)}
                 disabled={actionLoading}
-                className="px-3.5 py-1.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#B42318] hover:bg-[#B42318]/10 transition-colors"
+                className="px-3.5 py-1.5 rounded-[6px] border border-line bg-paper text-xs text-danger hover:bg-danger/10 transition-colors"
               >
                 Cancelar actividad
               </button>
@@ -820,10 +820,10 @@ export default function RoomHostPage() {
         {sala.status === 'ROUND_FEEDBACK' && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#14171A]">
+              <h2 className="text-sm font-semibold text-ink">
                 Revisión de argumentos de la Ronda {sala.current_round}
               </h2>
-              <p className="text-xs text-[#5A554E] mt-0.5">
+              <p className="text-xs text-ink-2 mt-0.5">
                 Los participantes están consultando los argumentos de los demás. Puedes habilitar la siguiente ronda de reordenación.
               </p>
             </div>
@@ -854,7 +854,7 @@ export default function RoomHostPage() {
                     type="button"
                     onClick={handleOpenNextRound}
                     disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
-                    className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                    className="px-4 py-2 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                   >
                     {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.current_round + 1} ahora`}
                   </button>
@@ -864,14 +864,14 @@ export default function RoomHostPage() {
                     type="button"
                     onClick={() => setConfirmCancelOpen(true)}
                     disabled={actionLoading}
-                    className="text-xs text-[#B42318] hover:underline ml-auto"
+                    className="text-xs text-danger hover:underline ml-auto"
                   >
                     Cancelar actividad
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-[#5A554E]">
+              <p className="text-xs text-ink-2">
                 Se ha completado el máximo de rondas programadas ({sala.max_rounds}).
               </p>
             )}
@@ -881,10 +881,10 @@ export default function RoomHostPage() {
         {/* FINALIZADA (CONCLUDED) */}
         {sala.status === 'CONCLUDED' && (
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-[#14171A]">
+            <h2 className="text-sm font-semibold text-ink">
               Actividad finalizada
             </h2>
-            <p className="text-sm text-[#14171A]">
+            <p className="text-sm text-ink">
               {data?.conclusion === 'CONSENSUS'
                 ? `Terminó porque el grupo alcanzó el acuerdo requerido (${Math.round((latestReport?.obtained_tau ?? 0) * 100)}% de ${Math.round(sala.tau_threshold * 100)}%) en la ronda ${sala.current_round}.`
                 : data?.conclusion === 'MAX_ROUNDS'
@@ -898,10 +898,10 @@ export default function RoomHostPage() {
         {/* CANCELADA (CANCELLED) */}
         {sala.status === 'CANCELLED' && (
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-[#B42318]">
+            <h2 className="text-sm font-semibold text-danger">
               Actividad cancelada
             </h2>
-            <p className="text-xs text-[#6B6860]">
+            <p className="text-xs text-ink-3">
               La actividad fue cancelada por el anfitrión. Los datos de las rondas completadas se conservan en modo de lectura.
             </p>
           </div>
@@ -910,10 +910,10 @@ export default function RoomHostPage() {
         {/* CALCULANDO RESULTADOS (PROCESSING) */}
         {sala.status === 'PROCESSING' && (
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-[#14171A]">
+            <h2 className="text-sm font-semibold text-ink">
               Calculando resultados
             </h2>
-            <p className="text-xs text-[#5A554E]">
+            <p className="text-xs text-ink-2">
               El motor de agregación está procesando las selecciones y el consenso ordinal de esta ronda.
             </p>
           </div>
@@ -921,29 +921,29 @@ export default function RoomHostPage() {
       </div>
 
       {/* 4. Nivel de Acuerdo y Detalle Técnico */}
-      <section className="pb-6 border-b border-[#D9D5CC] space-y-4">
+      <section className="pb-6 border-b border-line space-y-4">
         <div>
-          <h2 className="text-sm font-semibold text-[#14171A]">
+          <h2 className="text-sm font-semibold text-ink">
             Nivel de acuerdo
           </h2>
-          <p className="text-xs text-[#5A554E] mt-0.5">
+          <p className="text-xs text-ink-2 mt-0.5">
             Porcentaje de consenso alcanzado frente al acuerdo requerido.
           </p>
         </div>
 
         {tauStar != null ? (
-          <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-4 space-y-3">
+          <div className="border border-line bg-paper rounded-[6px] p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="font-mono text-2xl font-bold text-[#14171A]">{agreementPct}%</span>
-                <p className="text-xs text-[#5A554E] mt-0.5">
+                <span className="font-mono text-2xl font-bold text-ink">{agreementPct}%</span>
+                <p className="text-xs text-ink-2 mt-0.5">
                   Nivel de acuerdo alcanzado hasta ahora
                   {latestReport ? ` (ronda ${latestReport.round})` : ''}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <span className="text-xs text-[#14171A]">Requerido: {requiredPct}%</span>
-                <p className={`text-xs font-semibold mt-0.5 ${agreementPct >= requiredPct ? 'text-[#2F7D4F]' : 'text-[#B7791F]'}`}>
+                <span className="text-xs text-ink">Requerido: {requiredPct}%</span>
+                <p className={`text-xs font-semibold mt-0.5 ${agreementPct >= requiredPct ? 'text-good' : 'text-warn'}`}>
                   {agreementPct >= requiredPct ? 'Alcanzado' : 'Todavía no alcanzado'}
                 </p>
               </div>
@@ -953,7 +953,7 @@ export default function RoomHostPage() {
             <div>
               <div className="relative">
                 <div
-                  className="w-full bg-[#EBE7DF] h-3 rounded-[4px] overflow-hidden"
+                  className="w-full bg-subtle h-3 rounded-[4px] overflow-hidden"
                   role="meter"
                   aria-valuemin={0}
                   aria-valuemax={100}
@@ -961,20 +961,20 @@ export default function RoomHostPage() {
                   aria-label={`Nivel de acuerdo ${agreementPct}%, requerido ${requiredPct}%`}
                 >
                   <div
-                    className="h-full bg-[#E4572E] transition-all duration-300"
+                    className="h-full bg-brand transition-all duration-300"
                     style={{ width: `${Math.min(100, Math.max(0, agreementPct))}%` }}
                   />
                 </div>
                 <div
-                  className="absolute -top-1 -bottom-1 w-0.5 bg-[#14171A]"
+                  className="absolute -top-1 -bottom-1 w-0.5 bg-ink"
                   style={{ left: `calc(${Math.min(100, Math.max(0, requiredPct))}% - 1px)` }}
                   aria-hidden="true"
                 />
               </div>
-              <div className="relative h-4 mt-1 text-[11px] font-mono text-[#5A554E]" aria-hidden="true">
+              <div className="relative h-4 mt-1 text-[11px] font-mono text-ink-2" aria-hidden="true">
                 {requiredPct > 8 && <span className="absolute left-0">0%</span>}
                 <span
-                  className="absolute font-semibold text-[#14171A]"
+                  className="absolute font-semibold text-ink"
                   style={{ left: `${Math.min(100, Math.max(0, requiredPct))}%`, transform: `translateX(${requiredPct < 6 ? '0' : requiredPct > 94 ? '-100%' : '-50%'})` }}
                 >
                   {requiredPct}%
@@ -984,14 +984,14 @@ export default function RoomHostPage() {
             </div>
           </div>
         ) : (
-          <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-4 text-xs text-[#5A554E]">
+          <div className="border border-line bg-paper rounded-[6px] p-4 text-xs text-ink-2">
             El nivel de acuerdo se calculará cuando se cierre la ronda y se procesen las selecciones recibidas.
           </div>
         )}
 
         {/* Progress of the group's agreement over the rounds */}
         {(sala.reports?.length ?? 0) > 0 && (
-          <div className="border border-[#D9D5CC] rounded-[6px] bg-white p-3">
+          <div className="border border-line rounded-[6px] bg-paper p-3">
             <AgreementChart
               points={sala.reports.map((r) => ({ round: r.round, value: r.obtained_tau }))}
               threshold={sala.tau_threshold}
@@ -1001,25 +1001,25 @@ export default function RoomHostPage() {
         )}
 
         {/* Sección plegable "Detalle técnico" */}
-        <details className="group border border-[#D9D5CC] rounded-[6px] bg-white p-3.5">
-          <summary className="flex items-center justify-between cursor-pointer text-xs font-semibold text-[#14171A] select-none">
+        <details className="group border border-line rounded-[6px] bg-paper p-3.5">
+          <summary className="flex items-center justify-between cursor-pointer text-xs font-semibold text-ink select-none">
             <span>Detalle técnico</span>
-            <ChevronDown className="w-4 h-4 stroke-[1.5] text-[#5A554E] group-open:rotate-180 transition-transform" />
+            <ChevronDown className="w-4 h-4 stroke-[1.5] text-ink-2 group-open:rotate-180 transition-transform" />
           </summary>
-          <div className="mt-3 pt-3 border-t border-[#D9D5CC] text-xs text-[#5A554E] space-y-2 font-mono">
+          <div className="mt-3 pt-3 border-t border-line text-xs text-ink-2 space-y-2 font-mono">
             <div>
-              <span className="text-[#14171A] font-semibold">Nivel de acuerdo (coeficiente exacto):</span>{' '}
+              <span className="text-ink font-semibold">Nivel de acuerdo (coeficiente exacto):</span>{' '}
               {tauStar != null ? tauStar.toFixed(4) : 'Pendiente de cálculo'}
             </div>
             <div>
-              <span className="text-[#14171A] font-semibold">Selecciones recibidas:</span>{' '}
+              <span className="text-ink font-semibold">Selecciones recibidas:</span>{' '}
               {latestReport?.effective_voters ?? votesCount} participantes
             </div>
             <div>
-              <span className="text-[#14171A] font-semibold">Regla de agregación:</span>{' '}
+              <span className="text-ink font-semibold">Regla de agregación:</span>{' '}
               {sala.method}
             </div>
-            <p className="font-sans text-[11px] text-[#5A554E] pt-1">
+            <p className="font-sans text-[11px] text-ink-2 pt-1">
               El nivel de acuerdo compara el orden de cada participante con el orden del grupo, ya sin empates.
             </p>
           </div>
@@ -1027,12 +1027,12 @@ export default function RoomHostPage() {
       </section>
 
       {/* 5. Orden del Grupo (si hay reporte) u Opciones de la sala */}
-      <section className="pb-6 border-b border-[#D9D5CC] space-y-3">
+      <section className="pb-6 border-b border-line space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-[#14171A]">
+          <h2 className="text-sm font-semibold text-ink">
             {latestReport ? 'Orden del grupo' : 'Opciones de la sala'}
           </h2>
-          <p className="text-xs text-[#5A554E] mt-0.5">
+          <p className="text-xs text-ink-2 mt-0.5">
             {latestReport
               ? 'Posiciones colectivas agregadas a partir de las selecciones recibidas.'
               : 'Opciones registradas que los participantes ordenarán.'}
@@ -1040,7 +1040,7 @@ export default function RoomHostPage() {
         </div>
 
         {latestReport?.tieBreak?.applied && latestReport.tieBreak.tiedGroups.length > 0 && (
-          <div className="p-3 rounded-[6px] border border-[#B7791F]/40 bg-[#B7791F]/[0.07] text-xs text-[#14171A] space-y-1">
+          <div className="p-3 rounded-[6px] border border-warn/40 bg-warn/[0.07] text-xs text-ink space-y-1">
             <p className="font-semibold">Hubo empates en la ronda {latestReport.round}</p>
             {latestReport.tieBreak.tiedGroups.map((group, i) => (
               <p key={i}>
@@ -1048,7 +1048,7 @@ export default function RoomHostPage() {
                 {group.map((id) => sala.options.find((o) => o.id === id)?.title ?? id).join(', ')}
               </p>
             ))}
-            <p className="text-[#14171A]/80">
+            <p className="text-ink/80">
               {tieBreakHostNote(latestReport.tieBreak.rule, latestReport.tieBreak.fallbackUsed)} Los participantes no ven este aviso; queda en el
               export (round_metrics.csv: tie_detected, tie_resolved_by).
             </p>
@@ -1056,10 +1056,10 @@ export default function RoomHostPage() {
         )}
 
         {latestReport ? (
-          <div className="overflow-x-auto border border-[#D9D5CC] rounded-[6px] bg-white">
+          <div className="overflow-x-auto border border-line rounded-[6px] bg-paper">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF]/60 text-[#5A554E] font-mono text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-line bg-canvas/60 text-ink-2 font-mono text-[11px] uppercase tracking-wider">
                   <th className="py-2.5 px-3 w-40">Posición</th>
                   {/* The mid-rank only adds information when options share a place */}
                   {rankingHasTies(latestReport.collective_ranking) && (
@@ -1068,7 +1068,7 @@ export default function RoomHostPage() {
                   <th className="py-2.5 px-3">Opción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D9D5CC]">
+              <tbody className="divide-y divide-line">
                 {latestReport.collective_ranking.map((item, idx) => {
                   const proj = sala.options.find((p) => p.id === item.id);
                   const title = proj ? proj.title : item.title || `Opción ${idx + 1}`;
@@ -1079,19 +1079,19 @@ export default function RoomHostPage() {
                   );
 
                   return (
-                    <tr key={item.id} className="hover:bg-[#F6F4EF]/50">
-                      <td className="py-2.5 px-3 font-semibold text-[#14171A]">
+                    <tr key={item.id} className="hover:bg-canvas/50">
+                      <td className="py-2.5 px-3 font-semibold text-ink">
                         {rankLabel}
                       </td>
                       {rankingHasTies(latestReport.collective_ranking) && (
-                        <td className="py-2.5 px-3 font-mono text-[#14171A]">
+                        <td className="py-2.5 px-3 font-mono text-ink">
                           {item.midRank.toFixed(1)}
                         </td>
                       )}
-                      <td className="py-2.5 px-3 text-[#14171A]">
+                      <td className="py-2.5 px-3 text-ink">
                         <span className="font-medium">{title}</span>
                         {proj?.description && (
-                          <span className="block text-[11px] text-[#5A554E] mt-0.5">
+                          <span className="block text-[11px] text-ink-2 mt-0.5">
                             {proj.description}
                           </span>
                         )}
@@ -1103,25 +1103,25 @@ export default function RoomHostPage() {
             </table>
           </div>
         ) : (
-          <div className="overflow-x-auto border border-[#D9D5CC] rounded-[6px] bg-white">
+          <div className="overflow-x-auto border border-line rounded-[6px] bg-paper">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF]/60 text-[#5A554E] font-mono text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-line bg-canvas/60 text-ink-2 font-mono text-[11px] uppercase tracking-wider">
                   <th className="py-2.5 px-3 w-16">#</th>
                   <th className="py-2.5 px-3">Título</th>
                   <th className="py-2.5 px-3">Descripción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D9D5CC]">
+              <tbody className="divide-y divide-line">
                 {sala.options.map((p, idx) => (
-                  <tr key={p.id} className="hover:bg-[#F6F4EF]/50">
-                    <td className="py-2.5 px-3 font-mono font-bold text-[#14171A]">
+                  <tr key={p.id} className="hover:bg-canvas/50">
+                    <td className="py-2.5 px-3 font-mono font-bold text-ink">
                       {idx + 1}
                     </td>
-                    <td className="py-2.5 px-3 font-medium text-[#14171A]">
+                    <td className="py-2.5 px-3 font-medium text-ink">
                       {p.title}
                     </td>
-                    <td className="py-2.5 px-3 text-[#5A554E]">
+                    <td className="py-2.5 px-3 text-ink-2">
                       {p.description}
                     </td>
                   </tr>
@@ -1132,52 +1132,52 @@ export default function RoomHostPage() {
         )}
       </section>
 
-      <div className="pb-6 border-b border-[#D9D5CC]">
+      <div className="pb-6 border-b border-line">
         <ParticipationTable roomId={sala.id} refreshKey={`${sala.status}:${sala.current_round}:${votesCount}:${totalParticipants}`} />
       </div>
 
       {/* 6. Tabla Densa de Participantes (grupos con PIN; con lista, la lista y los totales de arriba) */}
       {sala.access_mode !== 'ROSTER' && (
-        <section className="pb-6 border-b border-[#D9D5CC] space-y-3">
+        <section className="pb-6 border-b border-line space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold text-[#14171A]">
+              <h2 className="text-sm font-semibold text-ink">
                 Participantes ({totalParticipants})
               </h2>
-              <p className="text-xs text-[#5A554E] mt-0.5">
+              <p className="text-xs text-ink-2 mt-0.5">
                 Identificadores anónimos y si enviaron su selección en la ronda actual.
               </p>
             </div>
           </div>
 
           {totalParticipants === 0 ? (
-            <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-6 text-center text-xs text-[#5A554E]">
+            <div className="border border-line bg-paper rounded-[6px] p-6 text-center text-xs text-ink-2">
               Aún no se han unido participantes con el PIN <strong>{sala.pin}</strong>.
             </div>
           ) : (
-            <div className="overflow-x-auto border border-[#D9D5CC] rounded-[6px] bg-white">
+            <div className="overflow-x-auto border border-line rounded-[6px] bg-paper">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF]/60 text-[#5A554E] font-mono text-[11px] uppercase tracking-wider">
+                  <tr className="border-b border-line bg-canvas/60 text-ink-2 font-mono text-[11px] uppercase tracking-wider">
                     <th className="py-2.5 px-3">Nombre</th>
                     <th className="py-2.5 px-3 w-36">Estado</th>
                     <th className="py-2.5 px-3 w-56 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#D9D5CC]">
+                <tbody className="divide-y divide-line">
                   {sala.participants.map((p) => {
                     const didVote = voterIds.includes(p.id);
 
                     return (
-                      <tr key={p.id} className="hover:bg-[#F6F4EF]/50">
-                        <td className="py-2.5 px-3 font-medium text-[#14171A]">
+                      <tr key={p.id} className="hover:bg-canvas/50">
+                        <td className="py-2.5 px-3 font-medium text-ink">
                           {p.nickname}
                         </td>
                         <td className="py-2.5 px-3 font-mono">
                           {didVote ? (
-                            <span className="text-[#2F7D4F] font-semibold">Envió</span>
+                            <span className="text-good font-semibold">Envió</span>
                           ) : (
-                            <span className="text-[#5A554E]">Pendiente</span>
+                            <span className="text-ink-2">Pendiente</span>
                           )}
                         </td>
                         <td className="py-2.5 px-3 text-right space-x-3">
@@ -1191,7 +1191,7 @@ export default function RoomHostPage() {
                                 nickname: p.nickname,
                               })
                             }
-                            className="text-xs text-[#14171A] hover:underline hover:text-[#E4572E] font-medium"
+                            className="text-xs text-ink hover:underline hover:text-brand font-medium"
                           >
                             Restablecer PIN
                           </button>
@@ -1206,7 +1206,7 @@ export default function RoomHostPage() {
                                 nickname: p.nickname,
                               });
                             }}
-                            className="text-xs text-[#B42318] hover:underline font-medium"
+                            className="text-xs text-danger hover:underline font-medium"
                           >
                             Expulsar de la sala
                           </button>
@@ -1223,24 +1223,24 @@ export default function RoomHostPage() {
 
       {/* 6b. Retirados: se pueden reincorporar mientras la actividad sigue */}
       {(sala.removedParticipants?.length ?? 0) > 0 && (
-        <section className="pb-6 border-b border-[#D9D5CC] space-y-2">
+        <section className="pb-6 border-b border-line space-y-2">
           <div>
-            <h2 className="text-sm font-semibold text-[#14171A]">Retirados ({sala.removedParticipants!.length})</h2>
-            <p className="text-xs text-[#14171A]/80 mt-0.5">
+            <h2 className="text-sm font-semibold text-ink">Retirados ({sala.removedParticipants!.length})</h2>
+            <p className="text-xs text-ink/80 mt-0.5">
               No ocupan cupo y su nombre quedó libre. Reincorporar devuelve a la misma persona, con su historial, si hay
               cupo y nadie tomó su nombre.
             </p>
           </div>
-          <ul className="divide-y divide-[#D9D5CC] border border-[#D9D5CC] rounded-[6px] bg-white">
+          <ul className="divide-y divide-line border border-line rounded-[6px] bg-paper">
             {sala.removedParticipants!.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                <span className="font-medium text-[#14171A]">{p.nickname}</span>
+                <span className="font-medium text-ink">{p.nickname}</span>
                 {sala.status !== 'CONCLUDED' && sala.status !== 'CANCELLED' && (
                   <button
                     type="button"
                     onClick={() => handleReinstate(p.id, p.nickname)}
                     disabled={reinstatingId !== null}
-                    className="min-h-[36px] px-2 text-xs font-medium text-[#14171A] hover:underline hover:text-[#E4572E] disabled:opacity-40"
+                    className="min-h-[36px] px-2 text-xs font-medium text-ink hover:underline hover:text-brand disabled:opacity-40"
                   >
                     {reinstatingId === p.id ? 'Reincorporando...' : 'Reincorporar'}
                   </button>
@@ -1270,14 +1270,14 @@ export default function RoomHostPage() {
               <button
                 type="button"
                 onClick={() => setConfirmCloseOpen(false)}
-                className="text-xs text-[#5A554E] hover:text-[#14171A]"
+                className="text-xs text-ink-2 hover:text-ink"
               >
                 Volver
               </button>
               <button
                 type="button"
                 onClick={handleCloseManually}
-                className="px-3.5 py-2 rounded-[6px] bg-[#E4572E] text-white text-xs font-semibold hover:bg-[#E4572E]/90"
+                className="px-3.5 py-2 rounded-[6px] bg-brand text-white text-xs font-semibold hover:bg-brand/90"
               >
                 Cerrar y calcular
               </button>
@@ -1290,7 +1290,7 @@ export default function RoomHostPage() {
       <Dialog open={confirmCancelOpen} onOpenChange={setConfirmCancelOpen}>
         <DialogContent>
           <div className="space-y-4">
-            <DialogTitle className="text-[#B42318]">
+            <DialogTitle className="text-danger">
               ¿Cancelar actividad?
             </DialogTitle>
             <DialogDescription>
@@ -1300,14 +1300,14 @@ export default function RoomHostPage() {
               <button
                 type="button"
                 onClick={() => setConfirmCancelOpen(false)}
-                className="text-xs text-[#5A554E] hover:text-[#14171A]"
+                className="text-xs text-ink-2 hover:text-ink"
               >
                 Volver
               </button>
               <button
                 type="button"
                 onClick={handleCancelRoom}
-                className="px-3.5 py-2 rounded-[6px] bg-[#B42318] text-white text-xs font-semibold hover:bg-[#B42318]/90"
+                className="px-3.5 py-2 rounded-[6px] bg-danger text-white text-xs font-semibold hover:bg-danger/90"
               >
                 Cancelar sala
               </button>
@@ -1365,15 +1365,15 @@ export default function RoomHostPage() {
                   }
                   className={`h-11 text-lg font-bold pl-11 ${
                     resetPinServerError || (resetPinTouched && resetPinError)
-                      ? 'border-[#B42318] focus:border-[#B42318]'
-                      : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                      ? 'border-danger focus:border-danger'
+                      : 'border-line focus:border-brand'
                   }`}
                 />
                 {(resetPinServerError || (resetPinTouched && resetPinError)) && (
                   <p
                     id="reset-pin-error"
                     role="alert"
-                    className="text-xs text-[#B42318] mt-1.5 flex items-center justify-center gap-1"
+                    className="text-xs text-danger mt-1.5 flex items-center justify-center gap-1"
                   >
                     <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                     <span>{resetPinServerError || resetPinError}</span>
@@ -1391,7 +1391,7 @@ export default function RoomHostPage() {
                     setResetPinError(null);
                     setResetPinServerError(null);
                   }}
-                  className="text-xs text-[#5A554E] hover:text-[#14171A]"
+                  className="text-xs text-ink-2 hover:text-ink"
                 >
                   Cancelar
                 </button>
@@ -1402,7 +1402,7 @@ export default function RoomHostPage() {
                     resetPinServerError ||
                     newPinValue.length !== 4
                   )}
-                  className="px-3.5 py-2 rounded-[6px] bg-[#E4572E] text-white text-xs font-semibold hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-3.5 py-2 rounded-[6px] bg-brand text-white text-xs font-semibold hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Guardar PIN
                 </button>
@@ -1432,11 +1432,11 @@ export default function RoomHostPage() {
                 label="Tiempo adicional"
               />
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D9D5CC]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
               <button
                 type="button"
                 onClick={() => setExtendDialogOpen(false)}
-                className="px-3.5 py-1.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#5A554E] hover:bg-[#EBE7DF] transition-colors"
+                className="px-3.5 py-1.5 rounded-[6px] border border-line bg-paper text-xs text-ink-2 hover:bg-subtle transition-colors"
               >
                 Cancelar
               </button>
@@ -1444,7 +1444,7 @@ export default function RoomHostPage() {
                 type="button"
                 disabled={actionLoading || !timingReady(extendMinutes, extendClosesAt)}
                 onClick={() => handleExtendDeadlineWithMinutes(extendMinutes, extendClosesAt)}
-                className="px-4 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                className="px-4 py-1.5 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
                 {actionLoading ? 'Guardando...' : 'Confirmar extensión'}
               </button>
@@ -1476,7 +1476,7 @@ export default function RoomHostPage() {
             {totalParticipants - 1 < 3 && (
               <div
                 role="alert"
-                className="p-3 bg-[#B42318]/10 border border-[#B42318]/30 rounded-[6px] text-xs text-[#B42318] flex items-start gap-2 leading-relaxed"
+                className="p-3 bg-danger/10 border border-danger/30 rounded-[6px] text-xs text-danger flex items-start gap-2 leading-relaxed"
               >
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
@@ -1486,7 +1486,7 @@ export default function RoomHostPage() {
             )}
 
             {expelServerError && (
-              <p role="alert" className="text-xs text-[#B42318]">
+              <p role="alert" className="text-xs text-danger">
                 {expelServerError}
               </p>
             )}
@@ -1499,7 +1499,7 @@ export default function RoomHostPage() {
                   setExpelServerError(null);
                 }}
                 disabled={expelLoading}
-                className="text-xs text-[#5A554E] hover:text-[#14171A]"
+                className="text-xs text-ink-2 hover:text-ink"
               >
                 Cancelar
               </button>
@@ -1507,7 +1507,7 @@ export default function RoomHostPage() {
                 type="button"
                 onClick={handleExpelSubmit}
                 disabled={expelLoading}
-                className="px-3.5 py-2 rounded-[6px] bg-[#B42318] text-white text-xs font-semibold hover:bg-[#B42318]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3.5 py-2 rounded-[6px] bg-danger text-white text-xs font-semibold hover:bg-danger/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {expelLoading ? 'Expulsando...' : 'Expulsar de la sala'}
               </button>

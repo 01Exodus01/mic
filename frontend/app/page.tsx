@@ -69,10 +69,10 @@ export default function HomePage() {
       {/* 1. Bloque principal: Título en Fraunces + frase descriptiva + dos accesos */}
       <section className="space-y-8">
         <div className="space-y-4">
-          <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-[#14171A] tracking-tight leading-[1.15]">
+          <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-ink tracking-tight leading-[1.15]">
             Consenso y priorización de opciones para grupos
           </h1>
-          <p className="text-base sm:text-lg text-[#5A554E] leading-relaxed max-w-2xl">
+          <p className="text-base sm:text-lg text-ink-2 leading-relaxed max-w-2xl">
             Permite a cualquier equipo, organización o asamblea ordenar propuestas, revisar argumentos de forma anónima y medir el nivel de acuerdo en rondas sucesivas.
           </p>
         </div>
@@ -83,7 +83,7 @@ export default function HomePage() {
           <form onSubmit={handleSubmit} className="space-y-2 max-w-md" noValidate>
             <label
               htmlFor="landing-pin"
-              className="block text-xs font-semibold text-[#14171A] uppercase tracking-wider"
+              className="block text-xs font-semibold text-ink uppercase tracking-wider"
             >
               Ingresar a una sala
             </label>
@@ -99,33 +99,33 @@ export default function HomePage() {
                 aria-invalid={isInvalid}
                 aria-describedby={isInvalid ? 'landing-pin-error' : undefined}
                 placeholder="PIN de 6 caracteres"
-                className={`w-full sm:flex-1 h-14 min-h-[56px] px-4 rounded-[6px] border bg-white font-mono text-base font-bold tracking-widest text-[#14171A] placeholder:text-[#5A554E]/50 placeholder:font-normal placeholder:tracking-normal focus:outline-none uppercase shrink-0 transition-colors ${
+                className={`w-full sm:flex-1 h-14 min-h-[56px] px-4 rounded-[6px] border bg-paper font-mono text-base font-bold tracking-widest text-ink placeholder:text-ink-2/50 placeholder:font-normal placeholder:tracking-normal focus:outline-none uppercase shrink-0 transition-colors ${
                   isInvalid
-                    ? 'border-[#B42318] focus:border-[#B42318]'
-                    : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line focus:border-brand'
                 }`}
               />
               <button
                 type="submit"
                 disabled={isInvalid || checking}
-                className="w-full sm:w-auto h-14 min-h-[56px] px-6 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shrink-0 flex items-center justify-center"
+                className="w-full sm:w-auto h-14 min-h-[56px] px-6 rounded-[6px] bg-brand hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shrink-0 flex items-center justify-center"
               >
                 {checking ? 'Comprobando...' : 'Ingresar a la sala'}
               </button>
             </div>
             {isInvalid && (
-              <p id="landing-pin-error" role="alert" className="text-xs text-[#B42318] pt-1">
+              <p id="landing-pin-error" role="alert" className="text-xs text-danger pt-1">
                 {error}
               </p>
             )}
           </form>
 
           {/* Acceso 2: Enlace crear sala (anfitrión) */}
-          <div className="pt-2 text-xs text-[#5A554E]">
+          <div className="pt-2 text-xs text-ink-2">
             ¿Organizas la actividad?{' '}
             <Link
               href="/auth/login"
-              className="text-[#14171A] font-semibold underline underline-offset-2 hover:text-[#E4572E]"
+              className="text-ink font-semibold underline underline-offset-2 hover:text-brand"
             >
               Crear una sala
             </Link>
@@ -134,49 +134,49 @@ export default function HomePage() {
       </section>
 
       {/* 2. Sección "Cómo funciona" en 3 pasos numerados en texto (sin íconos ni tarjetas) */}
-      <section className="pt-10 border-t border-[#D9D5CC] space-y-8">
-        <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#14171A] tracking-tight">
+      <section className="pt-10 border-t border-line space-y-8">
+        <h2 className="font-heading text-xl sm:text-2xl font-bold text-ink tracking-tight">
           Cómo funciona
         </h2>
 
         <div className="space-y-6">
           <div className="flex items-start gap-4">
-            <span className="font-mono text-base font-bold text-[#5A554E] shrink-0 pt-0.5">
+            <span className="font-mono text-base font-bold text-ink-2 shrink-0 pt-0.5">
               01
             </span>
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-[#14171A]">
+              <h3 className="text-sm font-semibold text-ink">
                 Crear opciones
               </h3>
-              <p className="text-xs text-[#5A554E] leading-relaxed">
+              <p className="text-xs text-ink-2 leading-relaxed">
                 El anfitrión define las opciones que el grupo evaluará y fija el acuerdo requerido para dar por concluido el proceso.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <span className="font-mono text-base font-bold text-[#5A554E] shrink-0 pt-0.5">
+            <span className="font-mono text-base font-bold text-ink-2 shrink-0 pt-0.5">
               02
             </span>
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-[#14171A]">
+              <h3 className="text-sm font-semibold text-ink">
                 El grupo ordena y argumenta
               </h3>
-              <p className="text-xs text-[#5A554E] leading-relaxed">
+              <p className="text-xs text-ink-2 leading-relaxed">
                 Cada participante ingresa con el PIN de la sala, ordena las opciones según su preferencia y escribe una razón breve de su postura.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <span className="font-mono text-base font-bold text-[#5A554E] shrink-0 pt-0.5">
+            <span className="font-mono text-base font-bold text-ink-2 shrink-0 pt-0.5">
               03
             </span>
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-[#14171A]">
+              <h3 className="text-sm font-semibold text-ink">
                 Se calcula el acuerdo en rondas
               </h3>
-              <p className="text-xs text-[#5A554E] leading-relaxed">
+              <p className="text-xs text-ink-2 leading-relaxed">
                 El sistema calcula el consenso del grupo y el nivel de acuerdo. Si no se alcanza la meta, se abren nuevas rondas con los argumentos a la vista para deliberar.
               </p>
             </div>

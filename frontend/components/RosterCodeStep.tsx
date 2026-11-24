@@ -65,7 +65,7 @@ export default function RosterCodeStep({
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       <div>
-        <label htmlFor="member-code-input" className="block text-xs font-medium text-[#14171A] mb-2">
+        <label htmlFor="member-code-input" className="block text-xs font-medium text-ink mb-2">
           Código personal
         </label>
         <PasswordInput
@@ -84,11 +84,11 @@ export default function RosterCodeStep({
           aria-invalid={Boolean(activeError)}
           aria-describedby={activeError ? 'member-code-error' : undefined}
           className={`h-[56px] font-mono text-xl tracking-widest uppercase ${
-            activeError ? 'border-[#B42318] focus:border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+            activeError ? 'border-danger focus:border-danger' : 'border-line focus:border-brand'
           }`}
         />
         {activeError && (
-          <p id="member-code-error" role="alert" className="text-xs text-[#B42318] mt-1.5 flex items-center gap-1">
+          <p id="member-code-error" role="alert" className="text-xs text-danger mt-1.5 flex items-center gap-1">
             <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
             <span>{activeError}</span>
           </p>
@@ -99,23 +99,23 @@ export default function RosterCodeStep({
         <button
           type="submit"
           disabled={disabled}
-          className="h-[56px] w-full bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
+          className="h-[56px] w-full bg-brand hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
         >
           {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
-        {disabled && !loading && <p className="text-xs text-[#5A554E] text-center">Escribe el código que te entregó el anfitrión</p>}
+        {disabled && !loading && <p className="text-xs text-ink-2 text-center">Escribe el código que te entregó el anfitrión</p>}
       </div>
 
       <div className="flex items-center justify-between pt-2">
         {showBack ? (
-          <button type="button" onClick={onBack} className="min-h-[44px] px-2 text-xs text-[#5A554E] hover:text-[#14171A] flex items-center gap-1">
+          <button type="button" onClick={onBack} className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
             <span>Atrás</span>
           </button>
         ) : (
           <span />
         )}
-        <button type="button" onClick={onChangeRoom} className="min-h-[44px] px-2 text-xs text-[#5A554E] hover:text-[#14171A]">
+        <button type="button" onClick={onChangeRoom} className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink">
           Cambiar sala
         </button>
       </div>

@@ -92,19 +92,19 @@ const SIDE_UI: Record<ReasonSideKey, {
   for: {
     question: 'A favor: ¿por qué debería quedar más arriba?',
     add: 'Razón a favor',
-    box: 'border-[#2F7D4F]/40 bg-[#2F7D4F]/[0.06]',
-    head: 'text-[#2F7D4F]',
-    field: 'border-l-[#2F7D4F]',
-    addBtn: 'text-[#2F7D4F] border-[#2F7D4F]/50 hover:bg-[#2F7D4F]/10',
+    box: 'border-good/40 bg-good/[0.06]',
+    head: 'text-good',
+    field: 'border-l-good',
+    addBtn: 'text-good border-good/50 hover:bg-good/10',
     Icon: Plus,
   },
   against: {
     question: 'En contra: ¿por qué debería quedar más abajo?',
     add: 'Razón en contra',
-    box: 'border-[#B42318]/40 bg-[#B42318]/[0.05]',
-    head: 'text-[#B42318]',
-    field: 'border-l-[#B42318]',
-    addBtn: 'text-[#B42318] border-[#B42318]/50 hover:bg-[#B42318]/10',
+    box: 'border-danger/40 bg-danger/[0.05]',
+    head: 'text-danger',
+    field: 'border-l-danger',
+    addBtn: 'text-danger border-danger/50 hover:bg-danger/10',
     Icon: Minus,
   },
 };
@@ -119,7 +119,7 @@ export default function ReasonListsField({
 }: ReasonListsFieldProps) {
   return (
     <fieldset className="space-y-2.5" disabled={disabled}>
-      <legend className="text-xs font-medium text-[#14171A] leading-relaxed mb-2">
+      <legend className="text-xs font-medium text-ink leading-relaxed mb-2">
         Razones (opcional). Hasta {MAX_REASONS_PER_SIDE} a favor y {MAX_REASONS_PER_SIDE} en contra; cada una en su bloque.
       </legend>
       {(['for', 'against'] as const).map((side) => {
@@ -142,7 +142,7 @@ export default function ReasonListsField({
                     <label htmlFor={fieldId} className={`font-medium ${ui.head}`}>
                       {SIDE_LABEL[side]} {index + 1}
                     </label>
-                    <span className={`font-mono ${err ? 'text-[#B42318]' : 'text-[#14171A]/70'}`}>
+                    <span className={`font-mono ${err ? 'text-danger' : 'text-ink/70'}`}>
                       {length}/{REASON_MAX_LENGTH}
                     </span>
                   </div>
@@ -158,21 +158,21 @@ export default function ReasonListsField({
                       }}
                       aria-invalid={Boolean(err)}
                       aria-describedby={err ? `${fieldId}-error` : undefined}
-                      className={`flex-1 min-w-0 p-2 rounded-[6px] border border-l-4 ${ui.field} bg-white text-sm text-[#14171A] focus:outline-none ${
-                        err ? 'border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                      className={`flex-1 min-w-0 p-2 rounded-[6px] border border-l-4 ${ui.field} bg-paper text-sm text-ink focus:outline-none ${
+                        err ? 'border-danger' : 'border-line focus:border-brand'
                       }`}
                     />
                     <button
                       type="button"
                       onClick={() => onChange(removeReason(value, side, index))}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#14171A]/70 hover:text-[#B42318]"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-ink/70 hover:text-danger"
                       aria-label={`Quitar ${SIDE_LABEL[side].toLowerCase()} ${index + 1}`}
                     >
                       <X className="w-4 h-4 stroke-[1.5]" />
                     </button>
                   </div>
                   {err && (
-                    <p id={`${fieldId}-error`} role="alert" className="text-xs text-[#B42318]">
+                    <p id={`${fieldId}-error`} role="alert" className="text-xs text-danger">
                       {err}
                     </p>
                   )}
@@ -188,12 +188,12 @@ export default function ReasonListsField({
                 }}
                 disabled={atLimit}
                 aria-label={ADD_LABEL[side]}
-                className={`min-h-[40px] px-2.5 inline-flex items-center gap-1.5 rounded-[6px] border bg-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed ${ui.addBtn}`}
+                className={`min-h-[40px] px-2.5 inline-flex items-center gap-1.5 rounded-[6px] border bg-paper text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed ${ui.addBtn}`}
               >
                 <ui.Icon className="w-4 h-4 stroke-[2]" aria-hidden="true" />
                 <span>{ui.add}</span>
               </button>
-              {atLimit && <span className="text-xs text-[#14171A]/80">Llegaste al máximo de {MAX_REASONS_PER_SIDE}.</span>}
+              {atLimit && <span className="text-xs text-ink/80">Llegaste al máximo de {MAX_REASONS_PER_SIDE}.</span>}
             </div>
           </div>
         );
@@ -207,23 +207,23 @@ export default function ReasonListsField({
 export function ReasonListsSummary({ value, legacyText }: { value: OptionReasons; legacyText?: string }) {
   const sides = (['for', 'against'] as const).filter((side) => value[side].length > 0);
   if (sides.length === 0 && !legacyText) {
-    return <p className="text-xs text-[#5A554E]">Sin razones escritas.</p>;
+    return <p className="text-xs text-ink-2">Sin razones escritas.</p>;
   }
   return (
     <div className="space-y-2">
       {legacyText && (
-        <p className="text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words">
+        <p className="text-xs text-ink leading-relaxed bg-canvas p-2.5 rounded-[4px] border border-line/80 break-words">
           {legacyText}
         </p>
       )}
       {sides.map((side) => (
         <div key={side}>
-          <span className="text-[11px] font-medium text-[#5A554E] block mb-1">{SIDE_LABEL[side]}</span>
+          <span className="text-[11px] font-medium text-ink-2 block mb-1">{SIDE_LABEL[side]}</span>
           <ul className="space-y-1">
             {value[side].map((text, i) => (
               <li
                 key={i}
-                className="text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words"
+                className="text-xs text-ink leading-relaxed bg-canvas p-2.5 rounded-[4px] border border-line/80 break-words"
               >
                 {text}
               </li>

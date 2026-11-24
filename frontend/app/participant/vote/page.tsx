@@ -20,6 +20,7 @@ import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { Clock, LogOut, AlertCircle, AlertTriangle, ChevronDown, Edit3, CheckCircle2, RefreshCw } from 'lucide-react';
 import RankingList, { type MoveMethod } from '@/components/RankingList';
 import ParticipantIdentity from '@/components/ParticipantIdentity';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface OptionItem {
   id: string;
@@ -428,30 +429,33 @@ export default function ParticipantVotePage() {
     const opensAt = roomData.sala.scheduledOpenAt ? new Date(roomData.sala.scheduledOpenAt) : null;
     return (
       <main className="flex-1 max-w-[540px] w-full mx-auto px-4 pt-6 pb-12">
-        <div className="flex items-center justify-between pb-3 mb-6 border-b border-[#D9D5CC] text-xs">
+        <div className="flex items-center justify-between pb-3 mb-6 border-b border-line text-xs">
           <ParticipantIdentity displayName={roomData.displayName} />
           {roomData.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1.5 text-[#5A554E] hover:text-[#B42318] transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
-            <span>Salir</span>
-          </button>
+          <div className="flex items-center">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1.5 text-ink-2 hover:text-danger transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
+              <span>Salir</span>
+            </button>
+          </div>
         </div>
-        <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">{roomData.sala.title}</h1>
-        <div className="mt-5 p-4 rounded-[6px] border border-[#D9D5CC] bg-white space-y-2" role="status" aria-live="polite">
-          <p className="flex items-center gap-2 text-sm font-semibold text-[#14171A]">
-            <Clock className="w-4 h-4 stroke-[1.5] text-[#E4572E]" aria-hidden="true" />
+        <h1 className="font-heading text-2xl font-bold text-ink leading-tight">{roomData.sala.title}</h1>
+        <div className="mt-5 p-4 rounded-[6px] border border-line bg-paper space-y-2" role="status" aria-live="polite">
+          <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <Clock className="w-4 h-4 stroke-[1.5] text-brand" aria-hidden="true" />
             Estás en la sala de espera
           </p>
-          <p className="text-sm text-[#14171A]">
+          <p className="text-sm text-ink">
             {opensAt
               ? `La Ronda 1 se abrirá el ${formatClosingMoment(opensAt)}.`
               : 'La Ronda 1 todavía no empieza. Cuando el anfitrión la abra, verás las opciones aquí.'}
           </p>
-          <p className="text-xs text-[#5A554E]">No hace falta recargar: esta pantalla se actualiza sola.</p>
+          <p className="text-xs text-ink-2">No hace falta recargar: esta pantalla se actualiza sola.</p>
         </div>
       </main>
     );
@@ -460,24 +464,27 @@ export default function ParticipantVotePage() {
   return (
     <main className="flex-1 max-w-[540px] w-full mx-auto px-4 pt-6 pb-28">
       {/* Top bar: Role & Logout */}
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#D9D5CC] text-xs">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-line text-xs">
         <div className="flex items-center gap-2">
           <ParticipantIdentity displayName={roomData?.displayName} />
         </div>
         {roomData?.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1.5 text-[#5A554E] hover:text-[#B42318] transition-colors"
-        >
-          <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
-          <span>Salir</span>
-        </button>
+        <div className="flex items-center">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1.5 text-ink-2 hover:text-danger transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
+            <span>Salir</span>
+          </button>
+        </div>
       </div>
 
       {/* Header: Room title, round info, countdown */}
       <div className="mb-6">
-        <div className="flex items-center justify-between text-xs text-[#5A554E] font-mono mb-1.5">
+        <div className="flex items-center justify-between text-xs text-ink-2 font-mono mb-1.5">
           <span>
             Ronda {roomData?.sala?.currentRound} de {roomData?.sala?.maxRounds}
           </span>
@@ -489,19 +496,19 @@ export default function ParticipantVotePage() {
           )}
         </div>
 
-        <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
+        <h1 className="font-heading text-2xl font-bold text-ink leading-tight">
           {roomData?.sala?.title}
         </h1>
 
         {/* Visible countdown timer */}
         {timeLeft && (
           <div className="mt-2.5 flex items-center gap-2">
-            <span className="text-xs text-[#5A554E]">Tiempo restante:</span>
+            <span className="text-xs text-ink-2">Tiempo restante:</span>
             <span
               className={`font-mono text-xs font-bold px-2 py-0.5 rounded-[4px] border ${
                 isClosed
-                  ? 'bg-[#B42318]/10 text-[#B42318] border-[#B42318]/30'
-                  : 'bg-[#2F7D4F]/10 text-[#2F7D4F] border-[#2F7D4F]/30'
+                  ? 'bg-danger/10 text-danger border-danger/30'
+                  : 'bg-good/10 text-good border-good/30'
               }`}
             >
               {timeLeft}
@@ -511,16 +518,16 @@ export default function ParticipantVotePage() {
 
         {/* Status banner */}
         {isClosed ? (
-          <div className="mt-3 p-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A]">
+          <div className="mt-3 p-3 rounded-[6px] border border-line bg-paper text-xs text-ink">
             Ronda cerrada. La hora límite fue a las {deadlineHour}. Esperando los resultados de la ronda.
           </div>
         ) : showReadOnlySummary ? (
-          <div className="mt-3 p-3 rounded-[6px] border border-[#2F7D4F]/30 bg-[#2F7D4F]/5 text-xs text-[#2F7D4F] flex items-center gap-2">
+          <div className="mt-3 p-3 rounded-[6px] border border-good/30 bg-good/5 text-xs text-good flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 stroke-[1.5] shrink-0" />
             <span>Selección enviada. Puedes editarla mientras la ronda siga abierta.</span>
           </div>
         ) : (
-          <p className="text-sm text-[#14171A] mt-2 leading-relaxed">
+          <p className="text-sm text-ink mt-2 leading-relaxed">
             Ordena las opciones de mayor a menor preferencia arrastrando o con las flechas. Si quieres, escribe razones a favor o en contra de cada una.
           </p>
         )}
@@ -530,11 +537,11 @@ export default function ParticipantVotePage() {
       {roomData?.latestReport && (roomData.sala.currentRound ?? 1) > 1 && (
         <section
           aria-label="Resultados de la ronda anterior"
-          className="mb-5 rounded-[6px] border-2 border-[#E4572E] bg-[#E4572E]/[0.06]"
+          className="mb-5 rounded-[6px] border-2 border-brand bg-brand/[0.06]"
         >
           {!hasVoted && !isClosed && (
-            <div role="status" className="flex items-start gap-2 px-4 pt-3 text-sm text-[#14171A]">
-              <RefreshCw className="w-4 h-4 stroke-[2] text-[#E4572E] shrink-0 mt-0.5" aria-hidden="true" />
+            <div role="status" className="flex items-start gap-2 px-4 pt-3 text-sm text-ink">
+              <RefreshCw className="w-4 h-4 stroke-[2] text-brand shrink-0 mt-0.5" aria-hidden="true" />
               <p>
                 <strong className="font-semibold">Se abrió la Ronda {roomData.sala.currentRound}.</strong> Revisa los
                 resultados de la Ronda {roomData.sala.currentRound - 1} y vuelve a ordenar las opciones.
@@ -542,9 +549,9 @@ export default function ParticipantVotePage() {
             </div>
           )}
           <details onToggle={(e) => setPreviousOpen(e.currentTarget.open)}>
-            <summary className="cursor-pointer select-none px-4 py-3 min-h-[48px] flex items-center justify-between gap-2 text-sm font-semibold text-[#14171A]">
+            <summary className="cursor-pointer select-none px-4 py-3 min-h-[48px] flex items-center justify-between gap-2 text-sm font-semibold text-ink">
               <span>Ver resultados de la Ronda {roomData.sala.currentRound - 1}</span>
-              <ChevronDown className="w-4 h-4 stroke-[2] text-[#E4572E] shrink-0" aria-hidden="true" />
+              <ChevronDown className="w-4 h-4 stroke-[2] text-brand shrink-0" aria-hidden="true" />
             </summary>
             <div className="px-3 pb-3">
               <RoundFeedbackReport
@@ -569,25 +576,25 @@ export default function ParticipantVotePage() {
               return (
                 <div
                   key={option.id}
-                  className="rounded-[6px] border border-[#D9D5CC] bg-white p-3 space-y-2"
+                  className="rounded-[6px] border border-line bg-paper p-3 space-y-2"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="font-mono text-xl font-bold text-[#14171A] w-7 shrink-0">
+                    <span className="font-mono text-xl font-bold text-ink w-7 shrink-0">
                       {rank}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <h2 className="font-sans font-semibold text-sm text-[#14171A]">
+                      <h2 className="font-sans font-semibold text-sm text-ink">
                         {title}
                       </h2>
                       {description && (
-                        <p className="text-xs text-[#14171A]/75 mt-0.5 leading-relaxed">
+                        <p className="text-xs text-ink/75 mt-0.5 leading-relaxed">
                           {description}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-[#D9D5CC]/60">
+                  <div className="pt-2 border-t border-line/60">
                     <ReasonListsSummary
                       value={reasonsByOption[option.id] ?? EMPTY_REASONS}
                       legacyText={legacyJustifications[option.id]}
@@ -607,7 +614,7 @@ export default function ParticipantVotePage() {
                   isEditingRef.current = true;
                   setIsEditing(true);
                 }}
-                className="w-full min-h-[44px] rounded-[6px] border border-[#D9D5CC] bg-white hover:bg-[#EBE7DF] text-[#14171A] text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full min-h-[44px] rounded-[6px] border border-line bg-paper hover:bg-subtle text-ink text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-4 h-4 stroke-[1.5]" />
                 <span>Editar selección</span>
@@ -632,10 +639,10 @@ export default function ParticipantVotePage() {
           renderDetails={(option) => (
             <div className="space-y-2.5">
               {option.description && (
-                <p className="text-sm text-[#14171A] leading-relaxed break-words">{option.description}</p>
+                <p className="text-sm text-ink leading-relaxed break-words">{option.description}</p>
               )}
               {legacyJustifications[option.id] && (
-                <p className="text-xs text-[#14171A] leading-relaxed bg-[#F6F4EF] p-2.5 rounded-[4px] border border-[#D9D5CC]/80 break-words">
+                <p className="text-xs text-ink leading-relaxed bg-canvas p-2.5 rounded-[4px] border border-line/80 break-words">
                   {legacyJustifications[option.id]}
                 </p>
               )}
@@ -662,11 +669,11 @@ export default function ParticipantVotePage() {
 
       {/* Bottom action bar when in edit mode and voting is open */}
       {!isClosed && !showReadOnlySummary && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#F6F4EF] border-t border-[#D9D5CC] p-4 z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-canvas border-t border-line p-4 z-40">
           <div className="max-w-[540px] mx-auto w-full space-y-2">
             {roomData?.sala?.closeWhenAllVoted && (
-              <p className="flex items-start gap-2 p-2 rounded-[6px] border border-[#B7791F]/50 bg-[#B7791F]/10 text-xs text-[#14171A]">
-                <AlertTriangle className="w-4 h-4 stroke-[1.75] text-[#B7791F] shrink-0" aria-hidden="true" />
+              <p className="flex items-start gap-2 p-2 rounded-[6px] border border-warn/50 bg-warn/10 text-xs text-ink">
+                <AlertTriangle className="w-4 h-4 stroke-[1.75] text-warn shrink-0" aria-hidden="true" />
                 <span>Si eres la última persona en enviar su selección, la ronda se cierra al enviar y ya no podrás editarla.</span>
               </p>
             )}
@@ -678,7 +685,7 @@ export default function ParticipantVotePage() {
                   setIsEditing(false);
                   loadData(true);
                 }}
-                className="w-full text-xs text-[#5A554E] hover:text-[#14171A] text-center py-1 transition-colors"
+                className="w-full text-xs text-ink-2 hover:text-ink text-center py-1 transition-colors"
               >
                 Cancelar edición
               </button>
@@ -689,11 +696,11 @@ export default function ParticipantVotePage() {
                 <button
                   type="button"
                   disabled
-                  className="w-full h-[52px] rounded-[6px] bg-[#EBE7DF] border border-[#D9D5CC] text-[#5A554E] font-medium text-sm cursor-not-allowed flex items-center justify-center transition-colors"
+                  className="w-full h-[52px] rounded-[6px] bg-subtle border border-line text-ink-2 font-medium text-sm cursor-not-allowed flex items-center justify-center transition-colors"
                 >
                   {hasVoted ? 'Guardar cambios' : 'Enviar mi selección'}
                 </button>
-                <p className="text-xs text-[#5A554E] text-center">
+                <p className="text-xs text-ink-2 text-center">
                   Hay razones de más de 200 caracteres en {invalidReasonsCount}{' '}
                   {invalidReasonsCount === 1 ? 'opción' : 'opciones'}
                 </p>
@@ -703,7 +710,7 @@ export default function ParticipantVotePage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="w-full h-[52px] rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-50 text-white font-medium text-base transition-colors flex items-center justify-center"
+                className="w-full h-[52px] rounded-[6px] bg-brand hover:bg-brand/90 disabled:opacity-50 text-white font-medium text-base transition-colors flex items-center justify-center"
               >
                 {submitting
                   ? 'Guardando selección...'

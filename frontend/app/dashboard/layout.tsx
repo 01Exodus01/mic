@@ -27,11 +27,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row bg-[#F6F4EF]">
+    <div className="flex-1 flex flex-col md:flex-row bg-canvas">
       {/* Sidebar fija angosta (escritorio >= 768px) */}
-      <aside className="hidden md:flex md:w-52 md:flex-col justify-between fixed top-14 bottom-0 left-0 border-r border-[#D9D5CC] bg-[#F6F4EF] p-4 z-20">
+      <aside className="hidden md:flex md:w-52 md:flex-col justify-between fixed top-14 bottom-0 left-0 border-r border-line bg-canvas p-4 z-20">
         <div>
-          <div className="text-[11px] font-mono text-[#6B6860] mb-3 px-2">
+          <div className="text-[11px] font-mono text-ink-3 mb-3 px-2">
             Conectado como anfitrión
           </div>
           <nav className="space-y-1">
@@ -43,8 +43,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   href={item.href}
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-[6px] text-xs font-sans transition-colors ${
                     item.active
-                      ? 'bg-[#EBE7DF] text-[#14171A] font-semibold'
-                      : 'text-[#6B6860] hover:text-[#14171A] hover:bg-[#EBE7DF]/60'
+                      ? 'bg-subtle text-ink font-semibold'
+                      : 'text-ink-3 hover:text-ink hover:bg-subtle/60'
                   }`}
                 >
                   <Icon className="w-4 h-4 stroke-[1.5]" />
@@ -55,15 +55,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-[#D9D5CC] space-y-2">
-          <div className="text-[11px] font-mono text-[#6B6860] px-3">
+        <div className="pt-4 border-t border-line space-y-2">
+          <div className="text-[11px] font-mono text-ink-3 px-3">
             v1.0 · GDSS
           </div>
         </div>
       </aside>
 
       {/* Sub-navegación compacta horizontal en móvil (< 768px) */}
-      <div className="md:hidden border-b border-[#D9D5CC] bg-[#F6F4EF] px-4 py-2 flex items-center justify-between gap-2 overflow-x-auto text-xs">
+      <div className="md:hidden border-b border-line bg-canvas px-4 py-2 flex items-center justify-between gap-2 overflow-x-auto text-xs">
         <div className="flex items-center gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -73,8 +73,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border transition-colors whitespace-nowrap ${
                   item.active
-                    ? 'border-[#14171A] bg-[#EBE7DF] text-[#14171A] font-semibold'
-                    : 'border-[#D9D5CC] text-[#6B6860] bg-white'
+                    ? 'border-ink bg-subtle text-ink font-semibold'
+                    : 'border-line text-ink-3 bg-paper'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 stroke-[1.5]" />
@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             );
           })}
         </div>
-        <span className="text-[11px] font-mono text-[#6B6860] whitespace-nowrap">
+        <span className="text-[11px] font-mono text-ink-3 whitespace-nowrap">
           Conectado como anfitrión
         </span>
       </div>

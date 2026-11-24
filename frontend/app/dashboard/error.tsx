@@ -16,21 +16,21 @@ export default function DashboardError({
   }, [error]);
 
   return (
-    <div className="w-full max-w-2xl p-6 rounded-[6px] border border-[#B42318]/30 bg-white space-y-4 my-8">
+    <div className="w-full max-w-2xl p-6 rounded-[6px] border border-danger/30 bg-paper space-y-4 my-8">
       <div className="flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-[#B42318] stroke-[1.5] shrink-0 mt-0.5" />
+        <AlertCircle className="w-5 h-5 text-danger stroke-[1.5] shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <h2 className="font-heading text-base font-bold text-[#14171A]">
+          <h2 className="font-heading text-base font-bold text-ink">
             Error al cargar el panel de control
           </h2>
-          <p className="text-xs text-[#5A554E] leading-relaxed">
+          <p className="text-xs text-ink-2 leading-relaxed">
             No se pudieron obtener los datos de la sala o del anfitrión.
           </p>
         </div>
       </div>
 
       {error?.digest && (
-        <div className="p-2 rounded-[4px] bg-[#F6F4EF] border border-[#D9D5CC] font-mono text-[11px] text-[#5A554E]">
+        <div className="p-2 rounded-[4px] bg-canvas border border-line font-mono text-[11px] text-ink-2">
           Referencia: {error.digest}
         </div>
       )}
@@ -39,14 +39,14 @@ export default function DashboardError({
         <button
           type="button"
           onClick={() => reset()}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5 stroke-[1.5]" />
           <span>Reintentar</span>
         </button>
         <Link
           href="/dashboard"
-          className="text-xs text-[#5A554E] hover:text-[#14171A] underline underline-offset-2"
+          className="text-xs text-ink-2 hover:text-ink underline underline-offset-2"
         >
           Volver a mis salas
         </Link>

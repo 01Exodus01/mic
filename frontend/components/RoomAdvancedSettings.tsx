@@ -88,14 +88,14 @@ function RadioGroup<K extends string>({
 }) {
   return (
     <fieldset className="space-y-2" aria-describedby={errorId}>
-      <legend className="text-xs font-semibold text-[#14171A] mb-1">{legend}</legend>
+      <legend className="text-xs font-semibold text-ink mb-1">{legend}</legend>
       {(Object.keys(options) as K[]).map((key) => {
         const disabled = disabledKeys.includes(key);
         return (
           <label
             key={key}
-            className={`flex items-start gap-3 p-3 rounded-[6px] border bg-white ${
-              selected === key ? 'border-[#E4572E]' : 'border-[#D9D5CC]'
+            className={`flex items-start gap-3 p-3 rounded-[6px] border bg-paper ${
+              selected === key ? 'border-brand' : 'border-line'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <input
@@ -105,11 +105,11 @@ function RadioGroup<K extends string>({
               checked={selected === key}
               disabled={disabled}
               onChange={() => onSelect(key)}
-              className="mt-1 accent-[#E4572E]"
+              className="mt-1 accent-brand"
             />
             <span className="text-xs">
-              <span className="block font-medium text-[#14171A]">{options[key].name}</span>
-              <span className="block text-[#5A554E] mt-0.5">{options[key].help}</span>
+              <span className="block font-medium text-ink">{options[key].name}</span>
+              <span className="block text-ink-2 mt-0.5">{options[key].help}</span>
             </span>
           </label>
         );
@@ -122,22 +122,22 @@ export default function RoomAdvancedSettings({ value, onChange, error, lockAcces
   const set = <K extends keyof RoomSettingsValue>(key: K, v: RoomSettingsValue[K]) => onChange({ ...value, [key]: v });
 
   return (
-    <details className="rounded-[6px] border border-[#D9D5CC] bg-white">
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-[#14171A]">
+    <details className="rounded-[6px] border border-line bg-paper">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-ink">
         Opciones avanzadas
-        <span className="block text-xs font-normal text-[#5A554E] mt-0.5">
+        <span className="block text-xs font-normal text-ink-2 mt-0.5">
           Si no cambias nada, la sala funciona como siempre. No se pueden cambiar después de iniciar la sala.
         </span>
       </summary>
       <div className="px-4 pb-4 pt-1 space-y-5">
-        <p className="text-xs text-[#5A554E] leading-relaxed">
+        <p className="text-xs text-ink-2 leading-relaxed">
           Los empates del orden del grupo se resuelven siempre igual: primero por mayoría entre las opciones
           empatadas en la ronda y, si siguen igualadas, por el orden alfabético del título.
         </p>
         {lockAccessMode ? (
           <div className="text-xs">
-            <p className="font-medium text-[#14171A]">Ingreso de participantes: {ACCESS_LABELS[value.accessMode].name}</p>
-            <p className="text-[#5A554E] mt-0.5">La forma de ingreso no se puede cambiar después de crear el grupo.</p>
+            <p className="font-medium text-ink">Ingreso de participantes: {ACCESS_LABELS[value.accessMode].name}</p>
+            <p className="text-ink-2 mt-0.5">La forma de ingreso no se puede cambiar después de crear el grupo.</p>
           </div>
         ) : (
           <RadioGroup
@@ -150,7 +150,7 @@ export default function RoomAdvancedSettings({ value, onChange, error, lockAcces
           />
         )}
         {error && (
-          <p id="settings-error" role="alert" className="text-xs text-[#B42318]">
+          <p id="settings-error" role="alert" className="text-xs text-danger">
             {error}
           </p>
         )}
@@ -159,11 +159,11 @@ export default function RoomAdvancedSettings({ value, onChange, error, lockAcces
             type="checkbox"
             checked={!value.allowLateJoin}
             onChange={(e) => set('allowLateJoin', !e.target.checked)}
-            className="mt-0.5 accent-[#E4572E] w-4 h-4"
+            className="mt-0.5 accent-brand w-4 h-4"
           />
           <span>
-            <span className="block font-medium text-[#14171A]">Bloquear el ingreso de personas en rondas posteriores</span>
-            <span className="block text-[#5A554E] mt-0.5">
+            <span className="block font-medium text-ink">Bloquear el ingreso de personas en rondas posteriores</span>
+            <span className="block text-ink-2 mt-0.5">
               Si lo marcas, solo participan en las rondas siguientes quienes enviaron su selección en la primera. Si no, quien
               llegue tarde puede sumarse en cualquier ronda abierta.
             </span>
@@ -174,11 +174,11 @@ export default function RoomAdvancedSettings({ value, onChange, error, lockAcces
             type="checkbox"
             checked={value.closeWhenAllVoted}
             onChange={(e) => set('closeWhenAllVoted', e.target.checked)}
-            className="mt-0.5 accent-[#E4572E] w-4 h-4"
+            className="mt-0.5 accent-brand w-4 h-4"
           />
           <span>
-            <span className="block font-medium text-[#14171A]">Cerrar la ronda en cuanto todos envíen su selección</span>
-            <span className="block text-[#5A554E] mt-0.5">
+            <span className="block font-medium text-ink">Cerrar la ronda en cuanto todos envíen su selección</span>
+            <span className="block text-ink-2 mt-0.5">
               Si no lo marcas, la ronda espera a la hora límite o a que la cierres.
             </span>
           </span>
@@ -210,13 +210,13 @@ export function RoomSettingsSummary({
     ['Consentimiento', room.consent_required ? 'Se pide aceptar antes de la primera selección' : 'No se pide'],
   ];
   return (
-    <details className="rounded-[6px] border border-[#D9D5CC] bg-white text-xs">
-      <summary className="cursor-pointer select-none px-3 py-2 font-semibold text-[#14171A]">Configuración de la sala</summary>
+    <details className="rounded-[6px] border border-line bg-paper text-xs">
+      <summary className="cursor-pointer select-none px-3 py-2 font-semibold text-ink">Configuración de la sala</summary>
       <dl className="px-3 pb-3 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         {rows.map(([k, v]) => (
           <React.Fragment key={k}>
-            <dt className="text-[#5A554E]">{k}</dt>
-            <dd className="text-[#14171A]">{v}</dd>
+            <dt className="text-ink-2">{k}</dt>
+            <dd className="text-ink">{v}</dd>
           </React.Fragment>
         ))}
       </dl>

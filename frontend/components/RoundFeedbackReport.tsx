@@ -71,17 +71,17 @@ const SIDE_STYLE = {
     title: 'A favor',
     empty: 'Nadie escribió razones a favor.',
     Icon: Plus,
-    box: 'border-[#2F7D4F]/40 bg-[#2F7D4F]/[0.06]',
-    head: 'text-[#2F7D4F]',
-    item: 'border-l-[#2F7D4F]',
+    box: 'border-good/40 bg-good/[0.06]',
+    head: 'text-good',
+    item: 'border-l-good',
   },
   AGAINST: {
     title: 'En contra',
     empty: 'Nadie escribió razones en contra.',
     Icon: Minus,
-    box: 'border-[#B42318]/40 bg-[#B42318]/[0.05]',
-    head: 'text-[#B42318]',
-    item: 'border-l-[#B42318]',
+    box: 'border-danger/40 bg-danger/[0.05]',
+    head: 'text-danger',
+    item: 'border-l-danger',
   },
 } as const;
 
@@ -95,18 +95,18 @@ export function ReasonSideBlock({ side, reasons }: { side: 'FOR' | 'AGAINST'; re
         {st.title} <span className="font-mono font-normal">({reasons.length})</span>
       </h4>
       {reasons.length === 0 ? (
-        <p className="text-xs text-[#14171A]/80">{st.empty}</p>
+        <p className="text-xs text-ink/80">{st.empty}</p>
       ) : (
         <ul className="space-y-1.5">
           {reasons.map((r, i) => (
             <li
               key={i}
-              className={`px-2.5 py-2 rounded-[4px] border-l-4 ${st.item} bg-white text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words ${
-                r.mine ? 'border-2 border-[#14171A]' : 'border border-[#D9D5CC]'
+              className={`px-2.5 py-2 rounded-[4px] border-l-4 ${st.item} bg-paper text-xs text-ink leading-relaxed whitespace-pre-wrap break-words ${
+                r.mine ? 'border-2 border-ink' : 'border border-line'
               }`}
             >
               {r.mine && (
-                <span className="inline-block mr-1.5 mb-0.5 px-1.5 py-px rounded-[3px] bg-[#14171A] text-white text-[10px] font-semibold tracking-wide align-middle">
+                <span className="inline-block mr-1.5 mb-0.5 px-1.5 py-px rounded-[3px] bg-ink text-paper text-[10px] font-semibold tracking-wide align-middle">
                   Tu razón
                 </span>
               )}
@@ -145,7 +145,7 @@ export function OptionPreviousRound({
         if (e.currentTarget.open) onOpen?.(optionId);
       }}
     >
-      <summary className="cursor-pointer select-none min-h-[40px] flex items-center text-[#14171A]">
+      <summary className="cursor-pointer select-none min-h-[40px] flex items-center text-ink">
         Ronda anterior: posición sugerida {formatRankPosition(midRank, ranking).label} · {total} {total === 1 ? 'razón' : 'razones'}
       </summary>
       <div className="space-y-2 pt-1">
@@ -185,15 +185,15 @@ export default function RoundFeedbackReport({
 
   return (
     <div className="space-y-4">
-      <section className="p-4 rounded-[6px] border border-[#D9D5CC] bg-white">
-        <h3 className="font-heading text-base font-bold text-[#14171A]">Tu nivel de concordancia</h3>
+      <section className="p-4 rounded-[6px] border border-line bg-paper">
+        <h3 className="font-heading text-base font-bold text-ink">Tu nivel de concordancia</h3>
         {own?.voted && own.cix !== null ? (
-          <p className="mt-1 text-sm text-[#14171A]">
+          <p className="mt-1 text-sm text-ink">
             Qué tanto se parece tu orden al orden del grupo:{' '}
             <span className="font-mono text-base font-bold">{Math.round(own.cix * 100)}%</span>
           </p>
         ) : (
-          <p className="mt-1 text-sm text-[#14171A]">No enviaste tu selección en esta ronda, así que no hay un nivel de concordancia tuyo.</p>
+          <p className="mt-1 text-sm text-ink">No enviaste tu selección en esta ronda, así que no hay un nivel de concordancia tuyo.</p>
         )}
       </section>
 
@@ -201,7 +201,7 @@ export default function RoundFeedbackReport({
         <button
           type="button"
           onClick={toggleAll}
-          className="min-h-[40px] px-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+          className="min-h-[40px] px-3 rounded-[6px] border border-line bg-paper text-xs font-medium text-ink hover:bg-subtle"
         >
           {allOpen ? 'Ocultar todo' : 'Expandir todo'}
         </button>
@@ -229,32 +229,32 @@ export default function RoundFeedbackReport({
                 setOpen((prev) => ({ ...prev, [option.id]: next }));
                 if (next && !defaultOpen) onSectionOpen?.(option.id);
               }}
-              className="rounded-[6px] border border-[#D9D5CC] bg-white"
+              className="rounded-[6px] border border-line bg-paper"
             >
               <summary className="cursor-pointer select-none px-3 py-2.5 min-h-[44px] flex items-start gap-3">
-                <span className="font-mono text-lg font-bold text-[#14171A] w-9 shrink-0 leading-tight">{position}</span>
+                <span className="font-mono text-lg font-bold text-ink w-9 shrink-0 leading-tight">{position}</span>
                 <span className="flex-1 min-w-0">
-                  <span className="block font-sans font-semibold text-sm text-[#14171A]">{title}</span>
-                  <span className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[#14171A]/80 font-mono">
+                  <span className="block font-sans font-semibold text-sm text-ink">{title}</span>
+                  <span className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-ink/80 font-mono">
                     <span>{positionWord}: {position}</span>
                     <span>Tu posición: {mine ? `${mine}.º` : 'sin selección'}</span>
                     <span>Razones: {total}</span>
                   </span>
                 </span>
               </summary>
-              <div className="px-3 pb-3 space-y-2.5 border-t border-[#D9D5CC] pt-2.5">
-                {description && <p className="text-xs text-[#14171A]/80 leading-relaxed">{description}</p>}
-                <p className="text-xs font-medium text-[#14171A]">
+              <div className="px-3 pb-3 space-y-2.5 border-t border-line pt-2.5">
+                {description && <p className="text-xs text-ink/80 leading-relaxed">{description}</p>}
+                <p className="text-xs font-medium text-ink">
                   {final ? `Quedó en la posición ${position} con estas razones:` : `Se sugiere la posición ${position} por estas razones:`}
                 </p>
                 <ReasonSideBlock side="FOR" reasons={reasons.reasonsFor} />
                 <ReasonSideBlock side="AGAINST" reasons={reasons.reasonsAgainst} />
                 {legacy.length > 0 && (
-                  <div className="rounded-[6px] border border-[#D9D5CC] p-3">
-                    <h4 className="text-xs font-semibold text-[#14171A] mb-2">Razones ({legacy.length})</h4>
+                  <div className="rounded-[6px] border border-line p-3">
+                    <h4 className="text-xs font-semibold text-ink mb-2">Razones ({legacy.length})</h4>
                     <ul className="space-y-1.5">
                       {legacy.map((a, i) => (
-                        <li key={i} className="px-2.5 py-2 rounded-[4px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] leading-relaxed whitespace-pre-wrap break-words">
+                        <li key={i} className="px-2.5 py-2 rounded-[4px] border border-line bg-paper text-xs text-ink leading-relaxed whitespace-pre-wrap break-words">
                           {a.justification}
                         </li>
                       ))}

@@ -4,80 +4,80 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Theme tokens (RGB channels, so Tailwind opacity modifiers work: bg-danger/10).
+   * Dark is the default (html.dark, set in app/layout.tsx); light when the person
+   * chooses it (html without .dark, remembered in localStorage "theme").
+   */
   :root {
-    /* AGENTS.md Design Tokens */
-    --background: #F6F4EF;
-    --foreground: #14171A;
-    --card: #F6F4EF;
-    --card-foreground: #14171A;
-    --popover: #F6F4EF;
-    --popover-foreground: #14171A;
-    --primary: #E4572E;
+    --c-ink: 20 23 26;          /* #14171A text */
+    --c-ink-2: 90 85 78;        /* #5A554E secondary text */
+    --c-ink-3: 107 104 96;      /* #6B6860 tertiary text */
+    --c-paper: 255 255 255;     /* cards, inputs */
+    --c-canvas: 246 244 239;    /* #F6F4EF page */
+    --c-subtle: 235 231 223;    /* #EBE7DF hover, tracks */
+    --c-line: 217 213 204;      /* #D9D5CC borders */
+    --c-brand: 228 87 46;       /* #E4572E accent */
+    --c-danger: 180 35 24;      /* #B42318 */
+    --c-good: 47 125 79;        /* #2F7D4F */
+    --c-warn: 183 121 31;       /* #B7791F */
+    color-scheme: light;
+  }
+
+  .dark {
+    --c-ink: 236 232 224;       /* #ECE8E0 */
+    --c-ink-2: 179 173 162;     /* #B3ADA2 */
+    --c-ink-3: 154 148 138;     /* #9A948A */
+    --c-paper: 29 32 36;        /* #1D2024 */
+    --c-canvas: 19 21 24;       /* #131518 */
+    --c-subtle: 40 44 49;       /* #282C31 */
+    --c-line: 56 61 67;         /* #383D43 */
+    --c-brand: 233 99 60;       /* #E9633C */
+    --c-danger: 236 104 92;     /* #EC685C */
+    --c-good: 92 186 132;       /* #5CBA84 */
+    --c-warn: 226 170 80;       /* #E2AA50 */
+    color-scheme: dark;
+  }
+
+  :root,
+  .dark {
+    --background: rgb(var(--c-canvas));
+    --foreground: rgb(var(--c-ink));
+    --card: rgb(var(--c-canvas));
+    --card-foreground: rgb(var(--c-ink));
+    --popover: rgb(var(--c-paper));
+    --popover-foreground: rgb(var(--c-ink));
+    --primary: rgb(var(--c-brand));
     --primary-foreground: #FFFFFF;
-    --secondary: #EBE7DF;
-    --secondary-foreground: #14171A;
-    --muted: #EBE7DF;
-    --muted-foreground: #6B6860;
-    --accent: #E4572E;
+    --secondary: rgb(var(--c-subtle));
+    --secondary-foreground: rgb(var(--c-ink));
+    --muted: rgb(var(--c-subtle));
+    --muted-foreground: rgb(var(--c-ink-3));
+    --accent: rgb(var(--c-brand));
     --accent-foreground: #FFFFFF;
-    --destructive: #B42318;
+    --destructive: rgb(var(--c-danger));
     --destructive-foreground: #FFFFFF;
-    --border: #D9D5CC;
-    --input: #D9D5CC;
-    --ring: #E4572E;
+    --border: rgb(var(--c-line));
+    --input: rgb(var(--c-line));
+    --ring: rgb(var(--c-brand));
 
     /* Status Tokens */
-    --status-ok: #2F7D4F;
-    --status-alerta: #B7791F;
-    --status-error: #B42318;
+    --status-ok: rgb(var(--c-good));
+    --status-alerta: rgb(var(--c-warn));
+    --status-error: rgb(var(--c-danger));
 
     /* Radius & Spacing */
     --radius: 6px;
 
     /* Sidebar Tokens */
-    --sidebar: #F6F4EF;
-    --sidebar-foreground: #14171A;
-    --sidebar-primary: #E4572E;
+    --sidebar: rgb(var(--c-canvas));
+    --sidebar-foreground: rgb(var(--c-ink));
+    --sidebar-primary: rgb(var(--c-brand));
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #EBE7DF;
-    --sidebar-accent-foreground: #14171A;
-    --sidebar-border: #D9D5CC;
-    --sidebar-ring: #E4572E;
-  }
-
-  /* Modo claro únicamente. Prohibido modo oscuro en v1. */
-  .dark {
-    --background: #F6F4EF;
-    --foreground: #14171A;
-    --card: #F6F4EF;
-    --card-foreground: #14171A;
-    --popover: #F6F4EF;
-    --popover-foreground: #14171A;
-    --primary: #E4572E;
-    --primary-foreground: #FFFFFF;
-    --secondary: #EBE7DF;
-    --secondary-foreground: #14171A;
-    --muted: #EBE7DF;
-    --muted-foreground: #6B6860;
-    --accent: #E4572E;
-    --accent-foreground: #FFFFFF;
-    --destructive: #B42318;
-    --destructive-foreground: #FFFFFF;
-    --border: #D9D5CC;
-    --input: #D9D5CC;
-    --ring: #E4572E;
-    --status-ok: #2F7D4F;
-    --status-alerta: #B7791F;
-    --status-error: #B42318;
-    --radius: 6px;
-    --sidebar: #F6F4EF;
-    --sidebar-foreground: #14171A;
-    --sidebar-primary: #E4572E;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #EBE7DF;
-    --sidebar-accent-foreground: #14171A;
-    --sidebar-border: #D9D5CC;
-    --sidebar-ring: #E4572E;
+    --sidebar-accent: rgb(var(--c-subtle));
+    --sidebar-accent-foreground: rgb(var(--c-ink));
+    --sidebar-border: rgb(var(--c-line));
+    --sidebar-ring: rgb(var(--c-brand));
   }
 
   * {

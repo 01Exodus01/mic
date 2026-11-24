@@ -13,6 +13,7 @@ import RoundFeedbackReport, {
 import ConsentDialog from '@/components/ConsentDialog';
 import RetiredNotice from '@/components/RetiredNotice';
 import ParticipantIdentity from '@/components/ParticipantIdentity';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useReportReadTracker } from '@/lib/telemetry/client';
 
 interface OptionItem {
@@ -181,44 +182,47 @@ export default function ParticipantFeedbackPage() {
   return (
     <main className="flex-1 max-w-[760px] w-full mx-auto px-4 py-8 pb-16">
       {/* Barra superior con datos de sesión y botón de salida (AUD-34, AUD-35) */}
-      <div className="flex items-center justify-between pb-3 mb-6 border-b border-[#D9D5CC] text-xs">
+      <div className="flex items-center justify-between pb-3 mb-6 border-b border-line text-xs">
         <div className="flex items-center gap-2">
           <ParticipantIdentity displayName={roomData.displayName} />
         </div>
         {roomData.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-1.5 px-2 text-[#6B6860] hover:text-[#B42318] transition-colors"
-        >
-          <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
-          <span>Salir</span>
-        </button>
+        <div className="flex items-center">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-1.5 px-2 text-ink-3 hover:text-danger transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
+            <span>Salir</span>
+          </button>
+        </div>
       </div>
       {/* Cabecera sobria */}
-      <div className="mb-8 border-b border-[#D9D5CC] pb-6">
-        <div className="flex items-center justify-between text-xs text-[#5A554E] font-mono mb-2">
+      <div className="mb-8 border-b border-line pb-6">
+        <div className="flex items-center justify-between text-xs text-ink-2 font-mono mb-2">
           <span>
             {isConcluded ? 'Finalizada' : `Revisión de argumentos • Ronda ${sala.currentRound}`}
           </span>
         </div>
 
-        <h1 className="font-heading text-3xl font-bold text-[#14171A] leading-tight">
+        <h1 className="font-heading text-3xl font-bold text-ink leading-tight">
           {sala.title}
         </h1>
 
         {/* Mensaje de estado directo y sin exclamaciones */}
         {isConcluded ? (
-          <div role="status" className="mt-4 p-4 rounded-[6px] border-2 border-[#2F7D4F] bg-[#2F7D4F]/5 text-sm text-[#14171A] flex items-start gap-2.5">
-            <CheckCircle2 className="w-5 h-5 stroke-[1.5] text-[#2F7D4F] shrink-0 mt-0.5" />
+          <div role="status" className="mt-4 p-4 rounded-[6px] border-2 border-good bg-good/5 text-sm text-ink flex items-start gap-2.5">
+            <CheckCircle2 className="w-5 h-5 stroke-[1.5] text-good shrink-0 mt-0.5" />
             <span>
               <strong className="block font-semibold">La actividad terminó.</strong>
               {conclusionText(roomData.conclusion, sala.maxRounds)}
             </span>
           </div>
         ) : (
-          <div className="mt-4 p-3.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] flex items-center gap-2">
-            <Clock className="w-4 h-4 stroke-[1.5] text-[#5A554E] shrink-0" />
+          <div className="mt-4 p-3.5 rounded-[6px] border border-line bg-paper text-xs text-ink flex items-center gap-2">
+            <Clock className="w-4 h-4 stroke-[1.5] text-ink-2 shrink-0" />
             <span>
               {sala.scheduledOpenAt
                 ? `Ronda cerrada. Revisa los argumentos del grupo. La Ronda ${sala.currentRound + 1} se abrirá el ${formatClosingMoment(new Date(sala.scheduledOpenAt))}.`
@@ -231,10 +235,10 @@ export default function ParticipantFeedbackPage() {
       {/* PT-19: tu concordancia y, por opción, tu posición, la del grupo y todas las razones */}
       <section>
         <div className="mb-3">
-          <h2 className="font-heading text-lg font-bold text-[#14171A]">
+          <h2 className="font-heading text-lg font-bold text-ink">
             {isConcluded ? 'Resultado final' : 'Posición sugerida y razones del grupo'}
           </h2>
-          <p className="text-sm text-[#14171A] mt-1 leading-relaxed">
+          <p className="text-sm text-ink mt-1 leading-relaxed">
             {isConcluded
               ? 'Las opciones en el orden final del grupo. Abre cada una para ver las razones a favor y en contra.'
               : 'Las opciones están en el orden que sugiere el grupo. Abre cada una para ver tu posición, la posición sugerida y las razones a favor y en contra que escribió el grupo. Úsalo para revisar tu orden en la próxima ronda.'}
@@ -243,7 +247,7 @@ export default function ParticipantFeedbackPage() {
         {latestReport ? (
           <RoundFeedbackReport options={options || []} report={latestReport} final={isConcluded} onSectionOpen={onReportSectionOpen} />
         ) : (
-          <p className="text-xs text-[#5A554E]">Todavía no hay resultados de esta ronda.</p>
+          <p className="text-xs text-ink-2">Todavía no hay resultados de esta ronda.</p>
         )}
       </section>
     </main>

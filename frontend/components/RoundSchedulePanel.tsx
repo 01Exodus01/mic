@@ -95,9 +95,9 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
 
   if (scheduledOpenAt && scheduledDeadline) {
     return (
-      <div className="p-3.5 rounded-[6px] border border-[#2F7D4F]/40 bg-[#2F7D4F]/5 space-y-2" role="status">
-        <p className="text-xs text-[#14171A] flex items-start gap-2">
-          <CalendarClock className="w-4 h-4 stroke-[1.5] text-[#2F7D4F] shrink-0 mt-px" aria-hidden="true" />
+      <div className="p-3.5 rounded-[6px] border border-good/40 bg-good/5 space-y-2" role="status">
+        <p className="text-xs text-ink flex items-start gap-2">
+          <CalendarClock className="w-4 h-4 stroke-[1.5] text-good shrink-0 mt-px" aria-hidden="true" />
           <span>
             La Ronda {round} se abrirá sola el <strong>{formatClosingMoment(new Date(scheduledOpenAt))}</strong> y cerrará el{' '}
             <strong>{formatClosingMoment(new Date(scheduledDeadline))}</strong>.
@@ -107,7 +107,7 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
           type="button"
           onClick={remove}
           disabled={busy || disabled}
-          className="text-xs text-[#B42318] hover:underline disabled:opacity-40"
+          className="text-xs text-danger hover:underline disabled:opacity-40"
         >
           Quitar la programación
         </button>
@@ -121,7 +121,7 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
         type="button"
         onClick={openForm}
         disabled={disabled}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#14171A] hover:underline disabled:opacity-40"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink hover:underline disabled:opacity-40"
       >
         <CalendarClock className="w-4 h-4 stroke-[1.5]" aria-hidden="true" />
         Programar la Ronda {round} para más tarde
@@ -130,13 +130,13 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
   }
 
   return (
-    <div className="p-3.5 rounded-[6px] border border-[#D9D5CC] bg-white space-y-3">
+    <div className="p-3.5 rounded-[6px] border border-line bg-paper space-y-3">
       <div>
-        <h3 className="text-xs font-semibold text-[#14171A]">Programar la Ronda {round}</h3>
-        <p className="text-xs text-[#5A554E] mt-0.5">Se abre y se cierra sola a las horas que elijas.</p>
+        <h3 className="text-xs font-semibold text-ink">Programar la Ronda {round}</h3>
+        <p className="text-xs text-ink-2 mt-0.5">Se abre y se cierra sola a las horas que elijas.</p>
       </div>
       <div className="space-y-1.5">
-        <label htmlFor={startId} className="block text-xs font-medium text-[#14171A]">
+        <label htmlFor={startId} className="block text-xs font-medium text-ink">
           Fecha y hora de inicio
         </label>
         <input
@@ -149,12 +149,12 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
           onChange={(e) => setStart(e.target.value)}
           aria-invalid={Boolean(startError)}
           aria-describedby={startError ? `${startId}-error` : undefined}
-          className={`h-10 px-2.5 rounded-[6px] border bg-white text-sm font-mono text-[#14171A] focus:outline-none ${
-            startError ? 'border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+          className={`h-10 px-2.5 rounded-[6px] border bg-paper text-sm font-mono text-ink focus:outline-none ${
+            startError ? 'border-danger' : 'border-line focus:border-brand'
           }`}
         />
         {startError && (
-          <p id={`${startId}-error`} role="alert" className="text-xs text-[#B42318]">
+          <p id={`${startId}-error`} role="alert" className="text-xs text-danger">
             {startError}
           </p>
         )}
@@ -176,11 +176,11 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
           type="button"
           onClick={save}
           disabled={busy || disabled || !ready}
-          className="px-4 py-2 rounded-[6px] bg-[#14171A] hover:bg-[#14171A]/90 text-white text-xs font-semibold disabled:opacity-40"
+          className="px-4 py-2 rounded-[6px] bg-ink hover:bg-ink/90 text-paper text-xs font-semibold disabled:opacity-40"
         >
           {busy ? 'Programando...' : `Programar Ronda ${round}`}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="text-xs text-[#5A554E] hover:text-[#14171A] hover:underline">
+        <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink-2 hover:text-ink hover:underline">
           Cancelar
         </button>
       </div>

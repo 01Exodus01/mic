@@ -121,10 +121,10 @@ export default function LoginPage() {
     <main className="flex-1 flex items-center justify-center p-4 sm:p-6 py-12">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1.5">
-          <h1 className="font-heading text-2xl font-bold text-[#14171A] tracking-tight">
+          <h1 className="font-heading text-2xl font-bold text-ink tracking-tight">
             Acceso de anfitrión
           </h1>
-          <p className="text-xs text-[#5A554E]">
+          <p className="text-xs text-ink-2">
             Ingresa con tus datos para administrar tus salas.
           </p>
         </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
           <div
             id="auth-error-message"
             role="alert"
-            className="p-3 rounded-[6px] border border-[#B42318]/30 bg-white text-xs text-[#B42318] flex items-center gap-1.5"
+            className="p-3 rounded-[6px] border border-danger/30 bg-paper text-xs text-danger flex items-center gap-1.5"
           >
             <AlertCircle className="w-4 h-4 stroke-[1.5] shrink-0" />
             <span>{serverError}</span>
@@ -144,7 +144,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="login-email"
-              className="block text-xs font-semibold text-[#14171A]"
+              className="block text-xs font-semibold text-ink"
             >
               Correo electrónico
             </label>
@@ -159,14 +159,14 @@ export default function LoginPage() {
               onBlur={handleEmailBlur}
               aria-invalid={isEmailInvalid}
               aria-describedby={isEmailInvalid ? 'login-email-error' : undefined}
-              className={`w-full h-11 px-3 rounded-[6px] border bg-white text-xs text-[#14171A] placeholder:text-[#5A554E]/50 focus:outline-none transition-colors ${
+              className={`w-full h-11 px-3 rounded-[6px] border bg-paper text-xs text-ink placeholder:text-ink-2/50 focus:outline-none transition-colors ${
                 isEmailInvalid
-                  ? 'border-[#B42318] focus:border-[#B42318]'
-                  : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line focus:border-brand'
               }`}
             />
             {isEmailInvalid && (
-              <p id="login-email-error" role="alert" className="text-xs text-[#B42318] mt-1">
+              <p id="login-email-error" role="alert" className="text-xs text-danger mt-1">
                 {emailError}
               </p>
             )}
@@ -175,7 +175,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="login-password"
-              className="block text-xs font-semibold text-[#14171A]"
+              className="block text-xs font-semibold text-ink"
             >
               Contraseña
             </label>
@@ -192,12 +192,12 @@ export default function LoginPage() {
               aria-describedby={isPasswordInvalid ? 'login-password-error' : undefined}
               className={`h-11 px-3 ${
                 isPasswordInvalid
-                  ? 'border-[#B42318] focus:border-[#B42318]'
-                  : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line focus:border-brand'
               }`}
             />
             {isPasswordInvalid && (
-              <p id="login-password-error" role="alert" className="text-xs text-[#B42318] mt-1">
+              <p id="login-password-error" role="alert" className="text-xs text-danger mt-1">
                 {passwordError}
               </p>
             )}
@@ -207,21 +207,21 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitDisabled}
-              className="w-full h-11 px-4 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full h-11 px-4 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
             {isSubmitDisabled && submitMotive && (
-              <p className="text-xs text-[#5A554E] text-center">{submitMotive}</p>
+              <p className="text-xs text-ink-2 text-center">{submitMotive}</p>
             )}
           </div>
         </form>
 
-        <div className="pt-4 border-t border-[#D9D5CC] text-xs text-[#5A554E]">
+        <div className="pt-4 border-t border-line text-xs text-ink-2">
           ¿No tienes cuenta de anfitrión?{' '}
           <Link
             href="/auth/register"
-            className="text-[#14171A] font-semibold underline underline-offset-2 hover:text-[#E4572E]"
+            className="text-ink font-semibold underline underline-offset-2 hover:text-brand"
           >
             Crear cuenta
           </Link>

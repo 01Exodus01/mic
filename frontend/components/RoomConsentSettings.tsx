@@ -26,8 +26,8 @@ export default function RoomConsentSettings({
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold text-[#14171A]">Consentimiento informado</h2>
-        <p className="text-xs text-[#5A554E] mt-0.5">
+        <h2 className="text-sm font-semibold text-ink">Consentimiento informado</h2>
+        <p className="text-xs text-ink-2 mt-0.5">
           Opcional. Si lo activas, cada participante lee tu texto al entrar por primera vez y debe aceptarlo para enviar su selección.
           No se puede cambiar después de iniciar la sala.
         </p>
@@ -37,17 +37,17 @@ export default function RoomConsentSettings({
           type="checkbox"
           checked={required}
           onChange={(e) => onChange({ consentRequired: e.target.checked, consentText: text })}
-          className="mt-0.5 accent-[#E4572E] w-4 h-4"
+          className="mt-0.5 accent-brand w-4 h-4"
         />
-        <span className="font-medium text-[#14171A]">Pedir consentimiento antes de la primera selección</span>
+        <span className="font-medium text-ink">Pedir consentimiento antes de la primera selección</span>
       </label>
       {required && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label htmlFor="consent-text" className="block text-xs font-semibold text-[#14171A]">
+            <label htmlFor="consent-text" className="block text-xs font-semibold text-ink">
               Texto del consentimiento
             </label>
-            <span className="font-mono text-xs text-[#5A554E]">
+            <span className="font-mono text-xs text-ink-2">
               {getUnicodeLength(text)}/{CONSENT_TEXT_MAX}
             </span>
           </div>
@@ -60,16 +60,16 @@ export default function RoomConsentSettings({
             onBlur={() => setTouched(true)}
             aria-invalid={Boolean(shownError)}
             aria-describedby={shownError ? 'consent-text-error' : 'consent-text-help'}
-            className={`w-full p-3 rounded-[6px] border bg-white text-xs text-[#14171A] leading-relaxed focus:outline-none ${
-              shownError ? 'border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+            className={`w-full p-3 rounded-[6px] border bg-paper text-xs text-ink leading-relaxed focus:outline-none ${
+              shownError ? 'border-danger' : 'border-line focus:border-brand'
             }`}
           />
           {shownError ? (
-            <p id="consent-text-error" role="alert" className="text-xs text-[#B42318]">
+            <p id="consent-text-error" role="alert" className="text-xs text-danger">
               {shownError}
             </p>
           ) : (
-            <p id="consent-text-help" className="text-xs text-[#5A554E]">
+            <p id="consent-text-help" className="text-xs text-ink-2">
               Escribe el texto que acordaron con quien supervisa la actividad.
             </p>
           )}

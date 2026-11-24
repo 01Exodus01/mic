@@ -236,7 +236,7 @@ export default function DurationPicker({
   if (byDate) {
     return (
       <div className={`space-y-2.5 ${className}`}>
-        <label htmlFor={dateInputId} className="block text-xs font-medium text-[#14171A]">
+        <label htmlFor={dateInputId} className="block text-xs font-medium text-ink">
           Fecha y hora de cierre
         </label>
         <input
@@ -250,20 +250,20 @@ export default function DurationPicker({
           onChange={(e) => applyDate(e.target.value)}
           aria-invalid={Boolean(dateError)}
           aria-describedby={dateError ? `${dateInputId}-error` : undefined}
-          className={`h-10 px-2.5 rounded-[6px] border bg-white text-sm font-mono text-[#14171A] focus:outline-none transition-colors ${
-            dateError ? 'border-[#B42318] focus:border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+          className={`h-10 px-2.5 rounded-[6px] border bg-paper text-sm font-mono text-ink focus:outline-none transition-colors ${
+            dateError ? 'border-danger focus:border-danger' : 'border-line focus:border-brand'
           }`}
         />
         {dateError ? (
-          <p id={`${dateInputId}-error`} role="alert" className="text-xs text-[#B42318]">
+          <p id={`${dateInputId}-error`} role="alert" className="text-xs text-danger">
             {dateError}
           </p>
         ) : (
           closingDate && (
-            <div className="flex items-center gap-1.5 text-xs text-[#5A554E]">
-              <Clock className="w-3.5 h-3.5 stroke-[1.5] text-[#5A554E]" />
+            <div className="flex items-center gap-1.5 text-xs text-ink-2">
+              <Clock className="w-3.5 h-3.5 stroke-[1.5] text-ink-2" />
               <span>
-                La ronda cierra el <strong className="font-semibold text-[#14171A]">{formatClosingMoment(closingDate)}</strong>
+                La ronda cierra el <strong className="font-semibold text-ink">{formatClosingMoment(closingDate)}</strong>
               </span>
             </div>
           )
@@ -272,7 +272,7 @@ export default function DurationPicker({
           type="button"
           disabled={disabled}
           onClick={closeCalendar}
-          className="min-h-[36px] text-xs text-[#5A554E] underline underline-offset-2 hover:text-[#14171A] disabled:opacity-40"
+          className="min-h-[36px] text-xs text-ink-2 underline underline-offset-2 hover:text-ink disabled:opacity-40"
         >
           Volver a elegir una duración
         </button>
@@ -302,7 +302,7 @@ export default function DurationPicker({
 
   return (
     <div className={`space-y-2.5 ${className}`}>
-      {label && <label className="block text-xs font-medium text-[#14171A]">{label}</label>}
+      {label && <label className="block text-xs font-medium text-ink">{label}</label>}
 
       {/* Preset pills and custom button */}
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Selección de duración">
@@ -316,8 +316,8 @@ export default function DurationPicker({
               onClick={() => handlePresetClick(p.value)}
               className={`min-h-[36px] px-3 py-1.5 rounded-[6px] text-xs font-mono transition-colors disabled:opacity-40 ${
                 active
-                  ? 'bg-[#14171A] text-white font-medium'
-                  : 'bg-white border border-[#D9D5CC] text-[#14171A] hover:bg-[#EBE7DF]'
+                  ? 'bg-ink text-paper font-medium'
+                  : 'bg-paper border border-line text-ink hover:bg-subtle'
               }`}
             >
               {p.label}
@@ -331,8 +331,8 @@ export default function DurationPicker({
           onClick={handleCustomToggle}
           className={`min-h-[36px] px-3 py-1.5 rounded-[6px] text-xs font-sans transition-colors disabled:opacity-40 ${
             isCustom
-              ? 'bg-[#14171A] text-white font-medium'
-              : 'bg-white border border-[#D9D5CC] text-[#14171A] hover:bg-[#EBE7DF]'
+              ? 'bg-ink text-paper font-medium'
+              : 'bg-paper border border-line text-ink hover:bg-subtle'
           }`}
         >
           Personalizado
@@ -342,7 +342,7 @@ export default function DurationPicker({
       {/* Custom input field */}
       {isCustom && (
         <div className="flex items-center gap-2 pt-1">
-          <label htmlFor={inputId} className="text-xs text-[#5A554E] shrink-0">
+          <label htmlFor={inputId} className="text-xs text-ink-2 shrink-0">
             Duración (hasta 30 días):
           </label>
           <input
@@ -356,8 +356,8 @@ export default function DurationPicker({
             onChange={handleCustomChange}
             aria-invalid={Boolean(customError)}
             aria-describedby={customError ? `${inputId}-error` : undefined}
-            className={`w-28 h-9 px-2.5 rounded-[6px] border bg-white text-xs font-mono text-[#14171A] focus:outline-none transition-colors ${
-              customError ? 'border-[#B42318] focus:border-[#B42318]' : 'border-[#D9D5CC] focus:border-[#E4572E]'
+            className={`w-28 h-9 px-2.5 rounded-[6px] border bg-paper text-xs font-mono text-ink focus:outline-none transition-colors ${
+              customError ? 'border-danger focus:border-danger' : 'border-line focus:border-brand'
             }`}
           />
           <select
@@ -365,7 +365,7 @@ export default function DurationPicker({
             disabled={disabled}
             value={customUnit}
             onChange={handleUnitChange}
-            className="h-9 px-2 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] focus:outline-none focus:border-[#E4572E]"
+            className="h-9 px-2 rounded-[6px] border border-line bg-paper text-xs text-ink focus:outline-none focus:border-brand"
           >
             {UNITS.map((u) => (
               <option key={u.key} value={u.key}>
@@ -377,18 +377,18 @@ export default function DurationPicker({
       )}
 
       {customError && (
-        <p id={`${inputId}-error`} role="alert" className="text-xs text-[#B42318]">
+        <p id={`${inputId}-error`} role="alert" className="text-xs text-danger">
           {customError}
         </p>
       )}
 
       {/* Live deadline preview */}
       {previewDate && (
-        <div className="flex items-center gap-1.5 text-xs text-[#5A554E]">
-          <Clock className="w-3.5 h-3.5 stroke-[1.5] text-[#5A554E]" />
+        <div className="flex items-center gap-1.5 text-xs text-ink-2">
+          <Clock className="w-3.5 h-3.5 stroke-[1.5] text-ink-2" />
           <span>
             Nueva hora límite:{' '}
-            <strong className="font-mono font-semibold text-[#14171A]">
+            <strong className="font-mono font-semibold text-ink">
               {formatPreview(previewDate)}
             </strong>
           </span>
@@ -401,7 +401,7 @@ export default function DurationPicker({
           type="button"
           disabled={disabled}
           onClick={openCalendar}
-          className="min-h-[36px] inline-flex items-center gap-1.5 text-xs text-[#5A554E] underline underline-offset-2 hover:text-[#14171A] disabled:opacity-40"
+          className="min-h-[36px] inline-flex items-center gap-1.5 text-xs text-ink-2 underline underline-offset-2 hover:text-ink disabled:opacity-40"
         >
           <CalendarClock className="w-3.5 h-3.5 stroke-[1.5]" />
           Prefiero elegir el día y la hora de cierre

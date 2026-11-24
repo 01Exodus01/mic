@@ -6,9 +6,25 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // Theme: dark by default, light on request (html.dark / html without it; see app/layout.tsx)
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        // Theme tokens (app/globals.css): same name in both themes, value per theme
+        ink: {
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)',
+          2: 'rgb(var(--c-ink-2) / <alpha-value>)',
+          3: 'rgb(var(--c-ink-3) / <alpha-value>)',
+        },
+        paper: 'rgb(var(--c-paper) / <alpha-value>)',
+        canvas: 'rgb(var(--c-canvas) / <alpha-value>)',
+        subtle: 'rgb(var(--c-subtle) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        brand: 'rgb(var(--c-brand) / <alpha-value>)',
+        danger: 'rgb(var(--c-danger) / <alpha-value>)',
+        good: 'rgb(var(--c-good) / <alpha-value>)',
+        warn: 'rgb(var(--c-warn) / <alpha-value>)',
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {

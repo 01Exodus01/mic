@@ -294,15 +294,15 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
 
   return (
     <div className="w-full max-w-[420px] mx-auto">
-      <div className="border border-[#D9D5CC] bg-[#F6F4EF] rounded-[6px] p-6 sm:p-8">
+      <div className="border border-line bg-canvas rounded-[6px] p-6 sm:p-8">
         {/* Cabecera del paso */}
         <div className="mb-6">
-          <div className="flex items-center justify-between text-xs text-[#5A554E] mb-2 font-mono">
+          <div className="flex items-center justify-between text-xs text-ink-2 mb-2 font-mono">
             <span>
               Paso {currentStepNumber} de {totalSteps}
             </span>
             {pin && (
-              <span className="border border-[#D9D5CC] px-2 py-0.5 rounded-[999px] text-[#14171A]">
+              <span className="border border-line px-2 py-0.5 rounded-[999px] text-ink">
                 Sala {pin}
               </span>
             )}
@@ -310,10 +310,10 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
 
           {step === 1 && (
             <div>
-              <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
+              <h1 className="font-heading text-2xl font-bold text-ink leading-tight">
                 Ingreso a la sala
               </h1>
-              <p className="text-sm text-[#5A554E] mt-1">
+              <p className="text-sm text-ink-2 mt-1">
                 Escribe el PIN de 6 caracteres indicado por el anfitrión.
               </p>
             </div>
@@ -321,10 +321,10 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
 
           {step === 2 && isRoster && (
             <div>
-              <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
+              <h1 className="font-heading text-2xl font-bold text-ink leading-tight">
                 Código personal
               </h1>
-              <p className="text-sm text-[#5A554E] mt-1">
+              <p className="text-sm text-ink-2 mt-1">
                 Escribe el código que te entregó el anfitrión. Con el mismo código vuelves a entrar después.
               </p>
             </div>
@@ -332,10 +332,10 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
 
           {step === 2 && !isRoster && (
             <div>
-              <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
+              <h1 className="font-heading text-2xl font-bold text-ink leading-tight">
                 ¿Cómo te llamas?
               </h1>
-              <p className="text-sm text-[#5A554E] mt-1">
+              <p className="text-sm text-ink-2 mt-1">
                 Escribe tu nombre o alias para identificarte en el grupo.
               </p>
             </div>
@@ -343,10 +343,10 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
 
           {step === 3 && (
             <div>
-              <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">
+              <h1 className="font-heading text-2xl font-bold text-ink leading-tight">
                 PIN personal
               </h1>
-              <p className="text-sm text-[#5A554E] mt-1">
+              <p className="text-sm text-ink-2 mt-1">
                 {isReturningUser
                   ? 'Este nombre ya está registrado en la sala. Ingresa tu PIN personal para continuar.'
                   : 'Crea un PIN personal de 4 dígitos para volver a entrar en las siguientes rondas.'}
@@ -361,7 +361,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
             <div>
               <label
                 htmlFor="room-pin-input"
-                className="block text-xs font-medium text-[#14171A] mb-2"
+                className="block text-xs font-medium text-ink mb-2"
               >
                 PIN de sala
               </label>
@@ -378,14 +378,14 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                 onBlur={handlePinBlur}
                 aria-invalid={Boolean(activePinError)}
                 aria-describedby={activePinError ? 'room-pin-error' : undefined}
-                className={`h-[56px] w-full px-4 text-center font-mono text-2xl font-semibold tracking-widest uppercase bg-white border rounded-[6px] focus:outline-none transition-colors placeholder:text-[#5A554E]/50 ${
+                className={`h-[56px] w-full px-4 text-center font-mono text-2xl font-semibold tracking-widest uppercase bg-paper border rounded-[6px] focus:outline-none transition-colors placeholder:text-ink-2/50 ${
                   activePinError
-                    ? 'border-[#B42318] focus:border-[#B42318]'
-                    : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line focus:border-brand'
                 }`}
               />
               {activePinError && (
-                <p id="room-pin-error" role="alert" className="text-xs text-[#B42318] mt-1.5 flex items-center gap-1">
+                <p id="room-pin-error" role="alert" className="text-xs text-danger mt-1.5 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                   <span>{activePinError}</span>
                 </p>
@@ -396,12 +396,12 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               <button
                 type="submit"
                 disabled={isStep1Disabled}
-                className="h-[56px] w-full bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
+                className="h-[56px] w-full bg-brand hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
               >
                 {loading ? 'Verificando...' : 'Continuar'}
               </button>
               {isStep1Disabled && step1Motive && (
-                <p className="text-xs text-[#5A554E] text-center">{step1Motive}</p>
+                <p className="text-xs text-ink-2 text-center">{step1Motive}</p>
               )}
             </div>
           </form>
@@ -424,15 +424,15 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               <div className="flex items-center justify-between mb-2">
                 <label
                   htmlFor="nickname-input"
-                  className="block text-xs font-medium text-[#14171A]"
+                  className="block text-xs font-medium text-ink"
                 >
                   Nombre o alias
                 </label>
                 <span
                   className={`font-mono text-xs ${
                     nickname.length >= 30
-                      ? 'text-[#B7791F] font-bold'
-                      : 'text-[#5A554E]'
+                      ? 'text-warn font-bold'
+                      : 'text-ink-2'
                   }`}
                 >
                   {nickname.length}/30
@@ -451,14 +451,14 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                 onBlur={handleNickBlur}
                 aria-invalid={Boolean(activeNickError)}
                 aria-describedby={activeNickError ? 'nickname-error' : undefined}
-                className={`h-[56px] w-full px-4 font-sans text-lg bg-white border rounded-[6px] focus:outline-none transition-colors placeholder:text-[#5A554E]/50 ${
+                className={`h-[56px] w-full px-4 font-sans text-lg bg-paper border rounded-[6px] focus:outline-none transition-colors placeholder:text-ink-2/50 ${
                   activeNickError
-                    ? 'border-[#B42318] focus:border-[#B42318]'
-                    : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line focus:border-brand'
                 }`}
               />
               {activeNickError && (
-                <p id="nickname-error" role="alert" className="text-xs text-[#B42318] mt-1.5 flex items-center gap-1">
+                <p id="nickname-error" role="alert" className="text-xs text-danger mt-1.5 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                   <span>{activeNickError}</span>
                 </p>
@@ -469,12 +469,12 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               <button
                 type="submit"
                 disabled={isStep2Disabled}
-                className="h-[56px] w-full bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
+                className="h-[56px] w-full bg-brand hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
               >
                 {loading ? 'Verificando...' : 'Continuar'}
               </button>
               {isStep2Disabled && step2Motive && (
-                <p className="text-xs text-[#5A554E] text-center">{step2Motive}</p>
+                <p className="text-xs text-ink-2 text-center">{step2Motive}</p>
               )}
             </div>
 
@@ -485,7 +485,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                   setNickServerError(null);
                   goToStep(1);
                 }}
-                className="min-h-[44px] px-2 text-xs text-[#5A554E] hover:text-[#14171A] flex items-center gap-1 transition-colors"
+                className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink flex items-center gap-1 transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
                 <span>Atrás</span>
@@ -494,7 +494,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               <button
                 type="button"
                 onClick={handleChangeRoom}
-                className="min-h-[44px] px-2 text-xs text-[#5A554E] hover:text-[#14171A] transition-colors"
+                className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink transition-colors"
               >
                 Cambiar sala
               </button>
@@ -508,7 +508,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
             <div>
               <label
                 htmlFor="pin4-input"
-                className="block text-xs font-medium text-[#14171A] mb-2"
+                className="block text-xs font-medium text-ink mb-2"
               >
                 PIN personal (4 dígitos)
               </label>
@@ -525,12 +525,12 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                 aria-describedby={activePin4Error ? 'pin4-error' : undefined}
                 className={`h-[56px] text-2xl font-semibold pl-11 ${
                   activePin4Error
-                    ? 'border-[#B42318] focus:border-[#B42318]'
-                    : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line focus:border-brand'
                 }`}
               />
               {activePin4Error && (
-                <p id="pin4-error" role="alert" className="text-xs text-[#B42318] mt-1.5 flex items-center gap-1">
+                <p id="pin4-error" role="alert" className="text-xs text-danger mt-1.5 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                   <span>{activePin4Error}</span>
                 </p>
@@ -541,12 +541,12 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               <button
                 type="submit"
                 disabled={isStep3Disabled}
-                className="h-[56px] w-full bg-[#E4572E] hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
+                className="h-[56px] w-full bg-brand hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-medium rounded-[6px] transition-colors"
               >
                 {loading ? 'Ingresando...' : 'Ingresar'}
               </button>
               {isStep3Disabled && step3Motive && (
-                <p className="text-xs text-[#5A554E] text-center">{step3Motive}</p>
+                <p className="text-xs text-ink-2 text-center">{step3Motive}</p>
               )}
             </div>
 
@@ -557,7 +557,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                   setPin4ServerError(null);
                   goToStep(2);
                 }}
-                className="min-h-[44px] px-2 text-xs text-[#5A554E] hover:text-[#14171A] flex items-center gap-1 transition-colors"
+                className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink flex items-center gap-1 transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
                 <span>Atrás</span>
@@ -566,7 +566,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               <button
                 type="button"
                 onClick={handleChangeRoom}
-                className="min-h-[44px] px-2 text-xs text-[#5A554E] hover:text-[#14171A] transition-colors"
+                className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink transition-colors"
               >
                 Cambiar sala
               </button>

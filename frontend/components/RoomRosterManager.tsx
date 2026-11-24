@@ -102,39 +102,39 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="font-heading text-lg font-bold text-[#14171A]">Lista de participantes</h2>
-        <p className="text-xs text-[#5A554E] mt-0.5">
+        <h2 className="font-heading text-lg font-bold text-ink">Lista de participantes</h2>
+        <p className="text-xs text-ink-2 mt-0.5">
           Cada persona entra con el PIN de la sala y su código personal. {active.length} en la lista,{' '}
           {active.filter((m) => m.joined).length} ya ingresaron.
         </p>
       </div>
 
       {issued.length > 0 && (
-        <div className="p-4 rounded-[6px] border border-[#B7791F] bg-white space-y-2" role="status">
+        <div className="p-4 rounded-[6px] border border-warn bg-paper space-y-2" role="status">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="text-xs font-semibold text-[#14171A]">
+            <p className="text-xs font-semibold text-ink">
               Códigos nuevos. Solo se muestran ahora: descárgalos o cópialos antes de salir.
             </p>
             <button
               type="button"
               onClick={() => setShown(allShown ? new Set() : new Set(issued.map(codeKey)))}
               aria-pressed={allShown}
-              className="min-h-[36px] inline-flex items-center gap-1.5 px-2.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-2.5 rounded-[6px] border border-line bg-paper text-xs font-medium text-ink hover:bg-subtle"
             >
               {allShown ? <EyeOff className="w-3.5 h-3.5 stroke-[1.5]" /> : <Eye className="w-3.5 h-3.5 stroke-[1.5]" />}
               {allShown ? 'Ocultar todos' : 'Mostrar todos'}
             </button>
           </div>
-          <ul className="text-xs font-mono divide-y divide-[#D9D5CC] max-h-72 overflow-auto">
+          <ul className="text-xs font-mono divide-y divide-line max-h-72 overflow-auto">
             {issued.map((i) => {
               const key = codeKey(i);
               const visible = shown.has(key);
               return (
                 <li key={key} className="flex items-center justify-between gap-3 py-1.5">
-                  <span className="truncate font-sans text-[#14171A]">{i.label}</span>
+                  <span className="truncate font-sans text-ink">{i.label}</span>
                   <span className="relative inline-flex items-center justify-end shrink-0 min-w-[160px] min-h-[32px]">
                     <span
-                      className={`text-[#14171A] font-bold tracking-wider transition-[filter] ${visible ? '' : 'blur-[5px] select-none'}`}
+                      className={`text-ink font-bold tracking-wider transition-[filter] ${visible ? '' : 'blur-[5px] select-none'}`}
                       aria-hidden={!visible}
                     >
                       {i.code}
@@ -143,7 +143,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                       <button
                         type="button"
                         onClick={() => toggleCode(key)}
-                        className="ml-2 min-h-[32px] px-1.5 text-[#5A554E] hover:text-[#14171A]"
+                        className="ml-2 min-h-[32px] px-1.5 text-ink-2 hover:text-ink"
                         aria-label={`Ocultar el código de ${i.label}`}
                         title="Ocultar código"
                       >
@@ -153,7 +153,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                       <button
                         type="button"
                         onClick={() => toggleCode(key)}
-                        className="absolute inset-0 m-auto h-[28px] w-fit px-2.5 rounded-[4px] border border-[#D9D5CC] bg-white/95 font-sans text-[11px] font-medium text-[#14171A] hover:bg-[#EBE7DF] inline-flex items-center gap-1"
+                        className="absolute inset-0 m-auto h-[28px] w-fit px-2.5 rounded-[4px] border border-line bg-paper/95 font-sans text-[11px] font-medium text-ink hover:bg-subtle inline-flex items-center gap-1"
                         aria-label={`Mostrar el código de ${i.label}`}
                       >
                         <Eye className="w-3.5 h-3.5 stroke-[1.5]" />
@@ -169,7 +169,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
             <button
               type="button"
               onClick={() => downloadCsv(issued, roomPin)}
-              className="min-h-[44px] inline-flex items-center gap-1.5 px-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium hover:bg-[#EBE7DF]"
+              className="min-h-[44px] inline-flex items-center gap-1.5 px-3 rounded-[6px] border border-line bg-paper text-xs font-medium hover:bg-subtle"
             >
               <Download className="w-4 h-4 stroke-[1.5]" />
               Descargar códigos (CSV)
@@ -180,7 +180,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                 setIssued([]);
                 setShown(new Set());
               }}
-              className="min-h-[44px] text-xs text-[#5A554E] hover:text-[#14171A]"
+              className="min-h-[44px] text-xs text-ink-2 hover:text-ink"
             >
               Listo, quitar de la pantalla (no se vuelven a mostrar)
             </button>
@@ -197,7 +197,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
               if (await run(() => addRoomMember(roomId, label))) setLabel('');
             }}
           >
-            <label htmlFor="roster-label" className="block text-xs font-semibold text-[#14171A]">
+            <label htmlFor="roster-label" className="block text-xs font-semibold text-ink">
               Agregar una persona
             </label>
             <div className="flex gap-2">
@@ -207,12 +207,12 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                 maxLength={100}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="Matrícula o usuario"
-                className="flex-1 min-w-0 h-11 px-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs focus:outline-none focus:border-[#E4572E]"
+                className="flex-1 min-w-0 h-11 px-3 rounded-[6px] border border-line bg-paper text-xs focus:outline-none focus:border-brand"
               />
               <button
                 type="submit"
                 disabled={busy || label.trim().length === 0}
-                className="min-h-[44px] inline-flex items-center gap-1.5 px-3 rounded-[6px] bg-[#E4572E] text-white text-xs font-semibold disabled:opacity-40"
+                className="min-h-[44px] inline-flex items-center gap-1.5 px-3 rounded-[6px] bg-brand text-white text-xs font-semibold disabled:opacity-40"
               >
                 <Plus className="w-4 h-4 stroke-[1.5]" />
                 Agregar
@@ -227,7 +227,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
               if (await run(() => importRoomMembers(roomId, bulk))) setBulk('');
             }}
           >
-            <label htmlFor="roster-bulk" className="block text-xs font-semibold text-[#14171A]">
+            <label htmlFor="roster-bulk" className="block text-xs font-semibold text-ink">
               Pegar varias (una por línea)
             </label>
             <textarea
@@ -235,17 +235,17 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
               rows={3}
               value={bulk}
               onChange={(e) => setBulk(e.target.value)}
-              className="w-full p-2.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-mono focus:outline-none focus:border-[#E4572E]"
+              className="w-full p-2.5 rounded-[6px] border border-line bg-paper text-xs font-mono focus:outline-none focus:border-brand"
             />
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="submit"
                 disabled={busy || bulk.trim().length === 0}
-                className="min-h-[44px] px-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium hover:bg-[#EBE7DF] disabled:opacity-40"
+                className="min-h-[44px] px-3 rounded-[6px] border border-line bg-paper text-xs font-medium hover:bg-subtle disabled:opacity-40"
               >
                 Agregar la lista
               </button>
-              <label className="min-h-[44px] inline-flex items-center gap-1.5 px-3 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium hover:bg-[#EBE7DF] cursor-pointer">
+              <label className="min-h-[44px] inline-flex items-center gap-1.5 px-3 rounded-[6px] border border-line bg-paper text-xs font-medium hover:bg-subtle cursor-pointer">
                 <Upload className="w-4 h-4 stroke-[1.5]" />
                 Subir CSV
                 <input type="file" accept=".csv,.txt,text/csv,text/plain" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
@@ -256,24 +256,24 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
       )}
 
       {error && (
-        <p role="alert" className="text-xs text-[#B42318]">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}
 
       {members.length > 0 && (
-        <div className="border border-[#D9D5CC] rounded-[6px] bg-white overflow-x-auto">
+        <div className="border border-line rounded-[6px] bg-paper overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF] text-[#5A554E]">
+              <tr className="border-b border-line bg-canvas text-ink-2">
                 <th className="py-2 px-3 font-medium">Persona</th>
                 <th className="py-2 px-3 font-medium">Estado</th>
                 {!readOnly && <th className="py-2 px-3 font-medium text-right">Acciones</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D9D5CC]">
+            <tbody className="divide-y divide-line">
               {members.map((m) => (
-                <tr key={m.id} className={m.isRemoved ? 'text-[#5A554E]' : ''}>
+                <tr key={m.id} className={m.isRemoved ? 'text-ink-2' : ''}>
                   <td className="py-2 px-3 font-mono">{m.label}</td>
                   <td className="py-2 px-3">{m.isRemoved ? 'Quitada de la lista' : m.joined ? 'Ingresó' : 'No ha ingresado'}</td>
                   {!readOnly && (
@@ -284,7 +284,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                             type="button"
                             disabled={busy}
                             onClick={() => run(() => regenerateMemberCode(roomId, m.id))}
-                            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-1 px-2 text-[#14171A] hover:text-[#E4572E]"
+                            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-1 px-2 text-ink hover:text-brand"
                             aria-label={`Regenerar código de ${m.label}`}
                           >
                             <RefreshCw className="w-4 h-4 stroke-[1.5]" />
@@ -294,7 +294,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                             type="button"
                             disabled={busy}
                             onClick={() => setToRemove(m)}
-                            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-1 px-2 text-[#B42318]"
+                            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-1 px-2 text-danger"
                             aria-label={`Quitar a ${m.label}`}
                           >
                             <Trash2 className="w-4 h-4 stroke-[1.5]" />
@@ -319,7 +319,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
               Su código dejará de funcionar. Si ya ingresó, deja de participar; sus selecciones anteriores se conservan.
             </DialogDescription>
             <div className="flex items-center justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setToRemove(null)} className="min-h-[44px] text-xs text-[#5A554E] hover:text-[#14171A]">
+              <button type="button" onClick={() => setToRemove(null)} className="min-h-[44px] text-xs text-ink-2 hover:text-ink">
                 Volver
               </button>
               <button
@@ -329,7 +329,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
                   setToRemove(null);
                   if (target) await run(() => removeRoomMember(roomId, target.id));
                 }}
-                className="min-h-[44px] px-3.5 rounded-[6px] bg-[#B42318] text-white text-xs font-semibold"
+                className="min-h-[44px] px-3.5 rounded-[6px] bg-danger text-white text-xs font-semibold"
               >
                 Quitar de la lista
               </button>

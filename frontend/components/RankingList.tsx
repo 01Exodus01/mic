@@ -254,28 +254,28 @@ export default function RankingList({
                   }
                 : undefined
             }
-            className={`relative rounded-[6px] border bg-white ${
-              isDragged ? 'z-30 border-[#E4572E] shadow-[0_10px_24px_rgba(20,23,26,0.18)]' : 'z-0 border-[#D9D5CC]'
+            className={`relative rounded-[6px] border bg-paper ${
+              isDragged ? 'z-30 border-brand shadow-[0_10px_24px_rgba(20,23,26,0.18)]' : 'z-0 border-line'
             }`}
           >
             <div className="flex items-start gap-2 pl-2.5 pr-1 py-1.5">
-              <span className="font-mono text-lg font-bold text-[#14171A] w-6 shrink-0 pt-1.5 text-center" aria-hidden="true">
+              <span className="font-mono text-lg font-bold text-ink w-6 shrink-0 pt-1.5 text-center" aria-hidden="true">
                 {index + 1}
               </span>
               <div className="flex-1 min-w-0 py-1">
-                <h2 className="font-sans font-semibold text-sm text-[#14171A] leading-snug break-words">
+                <h2 className="font-sans font-semibold text-sm text-ink leading-snug break-words">
                   <span className="sr-only">Posición {index + 1}: </span>
                   {item.title}
                 </h2>
                 {item.description && (
-                  <p className="text-xs text-[#14171A]/75 leading-snug mt-0.5 line-clamp-2 break-words">{item.description}</p>
+                  <p className="text-xs text-ink/75 leading-snug mt-0.5 line-clamp-2 break-words">{item.description}</p>
                 )}
                 <button
                   type="button"
                   onClick={() => onOpenChange(isOpen ? null : item.id)}
                   aria-expanded={isOpen}
                   className={`mt-1 min-h-[32px] inline-flex items-center gap-1 rounded-[4px] px-2 -ml-2 text-xs font-medium transition-colors ${
-                    total === 0 ? 'text-[#E4572E] hover:bg-[#E4572E]/10' : 'text-[#14171A] hover:bg-[#EBE7DF]'
+                    total === 0 ? 'text-brand hover:bg-brand/10' : 'text-ink hover:bg-subtle'
                   }`}
                 >
                   {total === 0 ? (
@@ -286,8 +286,8 @@ export default function RankingList({
                   ) : (
                     <>
                       Razones:{' '}
-                      <span className="font-mono text-[#2F7D4F]">+{counts.for}</span>
-                      <span className="font-mono text-[#B42318]">−{counts.against}</span>
+                      <span className="font-mono text-good">+{counts.for}</span>
+                      <span className="font-mono text-danger">−{counts.against}</span>
                     </>
                   )}
                   <ChevronDown className={`w-3.5 h-3.5 stroke-[1.5] transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -299,7 +299,7 @@ export default function RankingList({
                     type="button"
                     onClick={() => moveBy(index, -1)}
                     disabled={index === 0}
-                    className="w-10 h-11 flex items-center justify-center text-[#14171A] hover:bg-[#EBE7DF] rounded-[4px] disabled:opacity-20 transition-colors"
+                    className="w-10 h-11 flex items-center justify-center text-ink hover:bg-subtle rounded-[4px] disabled:opacity-20 transition-colors"
                     title="Subir opción"
                     aria-label={`Subir ${item.title ?? 'opción'}`}
                   >
@@ -309,7 +309,7 @@ export default function RankingList({
                     type="button"
                     onClick={() => moveBy(index, 1)}
                     disabled={index === items.length - 1}
-                    className="w-10 h-11 flex items-center justify-center text-[#14171A] hover:bg-[#EBE7DF] rounded-[4px] disabled:opacity-20 transition-colors"
+                    className="w-10 h-11 flex items-center justify-center text-ink hover:bg-subtle rounded-[4px] disabled:opacity-20 transition-colors"
                     title="Bajar opción"
                     aria-label={`Bajar ${item.title ?? 'opción'}`}
                   >
@@ -320,7 +320,7 @@ export default function RankingList({
                     onPointerMove={moveDrag}
                     onPointerUp={endDrag}
                     onPointerCancel={endDrag}
-                    className={`w-10 h-11 flex items-center justify-center text-[#14171A] touch-none select-none ${
+                    className={`w-10 h-11 flex items-center justify-center text-ink touch-none select-none ${
                       isDragged ? 'cursor-grabbing' : 'cursor-grab'
                     }`}
                     title="Arrastrar para ordenar"
@@ -331,7 +331,7 @@ export default function RankingList({
                 </div>
               )}
             </div>
-            {isOpen && <div className="px-3 pb-3 pt-2 border-t border-[#D9D5CC]">{renderDetails(item)}</div>}
+            {isOpen && <div className="px-3 pb-3 pt-2 border-t border-line">{renderDetails(item)}</div>}
           </li>
         );
       })}

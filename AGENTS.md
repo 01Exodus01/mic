@@ -203,10 +203,15 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
 ### Dirección visual
 Instrumento claro y sobrio, no "SaaS startup". Propósito general.
 Anfitrión = panel de datos sobrio. Participante = móvil primero, una acción por
-pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
+pantalla. Modo oscuro por defecto y modo claro a elección de cada persona
+(botón sol/luna en la barra; se recuerda por navegador). Pedido del equipo
+2026-11-24 (E-15).
 
 ### Tokens (definidos en globals.css / tailwind config)
-- Fondo #F6F4EF | Texto #14171A | Borde #D9D5CC | Texto secundario #6B6860
+- En el código se usan solo los nombres de token (`text-ink`, `text-ink-2`,
+  `bg-paper`, `bg-canvas`, `bg-subtle`, `border-line`, `brand`, `danger`, `good`,
+  `warn`), nunca un color fijo: cada token tiene su valor claro y su valor oscuro.
+- Valores del modo claro: fondo #F6F4EF | texto #14171A | borde #D9D5CC | texto secundario #5A554E
 - UN solo acento: #E4572E
 - Estados: ok #2F7D4F, alerta #B7791F, error #B42318
 - Fuentes: Fraunces (títulos), IBM Plex Sans (UI), IBM Plex Mono (PIN, porcentajes,
@@ -216,7 +221,8 @@ pantalla. Modo claro únicamente; prohibido modo oscuro en v1.
 - Las opciones se distinguen por número y título, NUNCA por color
 
 ### Prohibido
-- Gradientes, glassmorphism, blur, glow, modo oscuro
+- Gradientes, glassmorphism, glow; blur solo para ocultar códigos personales
+- Colores fijos en el código (`#14171A`, `bg-white`): usar los tokens
 - Paletas multicolor y colores fuera de los tokens
 - Emojis como íconos o en títulos; íconos solo lucide, trazo 1.5
 - Inter/Roboto/Space Grotesk/Geist por defecto
@@ -368,6 +374,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-12 | 2026-11-05 | Solo Borda y Schulze en salas nuevas; desempate fijo (mayoría pareada en la ronda, luego título) y medición sin empates; sin opciones de desempate ni variante al crear la sala | Pedido del equipo; evita combinaciones redundantes ("desempatar" con "con empates" medía lo mismo). Procedimiento r-fast-cr-4 |
 | E-13 | 2026-11-06 | Ingreso tardío permitido por defecto; la opción de la sala lo bloquea | Pedido del equipo tras el testeo; reemplaza el valor por defecto de E-3. Las salas ya creadas conservan su configuración |
 | E-14 | 2026-11-15 | El CIX y τ* se calculan con tau-c de Stuart; tau-b de Kendall y gamma quedan como sensibilidad | Pedido explícito del investigador. Procedimiento r-fast-cr-5 (`__procedure.concordanceIndex = 'TAU_C'`). Los informes anteriores conservan tau-b; el export indica el coeficiente de cada ronda en `round_metrics.concordance_index` |
+| E-15 | 2026-11-24 | Modo oscuro por defecto, claro a elección; colores solo por tokens de tema | Pedido del equipo. Reemplaza "modo claro únicamente" |
 
 ### Especificación en PDF superada
 

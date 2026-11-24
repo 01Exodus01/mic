@@ -391,23 +391,23 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
       <nav aria-label="Migas de pan" className="mb-4 flex items-center gap-2 text-xs">
         <Link
           href={editing ? `/dashboard/rooms/${roomId}` : '/dashboard'}
-          className="inline-flex items-center gap-1 text-[#5A554E] hover:text-[#14171A] hover:underline transition-colors"
+          className="inline-flex items-center gap-1 text-ink-2 hover:text-ink hover:underline transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
           <span>{editing ? 'Volver al grupo' : 'Volver a salas'}</span>
         </Link>
-        <span className="text-[#D9D5CC]" aria-hidden="true">/</span>
-        <span className="text-[#14171A] font-medium" aria-current="page">
+        <span className="text-line" aria-hidden="true">/</span>
+        <span className="text-ink font-medium" aria-current="page">
           {editing ? 'Editar grupo' : 'Nueva sala'}
         </span>
       </nav>
 
       {/* Page Header */}
-      <div className="pb-6 mb-6 border-b border-[#D9D5CC]">
-        <h1 className="font-heading text-2xl font-bold text-[#14171A] tracking-tight">
+      <div className="pb-6 mb-6 border-b border-line">
+        <h1 className="font-heading text-2xl font-bold text-ink tracking-tight">
           {editing ? 'Editar grupo' : 'Nueva sala'}
         </h1>
-        <p className="text-xs text-[#5A554E] mt-1">
+        <p className="text-xs text-ink-2 mt-1">
           {editing
             ? 'Puedes cambiar todo salvo la forma de ingreso hasta que abras la Ronda 1.'
             : 'Configura las opciones que el grupo ordenará y los parámetros de consenso.'}
@@ -417,7 +417,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
       {serverError && (
         <div
           role="alert"
-          className="mb-6 p-3 rounded-[6px] border border-[#B42318] bg-[#B42318]/5 text-xs text-[#B42318] max-w-2xl flex items-center gap-2"
+          className="mb-6 p-3 rounded-[6px] border border-danger bg-danger/5 text-xs text-danger max-w-2xl flex items-center gap-2"
         >
           <AlertCircle className="w-4 h-4 stroke-[1.5] shrink-0" />
           <span>{serverError}</span>
@@ -428,10 +428,10 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
         {/* Section 1: Identification */}
         <section className="space-y-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#14171A]">
+            <h2 className="text-sm font-semibold text-ink">
               1. Identificación de la sala
             </h2>
-            <p className="text-xs text-[#5A554E] mt-0.5">
+            <p className="text-xs text-ink-2 mt-0.5">
               Título general visible para todos los participantes durante la actividad.
             </p>
           </div>
@@ -440,13 +440,13 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
             <div className="flex items-center justify-between mb-1.5">
               <label
                 htmlFor="room-title"
-                className="block text-xs font-medium text-[#14171A]"
+                className="block text-xs font-medium text-ink"
               >
                 Título de la actividad
               </label>
               <span
                 className={`font-mono text-xs ${
-                  title.length >= 100 ? 'text-[#B7791F] font-bold' : 'text-[#5A554E]'
+                  title.length >= 100 ? 'text-warn font-bold' : 'text-ink-2'
                 }`}
               >
                 {title.length}/100
@@ -472,17 +472,17 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
               }}
               aria-invalid={Boolean(activeTitleError)}
               aria-describedby={activeTitleError ? 'room-title-error' : undefined}
-              className={`w-full h-10 px-3 rounded-[6px] border bg-white text-sm text-[#14171A] placeholder:text-[#5A554E]/60 focus:outline-none transition-colors ${
+              className={`w-full h-10 px-3 rounded-[6px] border bg-paper text-sm text-ink placeholder:text-ink-2/60 focus:outline-none transition-colors ${
                 activeTitleError
-                  ? 'border-[#B42318] focus:border-[#B42318]'
-                  : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line focus:border-brand'
               }`}
             />
             {activeTitleError && (
               <p
                 id="room-title-error"
                 role="alert"
-                className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
+                className="text-xs text-danger mt-1 flex items-center gap-1"
               >
                 <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                 <span>{activeTitleError}</span>
@@ -491,16 +491,16 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
           </div>
         </section>
 
-        <hr className="border-[#D9D5CC]" />
+        <hr className="border-line" />
 
         {/* Section 2: Options */}
         <section className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#14171A]">
+              <h2 className="text-sm font-semibold text-ink">
                 2. Opciones a evaluar
               </h2>
-              <p className="text-xs text-[#5A554E] mt-0.5">
+              <p className="text-xs text-ink-2 mt-0.5">
                 Mínimo {MIN_OPTIONS} opciones. Cada participante las ordenará de mayor a menor preferencia.
               </p>
             </div>
@@ -508,7 +508,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
               type="button"
               onClick={addOption}
               disabled={options.length >= MAX_OPTIONS}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF] disabled:opacity-30 disabled:pointer-events-none transition-colors shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-line bg-paper text-xs font-medium text-ink hover:bg-subtle disabled:opacity-30 disabled:pointer-events-none transition-colors shrink-0"
             >
               <Plus className="w-3.5 h-3.5 stroke-[1.5]" />
               <span>Añadir opción ({options.length})</span>
@@ -516,7 +516,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
           </div>
 
           {optionsGeneralError && (
-            <p role="alert" className="text-xs text-[#B42318]">
+            <p role="alert" className="text-xs text-danger">
               {optionsGeneralError}
             </p>
           )}
@@ -530,9 +530,9 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
               return (
                 <div
                   key={idx}
-                  className="p-3.5 rounded-[6px] border border-[#D9D5CC] bg-white flex items-start gap-3"
+                  className="p-3.5 rounded-[6px] border border-line bg-paper flex items-start gap-3"
                 >
-                  <span className="w-7 h-7 shrink-0 rounded-[4px] border border-[#D9D5CC] bg-[#F6F4EF] font-mono text-xs font-bold text-[#14171A] flex items-center justify-center mt-1">
+                  <span className="w-7 h-7 shrink-0 rounded-[4px] border border-line bg-canvas font-mono text-xs font-bold text-ink flex items-center justify-center mt-1">
                     {idx + 1}
                   </span>
 
@@ -541,13 +541,13 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                       <div className="flex items-center justify-between mb-1">
                         <label
                           htmlFor={`opt-title-${idx}`}
-                          className="text-[11px] font-medium text-[#14171A]"
+                          className="text-[11px] font-medium text-ink"
                         >
                           Título de la opción (3 a 80 caracteres)
                         </label>
                         <span
                           className={`font-mono text-[11px] ${
-                            p.title.length >= 80 ? 'text-[#B7791F] font-bold' : 'text-[#5A554E]'
+                            p.title.length >= 80 ? 'text-warn font-bold' : 'text-ink-2'
                           }`}
                         >
                           {p.title.length}/80
@@ -566,17 +566,17 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                         onBlur={() => handleOptionBlur(idx, 'title')}
                         aria-invalid={Boolean(titleErr)}
                         aria-describedby={titleErr ? `opt-title-err-${idx}` : undefined}
-                        className={`w-full h-9 px-3 rounded-[6px] border bg-white text-xs font-semibold text-[#14171A] placeholder:text-[#5A554E]/60 focus:outline-none transition-colors ${
+                        className={`w-full h-9 px-3 rounded-[6px] border bg-paper text-xs font-semibold text-ink placeholder:text-ink-2/60 focus:outline-none transition-colors ${
                           titleErr
-                            ? 'border-[#B42318] focus:border-[#B42318]'
-                            : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                            ? 'border-danger focus:border-danger'
+                            : 'border-line focus:border-brand'
                         }`}
                       />
                       {titleErr && (
                         <p
                           id={`opt-title-err-${idx}`}
                           role="alert"
-                          className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
+                          className="text-xs text-danger mt-1 flex items-center gap-1"
                         >
                           <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                           <span>{titleErr}</span>
@@ -588,15 +588,15 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                       <div className="flex items-center justify-between mb-1">
                         <label
                           htmlFor={`opt-desc-${idx}`}
-                          className="text-[11px] font-medium text-[#14171A]"
+                          className="text-[11px] font-medium text-ink"
                         >
                           Descripción (opcional, 10 a 300 caracteres)
                         </label>
                         <span
                           className={`font-mono text-[11px] ${
                             p.description.length >= 300
-                              ? 'text-[#B7791F] font-bold'
-                              : 'text-[#5A554E]'
+                              ? 'text-warn font-bold'
+                              : 'text-ink-2'
                           }`}
                         >
                           {p.description.length}/300
@@ -615,17 +615,17 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                         onBlur={() => handleOptionBlur(idx, 'description')}
                         aria-invalid={Boolean(descErr)}
                         aria-describedby={descErr ? `opt-desc-err-${idx}` : undefined}
-                        className={`w-full p-2.5 rounded-[6px] border bg-white text-xs text-[#14171A] placeholder:text-[#5A554E]/60 focus:outline-none resize-y transition-colors ${
+                        className={`w-full p-2.5 rounded-[6px] border bg-paper text-xs text-ink placeholder:text-ink-2/60 focus:outline-none resize-y transition-colors ${
                           descErr
-                            ? 'border-[#B42318] focus:border-[#B42318]'
-                            : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                            ? 'border-danger focus:border-danger'
+                            : 'border-line focus:border-brand'
                         }`}
                       />
                       {descErr && (
                         <p
                           id={`opt-desc-err-${idx}`}
                           role="alert"
-                          className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
+                          className="text-xs text-danger mt-1 flex items-center gap-1"
                         >
                           <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                           <span>{descErr}</span>
@@ -639,7 +639,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                     onClick={() => removeOption(idx)}
                     disabled={options.length <= 3}
                     title="Eliminar opción"
-                    className="p-1.5 rounded-[6px] text-[#5A554E] hover:text-[#B42318] hover:bg-[#B42318]/10 disabled:opacity-20 disabled:pointer-events-none transition-colors shrink-0"
+                    className="p-1.5 rounded-[6px] text-ink-2 hover:text-danger hover:bg-danger/10 disabled:opacity-20 disabled:pointer-events-none transition-colors shrink-0"
                   >
                     <Trash2 className="w-4 h-4 stroke-[1.5]" />
                   </button>
@@ -649,15 +649,15 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
           </div>
         </section>
 
-        <hr className="border-[#D9D5CC]" />
+        <hr className="border-line" />
 
         {/* Section 3: Parameters */}
         <section className="space-y-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#14171A]">
+            <h2 className="text-sm font-semibold text-ink">
               3. Parámetros de participación
             </h2>
-            <p className="text-xs text-[#5A554E] mt-0.5">
+            <p className="text-xs text-ink-2 mt-0.5">
               Límites de participantes y acuerdo necesario para dar por finalizada la actividad.
             </p>
           </div>
@@ -667,7 +667,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
             <div>
               <label
                 htmlFor="max-members"
-                className="block text-xs font-medium text-[#14171A] mb-1.5"
+                className="block text-xs font-medium text-ink mb-1.5"
               >
                 Número de participantes (3 a {MAX_MEMBERS})
               </label>
@@ -692,23 +692,23 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                 }}
                 aria-invalid={Boolean(activeMaxMembersError)}
                 aria-describedby={activeMaxMembersError ? 'max-members-error' : undefined}
-                className={`w-full h-10 px-3 rounded-[6px] border bg-white text-sm font-mono text-[#14171A] focus:outline-none transition-colors ${
+                className={`w-full h-10 px-3 rounded-[6px] border bg-paper text-sm font-mono text-ink focus:outline-none transition-colors ${
                   activeMaxMembersError
-                    ? 'border-[#B42318] focus:border-[#B42318]'
-                    : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line focus:border-brand'
                 }`}
               />
               {activeMaxMembersError ? (
                 <p
                   id="max-members-error"
                   role="alert"
-                  className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
+                  className="text-xs text-danger mt-1 flex items-center gap-1"
                 >
                   <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                   <span>{activeMaxMembersError}</span>
                 </p>
               ) : (
-                <p className="text-[11px] text-[#5A554E] mt-1">
+                <p className="text-[11px] text-ink-2 mt-1">
                   Con 3 participantes, todos deben enviar su selección.
                 </p>
               )}
@@ -719,7 +719,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="agreement-req-num"
-                  className="block text-xs font-medium text-[#14171A]"
+                  className="block text-xs font-medium text-ink"
                 >
                   Acuerdo requerido (1% a 100%)
                 </label>
@@ -747,10 +747,10 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                   }}
                   aria-invalid={Boolean(activeTauError)}
                   aria-describedby={activeTauError ? 'agreement-req-error' : undefined}
-                  className={`w-28 h-10 px-3 rounded-[6px] border bg-white text-sm font-mono text-[#14171A] focus:outline-none transition-colors ${
+                  className={`w-28 h-10 px-3 rounded-[6px] border bg-paper text-sm font-mono text-ink focus:outline-none transition-colors ${
                     activeTauError
-                      ? 'border-[#B42318] focus:border-[#B42318]'
-                      : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                      ? 'border-danger focus:border-danger'
+                      : 'border-line focus:border-brand'
                   }`}
                 />
                 <input
@@ -767,20 +767,20 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                       setTauError(validateTau(nextVal));
                     }
                   }}
-                  className="flex-1 accent-[#E4572E]"
+                  className="flex-1 accent-brand"
                 />
               </div>
               {activeTauError ? (
                 <p
                   id="agreement-req-error"
                   role="alert"
-                  className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
+                  className="text-xs text-danger mt-1 flex items-center gap-1"
                 >
                   <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                   <span>{activeTauError}</span>
                 </p>
               ) : (
-                <p className="text-[11px] text-[#5A554E] mt-1">
+                <p className="text-[11px] text-ink-2 mt-1">
                   Meta de concordancia ordinal en porcentaje.
                 </p>
               )}
@@ -790,7 +790,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
             <div>
               <label
                 htmlFor="max-rounds"
-                className="block text-xs font-medium text-[#14171A] mb-1.5"
+                className="block text-xs font-medium text-ink mb-1.5"
               >
                 Máximo de rondas (1 a 10)
               </label>
@@ -815,23 +815,23 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                 }}
                 aria-invalid={Boolean(activeMaxRoundsError)}
                 aria-describedby={activeMaxRoundsError ? 'max-rounds-error' : undefined}
-                className={`w-full h-10 px-3 rounded-[6px] border bg-white text-sm font-mono text-[#14171A] focus:outline-none transition-colors ${
+                className={`w-full h-10 px-3 rounded-[6px] border bg-paper text-sm font-mono text-ink focus:outline-none transition-colors ${
                   activeMaxRoundsError
-                    ? 'border-[#B42318] focus:border-[#B42318]'
-                    : 'border-[#D9D5CC] focus:border-[#E4572E]'
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line focus:border-brand'
                 }`}
               />
               {activeMaxRoundsError ? (
                 <p
                   id="max-rounds-error"
                   role="alert"
-                  className="text-xs text-[#B42318] mt-1 flex items-center gap-1"
+                  className="text-xs text-danger mt-1 flex items-center gap-1"
                 >
                   <AlertCircle className="w-3.5 h-3.5 stroke-[1.5] shrink-0" />
                   <span>{activeMaxRoundsError}</span>
                 </p>
               ) : (
-                <p className="text-[11px] text-[#5A554E] mt-1">
+                <p className="text-[11px] text-ink-2 mt-1">
                   Límite máximo de deliberaciones antes del cierre automático.
                 </p>
               )}
@@ -839,15 +839,15 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
           </div>
         </section>
 
-        <hr className="border-[#D9D5CC]" />
+        <hr className="border-line" />
 
         {/* Section 4: Aggregation Method */}
         <section className="space-y-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#14171A]">
+            <h2 className="text-sm font-semibold text-ink">
               4. Regla de decisión colectiva
             </h2>
-            <p className="text-xs text-[#5A554E] mt-0.5">
+            <p className="text-xs text-ink-2 mt-0.5">
               Forma en que se combinan las selecciones individuales para obtener el orden del grupo.
             </p>
           </div>
@@ -869,8 +869,8 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                 key={m.id}
                 className={`flex items-start gap-3 p-3 rounded-[6px] border cursor-pointer transition-colors ${
                   method === m.id
-                    ? 'border-[#E4572E] bg-white'
-                    : 'border-[#D9D5CC] bg-white hover:bg-[#F6F4EF]/50'
+                    ? 'border-brand bg-paper'
+                    : 'border-line bg-paper hover:bg-canvas/50'
                 }`}
               >
                 <input
@@ -882,17 +882,17 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
                     setMethod(m.id as AggregationMethod);
                     setServerError(null);
                   }}
-                  className="mt-1 accent-[#E4572E]"
+                  className="mt-1 accent-brand"
                 />
                 <div className="text-xs">
-                  <div className="font-medium text-[#14171A]">{m.name}</div>
-                  <div className="text-[#5A554E] mt-0.5">{m.desc}</div>
+                  <div className="font-medium text-ink">{m.name}</div>
+                  <div className="text-ink-2 mt-0.5">{m.desc}</div>
                 </div>
               </label>
             ))}
           </div>
           {methodError && (
-            <p role="alert" className="text-xs text-[#B42318] mt-1">
+            <p role="alert" className="text-xs text-danger mt-1">
               {methodError}
             </p>
           )}
@@ -912,13 +912,13 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
           <button
             type="submit"
             disabled={isSubmitDisabled}
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[6px] bg-[#E4572E] text-white text-xs font-semibold hover:bg-[#E4572E]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-none"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[6px] bg-brand text-white text-xs font-semibold hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-none"
           >
             <span>{editing ? (loading ? 'Guardando...' : 'Guardar cambios') : loading ? 'Creando sala...' : 'Crear sala'}</span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
           </button>
           {isSubmitDisabled && submitMotive && (
-            <p className="text-xs text-[#5A554E]">{submitMotive}</p>
+            <p className="text-xs text-ink-2">{submitMotive}</p>
           )}
         </div>
       </form>

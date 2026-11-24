@@ -91,7 +91,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           inputMode={isPin ? 'numeric' : props.inputMode}
           pattern={isPin ? '[0-9]*' : props.pattern}
           className={cn(
-            'w-full rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] placeholder:text-[#5A554E]/50 focus:outline-none transition-colors pr-11',
+            'w-full rounded-[6px] border border-line bg-paper text-xs text-ink placeholder:text-ink-2/50 focus:outline-none transition-colors pr-11',
             isPin && 'font-mono text-center tracking-widest',
             className
           )}
@@ -104,7 +104,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           aria-label={label}
           aria-pressed={showPassword}
           tabIndex={0}
-          className="absolute right-0 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-[#5A554E] hover:text-[#14171A] disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus-visible:ring-1 focus-visible:ring-[#E4572E] rounded-[6px] transition-colors"
+          className="absolute right-0 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-ink-2 hover:text-ink disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus-visible:ring-1 focus-visible:ring-brand rounded-[6px] transition-colors"
         >
           {showPassword ? (
             <EyeOff className="w-4 h-4 stroke-[1.5] shrink-0" aria-hidden="true" />
