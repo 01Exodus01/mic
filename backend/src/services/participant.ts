@@ -394,7 +394,7 @@ export async function verifyRoomPin(
 
     // Unified message: does not disclose whether room exists or is in an invalid state
     // A finished room stays reachable so its participants can see the final results
-    if (!room || room.status === 'CANCELLED' || room.status === 'DRAFT') {
+    if (!room || room.status === 'CANCELLED') {
       return { success: false, error: 'No se puede ingresar a esa sala. Revisa el PIN.' };
     }
 
@@ -434,7 +434,7 @@ export async function checkNicknameInRoom(
     });
 
     // Roster rooms (PT-22) do not use names: same generic message
-    if (!room || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
+    if (!room || room.status === 'CANCELLED' || room.access_mode === 'ROSTER') {
       return { success: false, error: 'No se puede ingresar a esa sala. Revisa tus datos.' };
     }
 
@@ -546,7 +546,7 @@ export async function joinRoom(
     // Unified generic message according to D4 and AGENTS.md (no disclosure of room state).
     // Roster rooms (PT-22) only accept a personal code.
     // Finished rooms: only their participants come back, to see the final results
-    if (!room || room.status === 'CANCELLED' || room.status === 'DRAFT' || room.access_mode === 'ROSTER') {
+    if (!room || room.status === 'CANCELLED' || room.access_mode === 'ROSTER') {
       if (room) await recordJoinFailure(room, 'room_unavailable', { deviceTag, mode: 'pin' });
       throw Errors.CANNOT_JOIN();
     }
@@ -720,7 +720,7 @@ export async function joinRoomWithCode(
     const pinVal = RoomPinSchema.safeParse(roomPin);
     if (pinVal.success) room = await prisma.room.findUnique({ where: { pin: pinVal.data } });
     if (!pinVal.success || !room) await fail();
-    if (room!.access_mode !== 'ROSTER' || ['CANCELLED', 'DRAFT'].includes(room!.status)) {
+    if (room!.access_mode !== 'ROSTER' || room!.status === 'CANCELLED') {
       await fail('room_unavailable');
     }
     if (typeof accessCode !== 'string' || !isWellFormedMemberCode(accessCode)) await fail('invalid_code');
@@ -1125,7 +1125,9 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
           tauThreshold: room.tau_threshold,
           closeWhenAllVoted: room.close_when_all_voted,
         },
-        options: mappedOptions,
+        // Lobby (before round 1): the options are shown when the round opens,
+        // so every participant gets the same time to read them
+        options: room.status === 'DRAFT' ? [] : mappedOptions,
         session,
         myVotes: mappedVotes,
         latestReport: mappedReport,

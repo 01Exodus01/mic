@@ -612,36 +612,87 @@ export default function RoomHostPage() {
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
       <div className="pb-6 border-b border-[#D9D5CC]">
-        {/* BORRADOR (DRAFT) */}
+        {/* BORRADOR (DRAFT): PIN destacado, sala de espera y abrir la Ronda 1 */}
         {sala.status === 'DRAFT' && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-sm font-semibold text-[#14171A]">
-                Iniciar la actividad
-              </h2>
-              <p className="text-xs text-[#5A554E] mt-0.5">
-                La sala está en borrador. Define el plazo de la Ronda 1 para que los participantes comiencen a enviar su selección.
-              </p>
+          <div className="space-y-5">
+            <div className="rounded-[8px] border-2 border-[#E4572E] bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#5A554E]">PIN del grupo</p>
+                <p className="font-mono text-4xl sm:text-5xl font-bold tracking-[0.2em] text-[#14171A] mt-1" aria-label={`PIN ${sala.pin.split('').join(' ')}`}>
+                  {sala.pin}
+                </p>
+                <p className="text-xs text-[#5A554E] mt-1.5">
+                  {sala.access_mode === 'ROSTER'
+                    ? 'Compártelo junto con el código personal de cada persona. Pueden entrar ya y esperar a que abras la Ronda 1.'
+                    : 'Compártelo con los participantes. Pueden entrar ya y esperar a que abras la Ronda 1.'}
+                </p>
+              </div>
+              <div className="flex sm:flex-col gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={copyPin}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 h-10 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold"
+                >
+                  {copiedPin ? <Check className="w-3.5 h-3.5 stroke-[2]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
+                  Copiar PIN
+                </button>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 h-10 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 stroke-[1.5] text-[#2F7D4F]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.5]" />}
+                  Copiar enlace
+                </button>
+              </div>
             </div>
 
-            <DurationPicker
-              value={selectedMinutes}
-              onChange={setSelectedMinutes}
-              closesAt={selectedClosesAt}
-              onClosesAtChange={setSelectedClosesAt}
-              serverTime={data?.serverTime}
-              label="Duración de la Ronda 1"
-            />
+            <div className="space-y-2" aria-live="polite">
+              <h2 className="text-sm font-semibold text-[#14171A]">
+                Sala de espera: {totalParticipants} {totalParticipants === 1 ? 'persona' : 'personas'}
+              </h2>
+              {sala.access_mode === 'ROSTER' ? (
+                <p className="text-xs text-[#5A554E]">En la lista de participantes ves quién ya ingresó.</p>
+              ) : totalParticipants === 0 ? (
+                <p className="text-xs text-[#5A554E]">Todavía no ha entrado nadie.</p>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {sala.participants.map((p) => (
+                    <li key={p.id} className="px-2 py-1 rounded-[4px] border border-[#D9D5CC] bg-white text-xs text-[#14171A]">
+                      {p.nickname}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-            <div>
-              <button
-                type="button"
-                onClick={handleStartRoom}
-                disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
-                className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
-              >
-                {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1'}
-              </button>
+            <div className="space-y-4 pt-4 border-t border-[#D9D5CC]">
+              <div>
+                <h2 className="text-sm font-semibold text-[#14171A]">Abrir la Ronda 1</h2>
+                <p className="text-xs text-[#5A554E] mt-0.5">
+                  Define el plazo de la Ronda 1 para que los participantes comiencen a enviar su selección.
+                </p>
+              </div>
+
+              <DurationPicker
+                value={selectedMinutes}
+                onChange={setSelectedMinutes}
+                closesAt={selectedClosesAt}
+                onClosesAtChange={setSelectedClosesAt}
+                serverTime={data?.serverTime}
+                label="Duración de la Ronda 1"
+              />
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleStartRoom}
+                  disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
+                  className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                >
+                  {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1'}
+                </button>
+              </div>
             </div>
           </div>
         )}

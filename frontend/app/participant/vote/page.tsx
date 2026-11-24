@@ -78,6 +78,8 @@ export default function ParticipantVotePage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [retired, setRetired] = useState<boolean>(false);
+  // Set while the participant waits in the lobby, to announce when round 1 opens
+  const waitedInLobbyRef = useRef(false);
   const isEditingRef = useRef<boolean>(false);
   const initialLoadDoneRef = useRef<boolean>(false);
   const currentRoundRef = useRef<number | null>(null);
@@ -150,6 +152,16 @@ export default function ParticipantVotePage() {
       if (data.sala.status === 'ROUND_FEEDBACK' || data.sala.status === 'CONCLUDED') {
         router.push('/participant/feedback');
         return;
+      }
+
+      // Lobby: nothing to order yet; the ballot starts when round 1 opens
+      if (data.sala.status === 'DRAFT') {
+        waitedInLobbyRef.current = true;
+        return;
+      }
+      if (waitedInLobbyRef.current) {
+        waitedInLobbyRef.current = false;
+        toast.info('Se abrió la Ronda 1. Ordena las opciones.');
       }
 
       const options = data.options || [];
@@ -409,6 +421,37 @@ export default function ParticipantVotePage() {
     const value = reasonsByOption[opt.id] ?? EMPTY_REASONS;
     return [...value.for, ...value.against].some((t) => reasonError(t) !== null);
   }).length;
+
+  // Lobby: joined before round 1 opens. The options appear when it opens.
+  if (roomData?.sala?.status === 'DRAFT') {
+    return (
+      <main className="flex-1 max-w-[540px] w-full mx-auto px-4 pt-6 pb-12">
+        <div className="flex items-center justify-between pb-3 mb-6 border-b border-[#D9D5CC] text-xs">
+          <ParticipantIdentity displayName={roomData.displayName} />
+          {roomData.consent?.required && roomData.consent.text && <ConsentDialog text={roomData.consent.text} />}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1.5 text-[#5A554E] hover:text-[#B42318] transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5 stroke-[1.5]" />
+            <span>Salir</span>
+          </button>
+        </div>
+        <h1 className="font-heading text-2xl font-bold text-[#14171A] leading-tight">{roomData.sala.title}</h1>
+        <div className="mt-5 p-4 rounded-[6px] border border-[#D9D5CC] bg-white space-y-2" role="status" aria-live="polite">
+          <p className="flex items-center gap-2 text-sm font-semibold text-[#14171A]">
+            <Clock className="w-4 h-4 stroke-[1.5] text-[#E4572E]" aria-hidden="true" />
+            Estás en la sala de espera
+          </p>
+          <p className="text-sm text-[#14171A]">
+            La Ronda 1 todavía no empieza. Cuando el anfitrión la abra, verás las opciones aquí.
+          </p>
+          <p className="text-xs text-[#5A554E]">No hace falta recargar: esta pantalla se actualiza sola.</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 max-w-[540px] w-full mx-auto px-4 pt-6 pb-28">
