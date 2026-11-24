@@ -181,7 +181,6 @@ export default function RoundFeedbackReport({
   );
   const allOpen = sorted.length > 0 && sorted.every((o) => open[o.id]);
   const toggleAll = () => setOpen(Object.fromEntries(sorted.map((o) => [o.id, !allOpen])));
-  const positionWord = final ? 'Posición final' : 'Posición sugerida';
 
   return (
     <div className="space-y-4">
@@ -236,7 +235,8 @@ export default function RoundFeedbackReport({
                 <span className="flex-1 min-w-0">
                   <span className="block font-sans font-semibold text-sm text-ink">{title}</span>
                   <span className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-ink/80 font-mono">
-                    <span>{positionWord}: {position}</span>
+                    {/* The final position is already the number on the left */}
+                    {!final && <span>Posición sugerida: {position}</span>}
                     <span>Tu posición: {mine ? `${mine}.º` : 'sin selección'}</span>
                     <span>Razones: {total}</span>
                   </span>
@@ -245,7 +245,7 @@ export default function RoundFeedbackReport({
               <div className="px-3 pb-3 space-y-2.5 border-t border-line pt-2.5">
                 {description && <p className="text-xs text-ink/80 leading-relaxed">{description}</p>}
                 <p className="text-xs font-medium text-ink">
-                  {final ? `Quedó en la posición ${position} con estas razones:` : `Se sugiere la posición ${position} por estas razones:`}
+                  {final ? `Quedó en la posición ${position} por estas razones:` : `Se sugiere la posición ${position} por estas razones:`}
                 </p>
                 <ReasonSideBlock side="FOR" reasons={reasons.reasonsFor} />
                 <ReasonSideBlock side="AGAINST" reasons={reasons.reasonsAgainst} />
