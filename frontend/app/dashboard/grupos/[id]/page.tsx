@@ -50,6 +50,7 @@ import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import RoomRosterManager from '@/components/RoomRosterManager';
 import RoundSchedulePanel from '@/components/RoundSchedulePanel';
 import ParticipationTable from '@/components/ParticipationTable';
+import ReasonModerationPanel from '@/components/ReasonModerationPanel';
 import ExportDownloads from '@/components/ExportDownloads';
 import { rankingHasTies } from '@/lib/ranking';
 import AgreementChart from '@/components/AgreementChart';
@@ -1151,6 +1152,12 @@ export default function RoomHostPage() {
           </div>
         )}
       </section>
+
+      {sala.status !== 'DRAFT' && (
+        <div className="pb-6 border-b border-line">
+          <ReasonModerationPanel roomId={sala.id} refreshKey={`${sala.status}:${sala.current_round}:${votesCount}`} />
+        </div>
+      )}
 
       <div className="pb-6 border-b border-line">
         <ParticipationTable roomId={sala.id} refreshKey={`${sala.status}:${sala.current_round}:${votesCount}:${totalParticipants}`} />

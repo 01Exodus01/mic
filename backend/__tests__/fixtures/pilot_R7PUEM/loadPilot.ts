@@ -156,5 +156,6 @@ export function loadPilotDataset(): ExportDataset {
       created_at: new Date(e.created_at),
     })),
     consents: [],
+    moderations: [],
   } as unknown as ExportDataset;
 }

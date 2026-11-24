@@ -109,7 +109,9 @@ export function toPublicationTables(tables: CsvTable[], ds: ExportDataset, opts:
     'votes_long.csv': { submitted_at: sinceRoundOpen('round', 'submitted_at') },
     'reasons.csv': {
       created_at: sinceRoundOpen('round', 'created_at'),
-      ...(opts.includeText ? {} : { text: { value: () => '' } }),
+      moderated_at: sinceRoundOpen('round', 'moderated_at'),
+      // A reason the host hid never goes out with its text in a public export
+      text: { value: (_row, col) => (opts.includeText && col('moderated') !== 'true' ? col('text') : '') },
     },
     'events.csv': { created_at: { drop: true } },
   };

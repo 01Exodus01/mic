@@ -11,6 +11,7 @@ import RoundFeedbackReport, {
   type FeedbackReportData,
 } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
+import HiddenReasonsNotice, { type HiddenReason } from '@/components/HiddenReasonsNotice';
 import RetiredNotice from '@/components/RetiredNotice';
 import ParticipantIdentity from '@/components/ParticipantIdentity';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -70,6 +71,7 @@ interface FeedbackRoomData {
   /** Why the process ended (only when CONCLUDED) */
   conclusion?: 'CONSENSUS' | 'MAX_ROUNDS' | null;
   displayName?: string | null;
+  myHiddenReasons?: HiddenReason[];
   consent?: { required: boolean; accepted: boolean; text: string | null };
 }
 
@@ -231,6 +233,13 @@ export default function ParticipantFeedbackPage() {
           </div>
         )}
       </div>
+
+      {/* Reasons of this participant hidden by the host */}
+      {(roomData.myHiddenReasons?.length ?? 0) > 0 && (
+        <div className="mb-6">
+          <HiddenReasonsNotice reasons={roomData.myHiddenReasons} />
+        </div>
+      )}
 
       {/* PT-19: tu concordancia y, por opción, tu posición, la del grupo y todas las razones */}
       <section>

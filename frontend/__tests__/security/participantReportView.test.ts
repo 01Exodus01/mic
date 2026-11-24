@@ -99,6 +99,10 @@ vi.mock('@mic/backend/db', () => ({
         reports: [storedReport],
       }),
     },
+    reasonModeration: {
+      // No reason hidden by the host in this report
+      findMany: async () => [],
+    },
     roundVoterMetric: {
       // PT-30: no stored row, so the view falls back to __metrics
       findUnique: async () => null,

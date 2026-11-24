@@ -18,6 +18,9 @@ export const ROOM_EVENT_TYPES = [
   // The host scheduled when the next round opens and closes, or removed that schedule
   'round_scheduled',
   'round_schedule_cancelled',
+  // The host hid a reason for inappropriate content, or showed it again (no text logged)
+  'reason_hidden',
+  'reason_shown',
   'deadline_extended',
   'room_cancelled',
   'pin_reset',

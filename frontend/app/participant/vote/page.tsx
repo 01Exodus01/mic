@@ -13,6 +13,7 @@ import ReasonListsField, {
 import { trackEvent, useReportReadTracker } from '@/lib/telemetry/client';
 import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
+import HiddenReasonsNotice, { type HiddenReason } from '@/components/HiddenReasonsNotice';
 import RetiredNotice from '@/components/RetiredNotice';
 import { formatClosingMoment, formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import { toast } from 'sonner';
@@ -60,6 +61,7 @@ interface ParticipantRoomData {
   }>;
   latestReport: FeedbackReportData | null;
   displayName?: string | null;
+  myHiddenReasons?: HiddenReason[];
   consent?: { required: boolean; accepted: boolean; text: string | null };
   isExpired: boolean;
   serverTime?: string;
@@ -520,6 +522,13 @@ export default function ParticipantVotePage() {
             >
               {timeLeft}
             </span>
+          </div>
+        )}
+
+        {/* Reasons of this participant hidden by the host */}
+        {(roomData?.myHiddenReasons?.length ?? 0) > 0 && (
+          <div className="mt-3">
+            <HiddenReasonsNotice reasons={roomData?.myHiddenReasons} />
           </div>
         )}
 

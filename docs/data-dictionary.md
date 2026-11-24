@@ -6,6 +6,8 @@ Este documento especifica la estructura, formato, tipos de datos, fórmulas mate
 
 > **"Sala" ahora es "Grupo" (formato `r-fast-cr-export/2`, 2026-11-24).** `rooms.csv` pasó a llamarse `groups.csv`, y las columnas `room_id`, `room_name` y `room_status` pasaron a `group_id`, `group_name` y `group_status` (en el modo publicación el alias del grupo es `group`). En `events.csv`, `room_cancelled` es `group_cancelled` y los motivos de `join_failed` `room_unavailable`, `room_concluded` y `room_full` son `group_unavailable`, `group_concluded` y `group_full`. Los scripts escritos para el formato 1 deben renombrar esas columnas. Las rutas de la API (`/api/rooms/...`) no cambiaron.
 
+> **Razones moderadas (2026-11-24).** El anfitrión puede ocultar razones inadecuadas sin saber quién las escribió. En `reasons.csv`, `moderated` = true y `moderated_at` indican cuáles y cuándo: no se mostraron en la retroalimentación y su autor recibió un aviso; su selección contó igual. En el modo publicación, el texto de una razón moderada siempre sale vacío.
+
 > **Terminología.** En la plataforma, el orden de opciones que envía un participante se llama *selección* (no "voto"). Los nombres de archivos y columnas conservan `vote` (`votes_long.csv`, `vote_version`, `vote_submitted`) porque son el contrato con los scripts de análisis.
 
 ---
@@ -79,6 +81,7 @@ Además de los eventos del servidor (apertura y cierre de rondas, ingresos, env�
 | `join_failed` | Ingreso rechazado a un grupo que existe. | `reason` (`wrong_pin`, `locked_out`, `retired`, `group_unavailable`, `group_concluded`, `late_join_closed`, `group_full`, `invalid_code`, `removed_member`), `mode` (`pin` / `roster`), `device_tag` |
 | `round_scheduled` | El anfitrión programó cuándo se abre y se cierra la ronda siguiente (antes de la Ronda 1 o entre rondas). La ronda programada se abre sola y queda como `round_opened` con `actor` `SYSTEM` y `scheduled` = true. | `opens_at`, `closes_at`, `minutes`, `timing` |
 | `round_schedule_cancelled` | El anfitrión quitó la programación. | — |
+| `reason_hidden` / `reason_shown` | El anfitrión ocultó una razón por contenido inadecuado, o la volvió a mostrar. Nunca se guarda el texto. | `option_id`, `side` |
 
 `report_viewed` (el servidor entregó el informe) sigue existiendo, pero **no es una lectura**: en el export normalizado se llama `report_delivered`, y la lectura real es `report_read`. `participant_joined` lleva `returning` (reingreso) y `device_tag`. `device_tag` es una etiqueta aleatoria que guarda el navegador para contar reintentos de un mismo dispositivo; no identifica a nadie ni se liga al nombre o código escrito.
 

@@ -100,6 +100,7 @@ model Room {
   events        RoomEvent[]
   members       RoomMember[]
   consents      ConsentRecord[]
+  moderatedReasons ReasonModeration[]
 
   @@index([status, deadline])
   @@index([status, scheduled_open_at])
@@ -137,6 +138,7 @@ model Participant {
   member     RoomMember?
   consents   ConsentRecord[]
   voterMetrics RoundVoterMetric[]
+  moderatedReasons ReasonModeration[]
 
   @@unique([room_id, nickname])
   @@unique([room_id, blind_code])
@@ -280,3 +282,23 @@ model RoundVoterMetric {
   @@index([room_id, round])
 }
 
+// A reason the host hid for inappropriate content (team request 2026-11-24).
+// The reason stays in the votes and in the round report (immutable); it is
+// left out of what participants see, and its author is told. Keyed by content,
+// so it stays hidden if the same text is sent again in that round. The host
+// never learns who wrote it.
+model ReasonModeration {
+  id             String      @id @default(cuid())
+  room_id        String
+  room           Room        @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  round          Int
+  participant_id String
+  participant    Participant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+  option_id      String
+  side           ReasonSide
+  text           String      @db.VarChar(200)
+  created_at     DateTime    @default(now())
+
+  @@unique([room_id, round, participant_id, option_id, side, text])
+  @@index([room_id, round])
+}

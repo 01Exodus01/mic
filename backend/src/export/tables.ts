@@ -8,6 +8,7 @@
  */
 
 import { computeVoterCIX, type ConcordanceIndex } from '@mic/backend/algorithms/kendallTau';
+import { moderationKey } from '@mic/backend/reason-moderation';
 import type { WeakOrder } from '@mic/backend/algorithms/types';
 import { PROCEDURE_VERSION } from '@mic/backend/round-processor';
 import { APP_VERSION, EXPORT_TIMEZONE, bool, isoUtc, metric, snakeCase, type Cell, type CsvTable } from './format';
@@ -526,6 +527,10 @@ export function roundMetricsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
 
 export function reasonsTable(ds: ExportDataset, ctx: Ctx, opts: { includeText: boolean }): CsvTable {
   const rows: Cell[][] = [];
+  // Reasons the host hid: still exported (research), flagged with the moment of the decision
+  const hiddenAt = new Map(
+    (ds.moderations ?? []).map((m) => [`${m.round}\u0000${moderationKey(m.participant_id, m.option_id, m.side, m.text)}`, m.created_at])
+  );
   const sorted = [...ds.votes].sort(
     (a, b) =>
       a.round - b.round ||
@@ -535,15 +540,19 @@ export function reasonsTable(ds: ExportDataset, ctx: Ctx, opts: { includeText: b
   for (const v of sorted) {
     const code = ctx.blindCode.get(v.participant_id) ?? '';
     if (v.justification) {
-      rows.push([`legacy-${v.id}`, v.round, code, v.option_id, 'LEGACY', 0, opts.includeText ? v.justification : '', isoUtc(v.created_at)]);
+      rows.push([`legacy-${v.id}`, v.round, code, v.option_id, 'LEGACY', 0, opts.includeText ? v.justification : '', isoUtc(v.created_at), bool(false), '']);
     }
     for (const r of [...v.reasons].sort((a, b) => a.side.localeCompare(b.side) || a.order_index - b.order_index)) {
-      rows.push([r.id, v.round, code, v.option_id, r.side, r.order_index, opts.includeText ? r.text : '', isoUtc(r.created_at)]);
+      const moderatedAt = hiddenAt.get(`${v.round}\u0000${moderationKey(v.participant_id, v.option_id, r.side, r.text)}`) ?? null;
+      rows.push([
+        r.id, v.round, code, v.option_id, r.side, r.order_index, opts.includeText ? r.text : '', isoUtc(r.created_at),
+        bool(moderatedAt !== null), moderatedAt ? isoUtc(moderatedAt) : '',
+      ]);
     }
   }
   return {
     name: 'reasons.csv',
-    headers: ['reason_id', 'round', 'blind_code', 'option_id', 'side', 'order', 'text', 'created_at'],
+    headers: ['reason_id', 'round', 'blind_code', 'option_id', 'side', 'order', 'text', 'created_at', 'moderated', 'moderated_at'],
     rows,
   };
 }

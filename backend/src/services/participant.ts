@@ -34,6 +34,7 @@ import { recordRoomEvent } from '@mic/backend/room-events';
 import { hashMemberCode, isWellFormedMemberCode } from '@mic/backend/shared/member-codes';
 import { displayOrderFor, displayedPositions } from '@mic/backend/option-order';
 import { conclusionReason, type ConclusionReason } from '@mic/backend/conclusion';
+import { moderatedKeys, moderationKey } from '@mic/backend/reason-moderation';
 import type { RequestContext, ParticipantSession as ParticipantSessionPayload } from './context';
 
 export interface ParticipantRoomViewData {
@@ -78,6 +79,8 @@ export interface ParticipantRoomViewData {
    * label is never shown). The blind code is not shown on screen: it is for the data.
    */
   displayName: string | null;
+  /** This participant's reasons hidden by the host (inappropriate content), in any round */
+  myHiddenReasons: Array<{ round: number; optionTitle: string; side: 'FOR' | 'AGAINST'; text: string }>;
   /** PT-24: informed consent of the room; text only when it is required */
   consent: { required: boolean; accepted: boolean; version: number; text: string | null };
   isExpired: boolean;
@@ -178,18 +181,22 @@ function toArgumentsView(
   return result;
 }
 
+/** Whether a report reason was hidden by the host (reason-moderation.ts) */
+type HiddenReasonCheck = (optionId: string, side: 'FOR' | 'AGAINST', blindCode: unknown, text: string) => boolean;
+
 function toReasonsView(
   raw: unknown,
   optionIds: string[],
   reportId: string,
-  myBlindCode: string | null
+  myBlindCode: string | null,
+  isHidden: HiddenReasonCheck = () => false
 ): Record<string, ParticipantOptionReasonsView> {
   const source = isRecord(raw) && isRecord(raw.__reasons) ? raw.__reasons : {};
   const pick = (optionId: string, side: string, list: unknown): ParticipantReasonView[] =>
     Array.isArray(list)
       ? list
           .flatMap((r, i) =>
-            isRecord(r) && typeof r.text === 'string'
+            isRecord(r) && typeof r.text === 'string' && !isHidden(optionId, side === 'for' ? 'FOR' : 'AGAINST', r.blindCode, r.text)
               ? [
                   {
                     key: mixedOrderKey(reportId, optionId, side, i),
@@ -242,7 +249,8 @@ function toParticipantReportView(
   optionIds: string[],
   participantId: string,
   myPositions: Record<string, number>,
-  myBlindCode: string | null = null
+  myBlindCode: string | null = null,
+  isHidden: HiddenReasonCheck = () => false
 ): ParticipantReportView {
   const ranking = toRankingView(report.collective_ranking);
   const args = toArgumentsView(report.arguments_json, optionIds, report.id);
@@ -252,7 +260,7 @@ function toParticipantReportView(
     obtained_tau: report.obtained_tau,
     collective_ranking: ranking,
     arguments_json: args,
-    reasonsByOption: toReasonsView(report.arguments_json, optionIds, report.id, myBlindCode),
+    reasonsByOption: toReasonsView(report.arguments_json, optionIds, report.id, myBlindCode, isHidden),
     tieBreak: toTieBreakView(report.arguments_json),
     myConcordance: toOwnConcordance(report.arguments_json, participantId),
     myPositions,
@@ -1085,15 +1093,39 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
       : [];
     const myPositions = Object.fromEntries(reportVotes.map((v) => [v.option_id, v.position]));
 
+    // Reasons the host hid (inappropriate content) are left out of the report
+    let isHidden: HiddenReasonCheck = () => false;
+    if (latestReport) {
+      const hidden = await moderatedKeys(room.id, latestReport.round);
+      if (hidden.size > 0) {
+        const codes = await prisma.participant.findMany({ where: { room_id: room.id }, select: { id: true, blind_code: true } });
+        const byCode = new Map(codes.map((c) => [c.blind_code, c.id]));
+        isHidden = (optionId, side, blindCode, text) => {
+          const pid = typeof blindCode === 'string' ? byCode.get(blindCode) : undefined;
+          return pid !== undefined && hidden.has(moderationKey(pid, optionId, side, text));
+        };
+      }
+    }
     const mappedReport = latestReport
       ? toParticipantReportView(
           latestReport,
           room.options.map((o) => o.id),
           session.participantId,
           myPositions,
-          participant.blind_code
+          participant.blind_code,
+          isHidden
         )
       : null;
+
+    // Only the author is told which of their reasons was hidden, and that the selection still counts
+    const optionTitle = new Map(room.options.map((o) => [o.id, o.title]));
+    const myHiddenReasons = (
+      await prisma.reasonModeration.findMany({
+        where: { room_id: room.id, participant_id: session.participantId },
+        orderBy: [{ round: 'asc' }, { created_at: 'asc' }],
+        select: { round: true, option_id: true, side: true, text: true },
+      })
+    ).map((m) => ({ round: m.round, optionTitle: optionTitle.get(m.option_id) ?? '', side: m.side, text: m.text }));
 
     // PT-30: own cix from RoundVoterMetric when the report has rows there
     if (mappedReport && latestReport) {
@@ -1136,6 +1168,7 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
         latestReport: mappedReport,
         conclusion: conclusionReason(room.status, room.tau_threshold, room.reports[room.reports.length - 1]),
         displayName: room.access_mode === 'OPEN_PIN' ? participant.nickname : null,
+        myHiddenReasons,
         consent: {
           required: room.consent_required,
           accepted: !room.consent_required || (await hasAcceptedConsent(session.participantId, room.consent_version)),

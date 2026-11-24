@@ -120,6 +120,14 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   participantes tardíos, cierre anticipado y consentimiento (un texto nuevo sube
   la versión). Desde la Ronda 1 la configuración no cambia. Pedido del equipo
   2026-11-24 (E-16).
+- Moderación de razones (E-18): el anfitrión ve las razones de cada ronda sin
+  autor (ordenadas por texto) y puede ocultar las inadecuadas, durante la ronda
+  y después, y deshacerlo. Una razón oculta no aparece en la retroalimentación
+  de nadie; su autor ve un aviso con el texto; la selección sigue contando y
+  ningún cálculo cambia. Se guarda en `ReasonModeration` (por contenido: si se
+  reenvía igual, sigue oculta); el informe de la ronda no se modifica. El export
+  de investigación la conserva con `moderated`; el de publicación nunca trae su
+  texto. La bitácora (`reason_hidden`, `reason_shown`) no guarda el texto.
 - Sala de espera: los participantes pueden ingresar en DRAFT y esperan sin ver
   las opciones; se muestran al abrirse la Ronda 1 (todos con el mismo tiempo).
 - Rondas programadas: en DRAFT (Ronda 1) o en ROUND_FEEDBACK (la siguiente), el
@@ -398,6 +406,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-15 | 2026-11-24 | Modo oscuro por defecto, claro a elección; colores solo por tokens de tema | Pedido del equipo. Reemplaza "modo claro únicamente" |
 | E-16 | 2026-11-24 | "Sala" pasa a "Grupo" en pantalla, URLs y export; sala de espera, edición antes de la Ronda 1 y rondas programadas; hasta 70 participantes y 50 opciones; en grupos con lista el anfitrión ve solo totales por ronda | Pedidos del equipo tras el testeo. Export `r-fast-cr-export/2`. Migración aditiva `scheduled_open_at`, `scheduled_deadline` |
 | E-17 | 2026-11-24 | Hora límite opcional: "Sin hora límite" por defecto al abrir, reabrir o programar una ronda | Pedido del equipo. La ronda la cierra el anfitrión (o el cierre anticipado) |
+| E-18 | 2026-11-24 | Moderación de razones por el anfitrión, sin ver autores; aviso al autor; la selección cuenta | Pedido del equipo por razones ofensivas. Migración aditiva `ReasonModeration`; `reasons.csv` agrega `moderated`, `moderated_at` |
 
 ### Especificación en PDF superada
 

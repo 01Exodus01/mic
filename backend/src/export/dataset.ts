@@ -32,7 +32,7 @@ export async function loadExportDataset(prisma: PrismaClient, roomId: string) {
   });
   if (!room) return null;
 
-  const [options, participants, votes, revisions, reports, voterMetrics, events, consents] = await Promise.all([
+  const [options, participants, votes, revisions, reports, voterMetrics, events, consents, moderations] = await Promise.all([
     prisma.option.findMany({ where: { room_id: roomId }, select: { id: true, order_index: true }, orderBy: { order_index: 'asc' } }),
     prisma.participant.findMany({
       where: { room_id: roomId },
@@ -59,9 +59,14 @@ export async function loadExportDataset(prisma: PrismaClient, roomId: string) {
     prisma.roundVoterMetric.findMany({ where: { room_id: roomId } }),
     prisma.roomEvent.findMany({ where: { room_id: roomId }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }] }),
     prisma.consentRecord.findMany({ where: { room_id: roomId }, select: { participant_id: true, accepted_at: true, text_version: true } }),
+    // Reasons hidden by the host (inappropriate content)
+    prisma.reasonModeration.findMany({
+      where: { room_id: roomId },
+      select: { round: true, participant_id: true, option_id: true, side: true, text: true, created_at: true },
+    }),
   ]);
 
-  return { room, options, participants, votes, revisions, reports, voterMetrics, events, consents };
+  return { room, options, participants, votes, revisions, reports, voterMetrics, events, consents, moderations };
 }
 
 export type ExportDataset = NonNullable<Awaited<ReturnType<typeof loadExportDataset>>>;

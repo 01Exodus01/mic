@@ -83,7 +83,8 @@ describe('capas: el frontend usa el backend solo por sus puertas', () => {
 
   it('las server actions son adaptadores: sin base de datos y sin exponer el login', () => {
     const actions = sourceFiles(path.join(ROOT, 'frontend/app/actions'));
-    expect(actions.length).toBe(3);
+    // auth, participant, room, moderation
+    expect(actions.length).toBe(4);
     for (const f of actions) {
       const src = fs.readFileSync(f, 'utf8');
       expect(src.startsWith("'use server';"), rel(f)).toBe(true);
