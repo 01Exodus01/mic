@@ -41,7 +41,7 @@ describe('PT-10: tipos de evento', () => {
   });
 });
 
-describe.skipIf(!hasTestDb)('PT-10: bitácora de la sala (PostgreSQL)', () => {
+describe.skipIf(!hasTestDb)('PT-10: bitácora del grupo (PostgreSQL)', () => {
   let prisma: PrismaClient;
   const fixtures: RoomFixture[] = [];
 

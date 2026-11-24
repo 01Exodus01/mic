@@ -92,7 +92,7 @@ describe.skipIf(!hasTestDb)('sala finalizada: reingreso para ver resultados (Pos
     expect(await prisma.participant.count({ where: { room_id: fx.roomId } })).toBe(1);
   });
 
-  it('una sala cancelada sigue cerrada para todos', async () => {
+  it('un grupo cancelado sigue cerrado para todos', async () => {
     const fx = await createRoomFixture(prisma, { participants: 1, status: 'CANCELLED' });
     fixtures.push(fx);
     const p = await import('@/app/actions/participant');

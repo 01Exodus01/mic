@@ -26,7 +26,7 @@ export const TIE_BREAK_LABELS: Record<TieBreakRuleValue, { name: string; help: s
     help: 'Entre opciones empatadas, va primero la que más participantes pusieron antes que la otra en esta ronda. Si siguen igualadas, decide el orden alfabético del título.',
   },
   NONE: {
-    name: 'Mantener los empates (salas anteriores)',
+    name: 'Mantener los empates (grupos anteriores)',
     help: 'Si dos opciones quedan igualadas, se muestran empatadas.',
   },
   LEXICOGRAPHIC: {
@@ -52,7 +52,7 @@ export const VARIANT_LABELS: Record<ConcordanceVariantValue, { name: string; hel
 
 export const ACCESS_LABELS: Record<RoomSettingsValue['accessMode'], { name: string; help: string }> = {
   OPEN_PIN: {
-    name: 'Con el PIN de la sala',
+    name: 'Con el PIN del grupo',
     help: 'Cualquier persona con el PIN entra con un nombre y un PIN personal de 4 dígitos.',
   },
   ROSTER: {
@@ -126,7 +126,7 @@ export default function RoomAdvancedSettings({ value, onChange, error, lockAcces
       <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-ink">
         Opciones avanzadas
         <span className="block text-xs font-normal text-ink-2 mt-0.5">
-          Si no cambias nada, la sala funciona como siempre. No se pueden cambiar después de iniciar la sala.
+          Si no cambias nada, el grupo funciona como siempre. No se pueden cambiar después de iniciar el grupo.
         </span>
       </summary>
       <div className="px-4 pb-4 pt-1 space-y-5">
@@ -211,7 +211,7 @@ export function RoomSettingsSummary({
   ];
   return (
     <details className="rounded-[6px] border border-line bg-paper text-xs">
-      <summary className="cursor-pointer select-none px-3 py-2 font-semibold text-ink">Configuración de la sala</summary>
+      <summary className="cursor-pointer select-none px-3 py-2 font-semibold text-ink">Configuración del grupo</summary>
       <dl className="px-3 pb-3 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         {rows.map(([k, v]) => (
           <React.Fragment key={k}>

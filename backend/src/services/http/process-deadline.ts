@@ -15,7 +15,7 @@ import { openScheduledRoundIfDue } from '@mic/backend/round-schedule';
 import { env } from '@mic/backend/env';
 
 const ProcessDeadlineSchema = z.object({
-  roomId: z.string().min(1, 'El identificador de sala es obligatorio.'),
+  roomId: z.string().min(1, 'El identificador de grupo es obligatorio.'),
 });
 
 export async function processDeadline(ctx: RequestContext, input: { workerSecret: string | null; bodyText: string }): Promise<ServiceResponse> {
@@ -70,11 +70,11 @@ export async function processDeadline(ctx: RequestContext, input: { workerSecret
     });
 
     if (!room) {
-      return { status: 404, body: { error: 'Sala no encontrada.' } };
+      return { status: 404, body: { error: 'Grupo no encontrado.' } };
     }
 
     if (room.status !== 'ROUND_OPEN') {
-      return { status: 409, body: { error: 'La sala no tiene una ronda abierta.' } };
+      return { status: 409, body: { error: 'El grupo no tiene una ronda abierta.' } };
     }
 
     if (!room.deadline || new Date() < room.deadline) {

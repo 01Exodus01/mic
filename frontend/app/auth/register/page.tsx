@@ -196,7 +196,7 @@ export default function RegisterPage() {
             Crear cuenta de anfitrión
           </h1>
           <p className="text-xs text-ink-2">
-            Registra tus datos para organizar actividades y salas.
+            Registra tus datos para organizar actividades y grupos.
           </p>
         </div>
 

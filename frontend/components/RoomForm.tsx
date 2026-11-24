@@ -336,16 +336,16 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
 
       if (editing && roomId) {
         const res = await updateRoom(roomId, input);
-        if (res.success) router.push(`/dashboard/rooms/${roomId}`);
+        if (res.success) router.push(`/dashboard/grupos/${roomId}`);
         else setServerError(res.error || 'No fue posible guardar los cambios.');
       } else {
         const res = await createRoom(input);
         if (res.success) {
           if (res.data) {
-            router.push(`/dashboard/rooms/${res.data.salaId}`);
+            router.push(`/dashboard/grupos/${res.data.salaId}`);
           }
         } else {
-          setServerError(res.error || 'No fue posible crear la sala.');
+          setServerError(res.error || 'No fue posible crear el grupo.');
         }
       }
     } catch (err: unknown) {
@@ -387,25 +387,25 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
 
   return (
     <div className="w-full">
-      {/* Migas de pan y Volver a salas (AUD-23) */}
+      {/* Migas de pan y Volver a grupos (AUD-23) */}
       <nav aria-label="Migas de pan" className="mb-4 flex items-center gap-2 text-xs">
         <Link
-          href={editing ? `/dashboard/rooms/${roomId}` : '/dashboard'}
+          href={editing ? `/dashboard/grupos/${roomId}` : '/dashboard'}
           className="inline-flex items-center gap-1 text-ink-2 hover:text-ink hover:underline transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
-          <span>{editing ? 'Volver al grupo' : 'Volver a salas'}</span>
+          <span>{editing ? 'Volver al grupo' : 'Volver a grupos'}</span>
         </Link>
         <span className="text-line" aria-hidden="true">/</span>
         <span className="text-ink font-medium" aria-current="page">
-          {editing ? 'Editar grupo' : 'Nueva sala'}
+          {editing ? 'Editar grupo' : 'Nuevo grupo'}
         </span>
       </nav>
 
       {/* Page Header */}
       <div className="pb-6 mb-6 border-b border-line">
         <h1 className="font-heading text-2xl font-bold text-ink tracking-tight">
-          {editing ? 'Editar grupo' : 'Nueva sala'}
+          {editing ? 'Editar grupo' : 'Nuevo grupo'}
         </h1>
         <p className="text-xs text-ink-2 mt-1">
           {editing
@@ -429,7 +429,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
         <section className="space-y-4">
           <div>
             <h2 className="text-sm font-semibold text-ink">
-              1. Identificación de la sala
+              1. Identificación del grupo
             </h2>
             <p className="text-xs text-ink-2 mt-0.5">
               Título general visible para todos los participantes durante la actividad.
@@ -914,7 +914,7 @@ export default function RoomForm({ roomId, initial }: { roomId?: string; initial
             disabled={isSubmitDisabled}
             className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[6px] bg-brand text-white text-xs font-semibold hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-none"
           >
-            <span>{editing ? (loading ? 'Guardando...' : 'Guardar cambios') : loading ? 'Creando sala...' : 'Crear sala'}</span>
+            <span>{editing ? (loading ? 'Guardando...' : 'Guardar cambios') : loading ? 'Creando grupo...' : 'Crear grupo'}</span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
           </button>
           {isSubmitDisabled && submitMotive && (

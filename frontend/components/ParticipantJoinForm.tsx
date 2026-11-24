@@ -67,7 +67,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
         if (res.success && res.data) {
           setAccessMode(res.data.accessMode);
         } else {
-          setPinServerError((!res.success && res.error) || 'No se puede ingresar a esa sala. Revisa el PIN.');
+          setPinServerError((!res.success && res.error) || 'No se puede ingresar a ese grupo. Revisa el PIN.');
           setStep(1);
         }
       })
@@ -99,7 +99,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
   const validatePin = (val: string): string | null => {
     const res = RoomPinSchema.safeParse(val);
     if (!res.success) {
-      return res.error.errors[0]?.message || 'El PIN de la sala debe tener 6 caracteres alfanuméricos.';
+      return res.error.errors[0]?.message || 'El PIN del grupo debe tener 6 caracteres alfanuméricos.';
     }
     return null;
   };
@@ -152,7 +152,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
     try {
       const res = await verifyRoomPin(pin);
       if (!res.success) {
-        setPinServerError(res.error || 'No se puede ingresar a esa sala. Revisa el PIN.');
+        setPinServerError(res.error || 'No se puede ingresar a ese grupo. Revisa el PIN.');
         pinInputRef.current?.focus();
         return;
       }
@@ -160,7 +160,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
       setAccessMode(res.data?.accessMode ?? 'OPEN_PIN');
       goToStep(2);
     } catch {
-      setPinServerError('No se puede ingresar a esa sala. Revisa el PIN.');
+      setPinServerError('No se puede ingresar a ese grupo. Revisa el PIN.');
       pinInputRef.current?.focus();
     } finally {
       setLoading(false);
@@ -248,7 +248,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
         toast.success('Ingreso confirmado');
         router.push('/participant/vote');
       } else {
-        const errorMsg = res.error || 'No fue posible ingresar a la sala.';
+        const errorMsg = res.error || 'No fue posible ingresar al grupo.';
         setPin4ServerError(errorMsg);
         pin4InputRef.current?.focus();
       }
@@ -303,7 +303,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
             </span>
             {pin && (
               <span className="border border-line px-2 py-0.5 rounded-[999px] text-ink">
-                Sala {pin}
+                Grupo {pin}
               </span>
             )}
           </div>
@@ -311,7 +311,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
           {step === 1 && (
             <div>
               <h1 className="font-heading text-2xl font-bold text-ink leading-tight">
-                Ingreso a la sala
+                Ingreso al grupo
               </h1>
               <p className="text-sm text-ink-2 mt-1">
                 Escribe el PIN de 6 caracteres indicado por el anfitrión.
@@ -348,14 +348,14 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
               </h1>
               <p className="text-sm text-ink-2 mt-1">
                 {isReturningUser
-                  ? 'Este nombre ya está registrado en la sala. Ingresa tu PIN personal para continuar.'
+                  ? 'Este nombre ya está registrado en el grupo. Ingresa tu PIN personal para continuar.'
                   : 'Crea un PIN personal de 4 dígitos para volver a entrar en las siguientes rondas.'}
               </p>
             </div>
           )}
         </div>
 
-        {/* PASO 1: PIN de sala */}
+        {/* PASO 1: PIN de grupo */}
         {step === 1 && (
           <form onSubmit={handleStep1Submit} className="space-y-4" noValidate>
             <div>
@@ -363,7 +363,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                 htmlFor="room-pin-input"
                 className="block text-xs font-medium text-ink mb-2"
               >
-                PIN de sala
+                PIN de grupo
               </label>
               <input
                 ref={pinInputRef}
@@ -407,7 +407,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
           </form>
         )}
 
-        {/* PASO 2 (sala con lista): código personal */}
+        {/* PASO 2 (grupo con lista): código personal */}
         {step === 2 && isRoster && (
           <RosterCodeStep
             roomPin={pin.trim().toUpperCase()}
@@ -496,7 +496,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                 onClick={handleChangeRoom}
                 className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink transition-colors"
               >
-                Cambiar sala
+                Cambiar grupo
               </button>
             </div>
           </form>
@@ -568,7 +568,7 @@ export default function ParticipantJoinForm({ initialPin = '' }: ParticipantJoin
                 onClick={handleChangeRoom}
                 className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink transition-colors"
               >
-                Cambiar sala
+                Cambiar grupo
               </button>
             </div>
           </form>

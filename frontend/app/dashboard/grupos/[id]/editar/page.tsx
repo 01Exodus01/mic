@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * app/dashboard/rooms/[id]/edit/page.tsx
+ * app/dashboard/grupos/[id]/editar/page.tsx
  * Edit a group before round 1: the creation form with the group's values.
  * Once round 1 has opened it sends the host back to the group.
  */
@@ -45,7 +45,7 @@ export default function EditRoomPage() {
       const room = res.data.room as unknown as EditableRoom;
       if (room.status !== 'DRAFT') {
         toast.info('La configuración solo se puede cambiar antes de abrir la Ronda 1.');
-        router.push(`/dashboard/rooms/${roomId}`);
+        router.push(`/dashboard/grupos/${roomId}`);
         return;
       }
       setInitial({

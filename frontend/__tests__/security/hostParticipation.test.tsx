@@ -110,7 +110,7 @@ describe.skipIf(!hasTestDb)('PT-25: participación por ronda (PostgreSQL)', () =
     ]);
   });
 
-  it('con lista: el estado de la sala no dice quién envió ni trae el nombre interno', async () => {
+  it('con lista: el estado del grupo no dice quién envió ni trae el nombre interno', async () => {
     const { getRoomStatus } = await import('@/app/actions/room');
     const res = await getRoomStatus(fx!.roomId);
     if (!res.success || !res.data) throw new Error('status failed');

@@ -9,7 +9,7 @@
  *    - Round 3 with deliberative convergence (tau* >= threshold -> CONCLUDED).
  * 2. Early convergence scenario (Round 1 tau* >= threshold -> CONCLUDED immediately).
  * 3. Desertion/expulsion in Round 2: Round 1 votes retained, Round 2 active votes purged, remaining 3 continue.
- * 4. Cancellation scenario: room_status reflects CANCELLED in the export (rooms.csv).
+ * 4. Cancellation scenario: group_status reflects CANCELLED in the export (groups.csv).
  * 5. Full mathematical reproducibility: CSV data enables exact recalculation of each tau*.
  */
 
@@ -207,12 +207,12 @@ describe('CIERRE §1: Simulación Completa Multirronda y Reproducibilidad', () =
   });
 
   describe('Escenario 4: Cancelación de Actividad y Registro en CSV', () => {
-    it('distingue actividades canceladas con room_status = CANCELLED en el export', () => {
+    it('distingue actividades canceladas con group_status = CANCELLED en el export', () => {
       const ds = loadPilotDataset();
       ds.room.status = 'CANCELLED';
       const tables = buildExportTables(ds);
-      const rooms = tables.find((t) => t.name === 'rooms.csv')!;
-      expect(rooms.rows[0][rooms.headers.indexOf('room_status')]).toBe('CANCELLED');
+      const rooms = tables.find((t) => t.name === 'groups.csv')!;
+      expect(rooms.rows[0][rooms.headers.indexOf('group_status')]).toBe('CANCELLED');
       // the reports of the rounds closed before the cancellation are kept
       const metrics = tables.find((t) => t.name === 'round_metrics.csv')!;
       expect(metrics.rows.map((r) => r[0])).toEqual([1, 2]);

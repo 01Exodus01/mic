@@ -1,7 +1,7 @@
 /**
  * __tests__/security/retiredAndClosed.test.tsx
  * Edge cases with the vote screen open:
- *  - expelled participant: clear "Fuiste retirado de la sala" (RETIRED), on the
+ *  - expelled participant: clear "Fuiste retirado del grupo" (RETIRED), on the
  *    view, on submitVote and on the sync endpoint;
  *  - round closed while the client timer still showed time: ROOM_CLOSED with
  *    "La ronda ya se cerró", ballot not stored.
@@ -44,7 +44,7 @@ vi.mock('@mic/backend/rate-limit', () => ({
 describe('Aviso de retiro', () => {
   it('dice con claridad que fue retirado y ofrece salir', () => {
     const html = renderToStaticMarkup(<RetiredNotice />);
-    expect(html).toContain('Fuiste retirado de la sala');
+    expect(html).toContain('Fuiste retirado del grupo');
     expect(html).toContain('Salir');
     expect(html).toContain('role="alert"');
   });
@@ -75,7 +75,7 @@ describe.skipIf(!hasTestDb)('Pantalla de voto abierta (PostgreSQL)', () => {
     await expelParticipant(fx.roomId, fx.participantIds[0]);
 
     const view = await getParticipantRoomView();
-    expect(view).toMatchObject({ success: false, code: 'RETIRED', error: 'Fuiste retirado de la sala. Tus selecciones anteriores se conservan.' });
+    expect(view).toMatchObject({ success: false, code: 'RETIRED', error: 'Fuiste retirado del grupo. Tus selecciones anteriores se conservan.' });
     expect(await submitVote(ballot(fx))).toMatchObject({ success: false, code: 'RETIRED' });
 
     state.hostId = null;

@@ -138,7 +138,7 @@ describe('Grupo 5: Voto enviado, cronómetros, tiempo real y presets', () => {
       expect(json.error).toBe('No autorizado.');
     });
 
-    it('valida que el parámetro ID de sala sea obligatorio', async () => {
+    it('valida que el parámetro ID de grupo sea obligatorio', async () => {
       const req = new NextRequest('http://localhost:3000/api/rooms//sync');
       const res = await syncHandler(req, { params: { id: '' } });
 

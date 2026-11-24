@@ -19,10 +19,10 @@ export async function exportZip(ctx: RequestContext, params: { id: string }, inp
     if (!hostId) return { status: 401, body: 'No autorizado' };
 
     const owned = await prisma.room.findFirst({ where: { id: params.id, host_id: hostId }, select: { id: true, pin: true } });
-    if (!owned) return { status: 404, body: 'Sala no encontrada' };
+    if (!owned) return { status: 404, body: 'Grupo no encontrado' };
 
     const dataset = await loadExportDataset(prisma, owned.id);
-    if (!dataset) return { status: 404, body: 'Sala no encontrada' };
+    if (!dataset) return { status: 404, body: 'Grupo no encontrado' };
 
     const opts = exportOptionsFrom(input.searchParams);
     const { zip } = buildExportZip(dataset, opts);

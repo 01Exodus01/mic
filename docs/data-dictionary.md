@@ -2,7 +2,9 @@
 
 Este documento especifica la estructura, formato, tipos de datos, fórmulas matemáticas y semántica de las exportaciones CSV generadas por GDSS r-FAST-CR para análisis estadístico, psicométrico y de teoría de elección social en software como R, Python (Pandas/SciPy) o Julia.
 
-> **Export normalizado (ZIP).** Desde el plan de mejora de los reportes, el panel de la sala descarga un ZIP con un archivo por granularidad (`rooms`, `options`, `participants`, `rounds`, `votes_long`, `voter_round_metrics`, `option_round_scores`, `round_metrics`, `reasons`, `events`), un `README_data_dictionary.md` generado con cada columna, su tipo, unidad y rango, y un `manifest.json` con el hash SHA-256 de cada archivo, la fecha y las versiones. Hay dos modos: **investigación** (datos completos, fechas ISO 8601 en UTC) y **publicación** (sin fechas absolutas, solo segundos desde la apertura de cada ronda; sin identificadores internos ni nombre de sala; sin texto de las razones salvo que se marque que su publicación fue aprobada). La lista del curso nunca entra al ZIP. Rutas: `/api/rooms/<id>/export/v2` (ZIP, `?mode=publication`, `&include_text=1`) y `/api/rooms/<id>/export/v2/<archivo>.csv`. Las columnas de cada archivo (tipo, unidad y rango) están en el `README_data_dictionary.md` de cada ZIP, que se genera con las columnas que ese export realmente trae; este documento explica las métricas y los eventos. Los archivos anteriores (`matrix_long`, `matrix_wide_metrics` y las primeras versiones de `reasons` y `events`) se retiraron el 2026-11-05.
+> **Export normalizado (ZIP).** Desde el plan de mejora de los reportes, el panel del grupo descarga un ZIP con un archivo por granularidad (`groups`, `options`, `participants`, `rounds`, `votes_long`, `voter_round_metrics`, `option_round_scores`, `round_metrics`, `reasons`, `events`), un `README_data_dictionary.md` generado con cada columna, su tipo, unidad y rango, y un `manifest.json` con el hash SHA-256 de cada archivo, la fecha y las versiones. Hay dos modos: **investigación** (datos completos, fechas ISO 8601 en UTC) y **publicación** (sin fechas absolutas, solo segundos desde la apertura de cada ronda; sin identificadores internos ni nombre del grupo; sin texto de las razones salvo que se marque que su publicación fue aprobada). La lista del curso nunca entra al ZIP. Rutas: `/api/rooms/<id>/export/v2` (ZIP, `?mode=publication`, `&include_text=1`) y `/api/rooms/<id>/export/v2/<archivo>.csv`. Las columnas de cada archivo (tipo, unidad y rango) están en el `README_data_dictionary.md` de cada ZIP, que se genera con las columnas que ese export realmente trae; este documento explica las métricas y los eventos. Los archivos anteriores (`matrix_long`, `matrix_wide_metrics` y las primeras versiones de `reasons` y `events`) se retiraron el 2026-11-05.
+
+> **"Sala" ahora es "Grupo" (formato `r-fast-cr-export/2`, 2026-11-24).** `rooms.csv` pasó a llamarse `groups.csv`, y las columnas `room_id`, `room_name` y `room_status` pasaron a `group_id`, `group_name` y `group_status` (en el modo publicación el alias del grupo es `group`). En `events.csv`, `room_cancelled` es `group_cancelled` y los motivos de `join_failed` `room_unavailable`, `room_concluded` y `room_full` son `group_unavailable`, `group_concluded` y `group_full`. Los scripts escritos para el formato 1 deben renombrar esas columnas. Las rutas de la API (`/api/rooms/...`) no cambiaron.
 
 > **Terminología.** En la plataforma, el orden de opciones que envía un participante se llama *selección* (no "voto"). Los nombres de archivos y columnas conservan `vote` (`votes_long.csv`, `vote_version`, `vote_submitted`) porque son el contrato con los scripts de análisis.
 
@@ -32,13 +34,13 @@ Si el orden del grupo tiene un solo lugar ($q \le 1$): $\tau_c = 0 \implies CIX 
 #### Nivel de Acuerdo de la Ronda ($\tau^*$)
 $$\tau^* = \frac{1}{m_{\text{efectivo}}} \sum_{j=1}^{m_{\text{efectivo}}} CIX_j$$
 
-$\tau^*$ es el valor que se compara con el acuerdo requerido de la sala y el que se guarda en `obtained_tau` (`round_metrics.collective_cix`). El CIX individual es el que ve cada participante como "Tu nivel de concordancia".
+$\tau^*$ es el valor que se compara con el acuerdo requerido del grupo y el que se guarda en `obtained_tau` (`round_metrics.collective_cix`). El CIX individual es el que ve cada participante como "Tu nivel de concordancia".
 
 > [!NOTE]
 > **Equivalencia de escala:** un umbral $\tau_{\text{umbral}} = 0.80$ en la escala CIX equivale a $\tau_c = 0.60$ ($\tau_c = 2 \cdot CIX - 1$).
 
 > [!NOTE]
-> **Salas sin empates (todas las salas nuevas desde `r-fast-cr-4`).** La selección y el orden colectivo son estrictos, así que $q = n$ y $\tau_c = \frac{2(C - D)}{n(n-1)}$, que coincide exactamente con $\tau_b$ y con $\gamma$. El cambio de coeficiente solo da valores distintos cuando el orden colectivo tiene empates (variante `WITH_TIES` de salas anteriores, o las columnas `*_weak_order`).
+> **Grupos sin empates (todos los grupos nuevos desde `r-fast-cr-4`).** La selección y el orden colectivo son estrictos, así que $q = n$ y $\tau_c = \frac{2(C - D)}{n(n-1)}$, que coincide exactamente con $\tau_b$ y con $\gamma$. El cambio de coeficiente solo da valores distintos cuando el orden colectivo tiene empates (variante `WITH_TIES` de grupos anteriores, o las columnas `*_weak_order`).
 
 #### Informes anteriores a `r-fast-cr-5`
 Hasta `r-fast-cr-4`, el CIX y $\tau^*$ se calcularon con **$\tau_b$ de Kendall**:
@@ -74,7 +76,9 @@ Además de los eventos del servidor (apertura y cierre de rondas, ingresos, env�
 | `reason_field_added` | Se agregó un campo de razón. | `option_id`, `side` (`for` / `against`) |
 | `reason_typing_started` | Primera vez que se escribe en las razones de esa opción y lado, en la ronda. | `option_id`, `side` |
 | `vote_submitted` | Envío de la selección (ya existía); ahora con cuántas razones se mandaron. | `version`, `changed`, `reasons_for`, `reasons_against` |
-| `join_failed` | Ingreso rechazado a una sala que existe. | `reason` (`wrong_pin`, `locked_out`, `retired`, `room_unavailable`, `late_join_closed`, `room_full`, `invalid_code`, `removed_member`), `mode` (`pin` / `roster`), `device_tag` |
+| `join_failed` | Ingreso rechazado a un grupo que existe. | `reason` (`wrong_pin`, `locked_out`, `retired`, `group_unavailable`, `group_concluded`, `late_join_closed`, `group_full`, `invalid_code`, `removed_member`), `mode` (`pin` / `roster`), `device_tag` |
+| `round_scheduled` | El anfitrión programó cuándo se abre y se cierra la ronda siguiente (antes de la Ronda 1 o entre rondas). La ronda programada se abre sola y queda como `round_opened` con `actor` `SYSTEM` y `scheduled` = true. | `opens_at`, `closes_at`, `minutes`, `timing` |
+| `round_schedule_cancelled` | El anfitrión quitó la programación. | — |
 
 `report_viewed` (el servidor entregó el informe) sigue existiendo, pero **no es una lectura**: en el export normalizado se llama `report_delivered`, y la lectura real es `report_read`. `participant_joined` lleva `returning` (reingreso) y `device_tag`. `device_tag` es una etiqueta aleatoria que guarda el navegador para contar reintentos de un mismo dispositivo; no identifica a nadie ni se liga al nombre o código escrito.
 
@@ -84,7 +88,7 @@ Además de los eventos del servidor (apertura y cierre de rondas, ingresos, env�
 
 - **Participantes Retirados (`is_retired = true`):** El retiro de un participante por el anfitrión es un borrado lógico. Desde PT-11 **ninguna selección se borra**: las de rondas cerradas siguen tal como entraron al informe, y las de la ronda activa se conservan pero quedan fuera del cálculo (`voter_round_metrics.counted_in_round = false`; el participante aparece en `participants.csv` con `status = EXCLUDED`).
 - **Lista del curso:** la etiqueta de cada persona (matrícula o usuario) vive solo en la base de datos y nunca aparece en ningún CSV.
-- **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus selecciones enviadas se conservan. El estado `CANCELLED` se refleja en la columna `room_status` de `rooms.csv`.
+- **Cancelaciones (`CANCELLED`):** Si una actividad es cancelada, todos los reportes de rondas previamente cerradas y sus selecciones enviadas se conservan. El estado `CANCELLED` se refleja en la columna `group_status` de `groups.csv`.
 
 ---
 

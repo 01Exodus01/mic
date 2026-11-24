@@ -26,7 +26,7 @@ describe('límites por IP con una clase detrás de la misma red', () => {
     expect(allowed).toBe(CLASS_IP_LIMIT);
   });
 
-  it('los códigos mal escritos de una clase no bloquean la sala enseguida', () => {
+  it('los códigos mal escritos de una clase no bloquean el grupo enseguida', () => {
     // Up to 2 typos per person for 70 people before the IP is locked for that room
     expect(ROSTER_FAILS_PER_IP).toBeGreaterThanOrEqual(140);
   });

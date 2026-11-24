@@ -64,8 +64,8 @@ async function run() {
       console.log(`Saved: dashboard-salas-${vp.name}.png`);
 
       // 2. Formulario vacío de nueva sala
-      console.log('Navigating to /dashboard/rooms/new (empty)...');
-      await page.goto(`${BASE_URL}/dashboard/rooms/new`, { waitUntil: 'networkidle' });
+      console.log('Navigating to /dashboard/grupos/nuevo (empty)...');
+      await page.goto(`${BASE_URL}/dashboard/grupos/nuevo`, { waitUntil: 'networkidle' });
       await page.waitForSelector('#titulo-input', { state: 'visible', timeout: 10000 });
       await page.waitForTimeout(400);
       await preparePageForFullScreenshot(page);

@@ -186,7 +186,7 @@ export async function processRoundConsensus(
     });
 
     if (!room) {
-      return { success: false, quorumMet: false, state: RoomStatus.PROCESSING, error: 'Sala no encontrada.' };
+      return { success: false, quorumMet: false, state: RoomStatus.PROCESSING, error: 'Grupo no encontrado.' };
     }
 
     const currentRound = room.current_round;
@@ -427,7 +427,7 @@ export async function processRoundConsensus(
         data: { status: RoomStatus.ROUND_OPEN },
       });
     } catch (restoreErr) {
-      console.error('Error al restaurar estado de la sala:', restoreErr);
+      console.error('Error al restaurar estado del grupo:', restoreErr);
     }
     const message = err instanceof Error ? err.message : 'Error al procesar el consenso de la ronda';
     return {

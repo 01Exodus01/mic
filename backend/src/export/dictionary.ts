@@ -18,7 +18,7 @@ export interface ColumnDoc {
 const T_ROUND = 'segundos desde que se abrió la ronda (puede ser negativo si ocurrió en la sala de espera)';
 
 const COMMON: Record<string, ColumnDoc> = {
-  room_id: { type: 'texto', description: 'Identificador de la sala (en modo publicación: `room`).' },
+  group_id: { type: 'texto', description: 'Identificador del grupo (en modo publicación: `group`).' },
   round: { type: 'entero', range: '≥ 1', description: 'Número de ronda.' },
   blind_code: { type: 'texto', description: 'Código ciego del participante (`Participante NN`). Único identificador de personas en el export.' },
   option_id: { type: 'texto', description: 'Opción (ver `options.csv`; en modo publicación: `opt_NN`).' },
@@ -27,19 +27,19 @@ const COMMON: Record<string, ColumnDoc> = {
 };
 
 export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
-  'rooms.csv': {
-    room_name: { type: 'texto', description: 'Título de la sala (solo modo investigación).' },
+  'groups.csv': {
+    group_name: { type: 'texto', description: 'Título del grupo (solo modo investigación).' },
     method: { type: 'categoría', range: 'BORDA, SCHULZE, KEMENY', description: 'Método de agregación del ranking colectivo.' },
     concordance_variant: { type: 'categoría', range: 'WITHOUT_TIES, WITH_TIES', description: 'Variante de concordancia: sin empates (contra el ranking ya desempatado) o con empates (contra el ranking con empates; agrega gamma).' },
-    tie_break_rule: { type: 'categoría', range: 'PAIRWISE_MAJORITY (salas nuevas); NONE, LEXICOGRAPHIC, REASON_BALANCE (salas anteriores)', description: 'Regla para desempatar opciones con igual puntaje. Desde r-fast-cr-4 es fija: mayoría pareada entre las empatadas en la ronda y, si sigue el empate, título de la opción.' },
+    tie_break_rule: { type: 'categoría', range: 'PAIRWISE_MAJORITY (grupos nuevos); NONE, LEXICOGRAPHIC, REASON_BALANCE (grupos anteriores)', description: 'Regla para desempatar opciones con igual puntaje. Desde r-fast-cr-4 es fija: mayoría pareada entre las empatadas en la ronda y, si sigue el empate, título de la opción.' },
     tie_break_fallback: { type: 'categoría', range: 'TITLE, SEEDED_RANDOM o vacío', description: 'Último recurso si la regla no separa: título de la opción (PAIRWISE_MAJORITY) o sorteo con semilla guardada en `round_metrics.tie_seed` (REASON_BALANCE).' },
     consensus_threshold: { type: 'decimal', range: '0–1', description: 'CIX colectivo que se considera consenso.' },
     max_rounds: { type: 'entero', range: '≥ 1', description: 'Rondas máximas configuradas.' },
     late_participants_policy: { type: 'categoría', range: 'ALLOWED, CLOSED_COHORT', description: 'Si se aceptan participantes nuevos después de la ronda 1.' },
     early_close: { type: 'booleano', description: 'La ronda se cierra sola cuando todos enviaron su selección.' },
-    consent_required: { type: 'booleano', description: 'La sala pide consentimiento informado antes de la primera selección.' },
+    consent_required: { type: 'booleano', description: 'El grupo pide consentimiento informado antes de la primera selección.' },
     access_mode: { type: 'categoría', range: 'OPEN_PIN, ROSTER', description: 'Ingreso con nombre y PIN propio, o con código personal de una lista.' },
-    room_status: { type: 'categoría', range: 'DRAFT, ROUND_OPEN, PROCESSING, ROUND_FEEDBACK, CONCLUDED, CANCELLED', description: 'Estado de la sala al exportar.' },
+    group_status: { type: 'categoría', range: 'DRAFT, ROUND_OPEN, PROCESSING, ROUND_FEEDBACK, CONCLUDED, CANCELLED', description: 'Estado del grupo al exportar.' },
     procedure_version: { type: 'texto', description: 'Versión del procedimiento de cálculo del último informe.' },
     app_version: { type: 'texto', description: 'Versión de la aplicación que generó el export.' },
     timezone: { type: 'texto', range: 'UTC', description: 'Zona horaria de todas las fechas del export.' },
@@ -55,7 +55,7 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
     status: { type: 'categoría', range: 'ACTIVE, NEVER_VOTED, EXCLUDED', description: 'Situación final del participante.' },
     excluded_from_round: { type: 'entero o vacío', description: 'Ronda en que fue retirado, si lo fue.' },
     exclusion_reason: { type: 'categoría o vacío', range: 'EXPELLED, REMOVED_FROM_LIST', description: 'Motivo del retiro.' },
-    consent_accepted: { type: 'booleano o vacío', description: 'Aceptó el consentimiento (vacío si la sala no lo pedía).' },
+    consent_accepted: { type: 'booleano o vacío', description: 'Aceptó el consentimiento (vacío si el grupo no lo pedía).' },
     consent_at: { type: 'fecha ISO 8601 UTC', description: 'Aceptación del consentimiento (solo modo investigación).' },
   },
   'rounds.csv': {
@@ -70,7 +70,7 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
     n_voted: { type: 'entero', description: 'Participantes con selección completa.' },
     effective_voters: { type: 'entero o vacío', description: 'Selecciones que entraron al cálculo.' },
     n_excluded: { type: 'entero o vacío', description: 'Selecciones que quedaron fuera del cálculo (participante retirado).' },
-    status: { type: 'categoría', range: 'REPORTED, UNREPORTED o un estado de sala', description: 'Si la ronda tiene informe.' },
+    status: { type: 'categoría', range: 'REPORTED, UNREPORTED o un estado de grupo', description: 'Si la ronda tiene informe.' },
   },
   'votes_long.csv': {
     position: { type: 'entero', range: '1–m', description: 'Lugar que el participante dio a la opción (1 = la preferida).' },
@@ -126,15 +126,15 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
     type: { type: 'categoría', description: 'Tipo de evento (ver la tabla de eventos más abajo).' },
     actor: { type: 'categoría', range: 'HOST, PARTICIPANT, SYSTEM', description: 'Quién originó el evento.' },
     // flattened data keys
-    reason: { type: 'categoría', description: 'round_closed: HOST, TIMEOUT, ALL_VOTED. join_failed: wrong_pin, locked_out, retired, room_unavailable, room_concluded, late_join_closed, room_full, invalid_code, removed_member.' },
+    reason: { type: 'categoría', description: 'round_closed: HOST, TIMEOUT, ALL_VOTED. join_failed: wrong_pin, locked_out, retired, group_unavailable, group_concluded, late_join_closed, group_full, invalid_code, removed_member.' },
     minutes: { type: 'entero', unit: 'min', description: 'Duración configurada o agregada (round_opened, deadline_extended); con una fecha de cierre, los minutos hasta ella.' },
     reopened: { type: 'booleano', description: 'round_opened: la ronda se reabrió tras selecciones insuficientes.' },
     timing: { type: 'categoría', range: 'duration, date', description: 'round_opened / deadline_extended: el anfitrión eligió una duración o la fecha y hora de cierre en el calendario (minutes es entonces la diferencia, redondeada).' },
-    from_status: { type: 'categoría', description: 'room_cancelled: estado previo de la sala.' },
+    from_status: { type: 'categoría', description: 'group_cancelled: estado previo del grupo.' },
     had_joined: { type: 'booleano', description: 'member_removed: la persona ya había ingresado.' },
     count: { type: 'entero', description: 'member_added: códigos creados.' },
     effective_voters: { type: 'entero', description: 'round_processed / insufficient_votes: selecciones contadas.' },
-    next_status: { type: 'categoría', description: 'round_processed: estado al que pasó la sala.' },
+    next_status: { type: 'categoría', description: 'round_processed: estado al que pasó el grupo.' },
     version: { type: 'entero', description: 'vote_submitted: versión de la selección; consent_accepted: versión del texto.' },
     changed_vs_prev_version: { type: 'booleano', description: 'vote_submitted: la selección difiere de la versión anterior de la misma ronda.' },
     reasons_for: { type: 'entero', description: 'vote_submitted: razones a favor enviadas.' },
@@ -155,17 +155,19 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
 };
 
 const EVENT_TYPES: Array<[string, string]> = [
-  ['round_opened', 'Se abrió una ronda (incluye el inicio de la sala).'],
+  ['round_opened', 'Se abrió una ronda (incluye el inicio del grupo).'],
   ['round_closed', 'Se cerró la ronda (no recibe más selecciones).'],
   ['round_processed', 'Se calculó el informe de la ronda.'],
   ['insufficient_votes', 'La ronda no tuvo selecciones suficientes para un informe.'],
   ['deadline_extended', 'El anfitrión agregó minutos.'],
-  ['room_cancelled', 'El anfitrión canceló la sala.'],
+  ['group_cancelled', 'El anfitrión canceló el grupo.'],
+  ['round_scheduled', 'El anfitrión programó cuándo se abre y se cierra la ronda siguiente (opens_at, closes_at).'],
+  ['round_schedule_cancelled', 'El anfitrión quitó la programación de la ronda siguiente.'],
   ['pin_reset', 'El anfitrión cambió el PIN de un participante.'],
-  ['participant_expelled', 'El anfitrión retiró a un participante (en salas con nombre, el nombre queda libre para otra persona).'],
+  ['participant_expelled', 'El anfitrión retiró a un participante (en grupos con nombre, el nombre queda libre para otra persona).'],
   ['participant_reinstated', 'El anfitrión reincorporó a un participante retirado: mismo código ciego e historial.'],
   ['participant_joined', 'Ingreso o reingreso de un participante.'],
-  ['join_failed', 'Ingreso rechazado a una sala existente (nunca se guarda el PIN ni el código escrito).'],
+  ['join_failed', 'Ingreso rechazado a un grupo existente (nunca se guarda el PIN ni el código escrito).'],
   ['consent_accepted', 'El participante aceptó el consentimiento.'],
   ['vote_submitted', 'Envío de la selección (orden de las opciones y razones).'],
   ['report_delivered', 'El servidor entregó el informe de una ronda a la pantalla del participante. No es una lectura.'],
@@ -201,9 +203,9 @@ export function buildDataDictionary(tables: CsvTable[], meta: DictionaryMeta): s
     '# Diccionario de datos del export r-FAST-CR',
     '',
     meta.mode === 'publication'
-      ? 'Modo **publicación (anonimizado)**: sin fechas absolutas (solo tiempos relativos a la apertura de cada ronda), sin identificadores internos (alias estables), sin el nombre de la sala' +
+      ? 'Modo **publicación (anonimizado)**: sin fechas absolutas (solo tiempos relativos a la apertura de cada ronda), sin identificadores internos (alias estables), sin el nombre del grupo' +
         (meta.includesFreeText ? '. Incluye el texto de las razones porque se declaró aprobada su publicación.' : ' y sin textos libres.')
-      : 'Modo **investigación**: datos completos de la sala, con fechas ISO 8601 en UTC' +
+      : 'Modo **investigación**: datos completos del grupo, con fechas ISO 8601 en UTC' +
         (meta.includesFreeText ? ' y el texto de las razones.' : '; sin textos libres.'),
     '',
     'Formato: CSV en UTF-8 con BOM, separador coma, fin de línea CRLF. Decimales con punto y exactamente 4 cifras. Booleanos `true` / `false`. Celda vacía = sin dato. Los textos que empiezan con `=`, `+`, `-` o `@` llevan un apóstrofo delante para que una planilla no los ejecute como fórmula.',

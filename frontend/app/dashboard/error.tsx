@@ -24,7 +24,7 @@ export default function DashboardError({
             Error al cargar el panel de control
           </h2>
           <p className="text-xs text-ink-2 leading-relaxed">
-            No se pudieron obtener los datos de la sala o del anfitrión.
+            No se pudieron obtener los datos del grupo o del anfitrión.
           </p>
         </div>
       </div>
@@ -48,7 +48,7 @@ export default function DashboardError({
           href="/dashboard"
           className="text-xs text-ink-2 hover:text-ink underline underline-offset-2"
         >
-          Volver a mis salas
+          Volver a mis grupos
         </Link>
       </div>
     </div>

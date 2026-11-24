@@ -21,12 +21,14 @@ export async function exportTableCsv(ctx: RequestContext, params: { id: string; 
     if (!hostId) return { status: 401, body: 'No autorizado' };
 
     const owned = await prisma.room.findFirst({ where: { id: params.id, host_id: hostId }, select: { id: true, pin: true } });
-    if (!owned) return { status: 404, body: 'Sala no encontrada' };
+    if (!owned) return { status: 404, body: 'Grupo no encontrado' };
 
     const dataset = await loadExportDataset(prisma, owned.id);
-    if (!dataset) return { status: 404, body: 'Sala no encontrada' };
+    if (!dataset) return { status: 404, body: 'Grupo no encontrado' };
 
-    const table = exportTables(dataset, exportOptionsFrom(input.searchParams)).find((t) => t.name === params.file);
+    // rooms.csv is the name before "sala" became "grupo" (export format 1): still served
+    const fileName = params.file === 'rooms.csv' ? 'groups.csv' : params.file;
+    const table = exportTables(dataset, exportOptionsFrom(input.searchParams)).find((t) => t.name === fileName);
     if (!table) return { status: 404, body: 'Archivo no encontrado' };
 
     const base = table.name.replace(/\.csv$/, '');

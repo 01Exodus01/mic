@@ -57,17 +57,17 @@ export function getUnicodeLength(input: string): number {
 }
 
 // ─────────────────────────────────────────────
-// 1. PIN de Sala (Landing & Participant Join)
+// 1. PIN de Grupo (Landing & Participant Join)
 // ─────────────────────────────────────────────
 
 export const RoomPinSchema = z
-  .string({ required_error: 'El PIN de la sala es obligatorio.' })
+  .string({ required_error: 'El PIN del grupo es obligatorio.' })
   .transform((v) => sanitizeText(v).replace(/\s+/g, '').toUpperCase())
   .pipe(
     z
       .string()
-      .min(1, 'El PIN de la sala es obligatorio.')
-      .regex(/^[A-Z0-9]{6}$/, 'El PIN de la sala debe tener 6 caracteres alfanuméricos.')
+      .min(1, 'El PIN del grupo es obligatorio.')
+      .regex(/^[A-Z0-9]{6}$/, 'El PIN del grupo debe tener 6 caracteres alfanuméricos.')
   );
 
 // ─────────────────────────────────────────────
@@ -225,7 +225,7 @@ export const HostInviteCodeSchema = z
   );
 
 // ─────────────────────────────────────────────
-// 7. Opciones de Sala
+// 7. Opciones de Grupo
 // ─────────────────────────────────────────────
 
 export const OptionItemSchema = z.object({
@@ -255,7 +255,7 @@ export const OptionItemSchema = z.object({
 });
 
 // ─────────────────────────────────────────────
-// 8. Creación de Nueva Sala
+// 8. Creación de Nuevo grupo
 // ─────────────────────────────────────────────
 
 /** Aggregation methods a new room can use (E-12). */

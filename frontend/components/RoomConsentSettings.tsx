@@ -29,7 +29,7 @@ export default function RoomConsentSettings({
         <h2 className="text-sm font-semibold text-ink">Consentimiento informado</h2>
         <p className="text-xs text-ink-2 mt-0.5">
           Opcional. Si lo activas, cada participante lee tu texto al entrar por primera vez y debe aceptarlo para enviar su selección.
-          No se puede cambiar después de iniciar la sala.
+          No se puede cambiar después de iniciar el grupo.
         </p>
       </div>
       <label className="flex items-start gap-3 text-xs cursor-pointer">

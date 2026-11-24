@@ -134,13 +134,13 @@ describe.skipIf(!hasTestDb)('P3.4: la lista del curso nunca llega al ZIP (Postgr
       expect(text, name).not.toContain('Razón de');
     }
     expect(zips['publication+text'].get('reasons.csv')!.toString('utf8')).toContain('Razón de 0');
-    expect(zips.research.get('rooms.csv')!.toString('utf8')).toContain('Curso 3B Liceo Ejemplo');
+    expect(zips.research.get('groups.csv')!.toString('utf8')).toContain('Curso 3B Liceo Ejemplo');
     const events = pub.get('events.csv')!.toString('utf8');
     expect(events).toContain('join_failed');
     expect(events).toContain('ranking_reordered');
   });
 
-  it('solo el anfitrión de la sala descarga el ZIP', async () => {
+  it('solo el anfitrión del grupo descarga el ZIP', async () => {
     expect((await getZip('', null)).status).toBe(401);
     expect((await getZip('', 'otro-anfitrion')).status).toBe(404);
   });

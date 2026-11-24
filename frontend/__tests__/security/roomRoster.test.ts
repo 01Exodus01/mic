@@ -139,7 +139,7 @@ describe.skipIf(!hasTestDb)('PT-21: lista del curso (PostgreSQL)', () => {
     expect(JSON.stringify(list)).not.toContain('Participante 09');
   });
 
-  it('otro anfitrión no puede ver ni cambiar la lista; una sala abierta no tiene lista', async () => {
+  it('otro anfitrión no puede ver ni cambiar la lista; un grupo abierta no tiene lista', async () => {
     const room = await import('@/app/actions/room');
     const other = await createRoomFixture(prisma, { participants: 0, status: 'DRAFT' });
     fixtures.push(other);
@@ -147,7 +147,7 @@ describe.skipIf(!hasTestDb)('PT-21: lista del curso (PostgreSQL)', () => {
     expect((await room.getRoomMembers(roster.roomId)).success).toBe(false);
     expect((await room.addRoomMember(roster.roomId, 'Z001')).success).toBe(false);
     const open = await room.addRoomMember(other.roomId, 'Z001');
-    expect(open).toMatchObject({ success: false, error: 'Esta sala no usa una lista de participantes.' });
+    expect(open).toMatchObject({ success: false, error: 'Este grupo no usa una lista de participantes.' });
     state.hostId = roster.hostId;
   });
 });

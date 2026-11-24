@@ -78,7 +78,28 @@ const nextConfig = {
       },
       {
         source: '/sala/:pin',
-        destination: '/room/:pin',
+        destination: '/grupo/:pin',
+        permanent: true,
+      },
+      // "Sala" became "Grupo" (2026-11-24): old links keep working
+      {
+        source: '/room/:pin',
+        destination: '/grupo/:pin',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/rooms/new',
+        destination: '/dashboard/grupos/nuevo',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/rooms/:id/edit',
+        destination: '/dashboard/grupos/:id/editar',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/rooms/:path*',
+        destination: '/dashboard/grupos/:path*',
         permanent: true,
       },
       {

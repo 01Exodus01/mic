@@ -42,7 +42,7 @@ export default function ExportDownloads({ roomId }: { roomId: string }) {
         </div>
         <p className="text-xs text-ink-2">
           La versión para publicar no trae fechas ni horas (solo segundos desde que abrió cada ronda), ni
-          identificadores internos, ni el nombre de la sala, ni el texto de las razones.
+          identificadores internos, ni el nombre del grupo, ni el texto de las razones.
         </p>
         <label className="flex items-start gap-2 text-xs text-ink min-h-[44px]">
           <input

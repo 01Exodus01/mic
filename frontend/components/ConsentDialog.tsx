@@ -25,7 +25,7 @@ export default function ConsentDialog({ text }: { text: string }) {
         <DialogContent>
           <div className="space-y-4">
             <DialogTitle>Consentimiento informado</DialogTitle>
-            <DialogDescription>Este es el texto que aceptaste para participar en la sala.</DialogDescription>
+            <DialogDescription>Este es el texto que aceptaste para participar en el grupo.</DialogDescription>
             <div className="max-h-[60vh] overflow-auto text-sm text-ink leading-relaxed whitespace-pre-wrap break-words">{text}</div>
             <div className="flex justify-end">
               <button type="button" onClick={() => setOpen(false)} className="min-h-[44px] px-3 text-xs font-medium text-ink">

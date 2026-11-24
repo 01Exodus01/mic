@@ -144,17 +144,17 @@ function procedureVersionOf(report: ExportReport | undefined): string {
   return extras(report).procedure?.version ?? 'r-fast-cr-1';
 }
 
-// ── rooms.csv ────────────────────────────────────────────────────────────────
+// ── groups.csv ────────────────────────────────────────────────────────────────
 
 export function roomsTable(ds: ExportDataset): CsvTable {
   const r = ds.room;
   const latest = ds.reports[ds.reports.length - 1];
   return {
-    name: 'rooms.csv',
+    name: 'groups.csv',
     headers: [
-      'room_id', 'room_name', 'method', 'concordance_variant', 'tie_break_rule', 'tie_break_fallback',
+      'group_id', 'group_name', 'method', 'concordance_variant', 'tie_break_rule', 'tie_break_fallback',
       'consensus_threshold', 'max_rounds', 'late_participants_policy', 'early_close', 'consent_required',
-      'access_mode', 'room_status', 'procedure_version', 'app_version', 'created_at', 'timezone',
+      'access_mode', 'group_status', 'procedure_version', 'app_version', 'created_at', 'timezone',
     ],
     rows: [[
       r.id,
@@ -295,7 +295,7 @@ export function votesLongTable(ds: ExportDataset, ctx: Ctx): CsvTable {
   return {
     name: 'votes_long.csv',
     headers: [
-      'room_id', 'round', 'blind_code', 'option_id', 'position', 'displayed_position',
+      'group_id', 'round', 'blind_code', 'option_id', 'position', 'displayed_position',
       'submitted_at', 'vote_version', 'changed_vs_prev_round',
     ],
     rows,
@@ -553,8 +553,15 @@ export function reasonsTable(ds: ExportDataset, ctx: Ctx, opts: { includeText: b
 /** Event type names in the export (P2.5): one name for opening a round. */
 export function exportEventType(type: string): string {
   if (type === 'room_started') return 'round_opened';
+  // Team request 2026-11-24: "sala" is now "grupo" everywhere, the export included
+  if (type === 'room_cancelled') return 'group_cancelled';
   if (type === 'report_viewed') return 'report_delivered';
   return type;
+}
+
+/** Values stored before "sala" became "grupo" (join_failed reasons): room_full → group_full, etc. */
+export function exportDataValue(v: unknown): unknown {
+  return typeof v === 'string' && /^room_(unavailable|concluded|full)$/.test(v) ? v.replace(/^room_/, 'group_') : v;
 }
 
 /** Flattened data keys; vote_submitted.changed is renamed so it is not read as "vs previous round". */
@@ -584,7 +591,7 @@ export function eventsTable(ds: ExportDataset, ctx: Ctx): CsvTable {
     const cols: Record<string, Cell> = {};
     for (const [k, v] of Object.entries(data)) {
       if (k === 'report_round') continue; // own column
-      cols[flatKey(e.type, k)] = typeof v === 'object' && v !== null ? JSON.stringify(v) : (v as Cell);
+      cols[flatKey(e.type, k)] = typeof v === 'object' && v !== null ? JSON.stringify(v) : (exportDataValue(v) as Cell);
     }
     return { e, cols };
   });

@@ -5,7 +5,7 @@
  * each file, the date and the versions.
  *
  * Two modes:
- *  - research: full data of the room, ISO 8601 UTC timestamps;
+ *  - research: full data of the group, ISO 8601 UTC timestamps;
  *  - publication: anonymized (lib/export/publication.ts).
  * Free text (reasons) is included in research mode by default and in
  * publication mode only when the researcher states it was approved.
@@ -22,7 +22,8 @@ import { toPublicationTables } from './publication';
 import { buildExportTables } from './tables';
 import { createZip } from './zip';
 
-export const EXPORT_FORMAT = 'r-fast-cr-export/1';
+/** 2: "room" renamed "group" (groups.csv, group_id, group_name, group_status), 2026-11-24 */
+export const EXPORT_FORMAT = 'r-fast-cr-export/2';
 
 export type ExportMode = 'research' | 'publication';
 
@@ -47,7 +48,7 @@ export interface ExportManifest {
   timezone: string;
   app_version: string;
   procedure_versions: string[];
-  room_id: string;
+  group_id: string;
   files: Array<{ name: string; rows: number | null; bytes: number; sha256: string }>;
 }
 
@@ -71,7 +72,7 @@ export function buildExportFiles(ds: ExportDataset, opts: BundleOptions): { file
   const metrics = tables.find((t) => t.name === 'round_metrics.csv');
   const versionCol = metrics ? metrics.headers.indexOf('procedure_version') : -1;
   const procedureVersions = [...new Set((metrics?.rows ?? []).map((r) => r[versionCol]).filter((v): v is string => typeof v === 'string' && v !== ''))].sort();
-  const rooms = tables.find((t) => t.name === 'rooms.csv');
+  const groups = tables.find((t) => t.name === 'groups.csv');
 
   const manifest: ExportManifest = {
     export_format: EXPORT_FORMAT,
@@ -81,7 +82,7 @@ export function buildExportFiles(ds: ExportDataset, opts: BundleOptions): { file
     timezone: EXPORT_TIMEZONE,
     app_version: APP_VERSION,
     procedure_versions: procedureVersions,
-    room_id: String(rooms?.rows[0]?.[rooms.headers.indexOf('room_id')] ?? ''),
+    group_id: String(groups?.rows[0]?.[groups.headers.indexOf('group_id')] ?? ''),
     files: files.map((f) => ({ name: f.name, rows: rows.get(f.name) ?? null, bytes: f.data.length, sha256: sha256(f.data) })),
   };
   files.push({ name: 'manifest.json', data: Buffer.from(JSON.stringify(manifest, null, 2) + '\n', 'utf8') });

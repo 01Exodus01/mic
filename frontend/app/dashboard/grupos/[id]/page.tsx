@@ -220,7 +220,7 @@ export default function RoomHostPage() {
           serverOffsetRef.current = new Date(d.serverTime).getTime() - Date.now();
         }
       } else if (!res.success) {
-        toast.error(res.error || 'No fue posible cargar el estado de la sala.');
+        toast.error(res.error || 'No fue posible cargar el estado del grupo.');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error de comunicación.';
@@ -294,7 +294,7 @@ export default function RoomHostPage() {
 
   const copyLink = () => {
     if (!data?.room?.pin) return;
-    const url = `${window.location.origin}/room/${data.room.pin}`;
+    const url = `${window.location.origin}/grupo/${data.room.pin}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     toast.success('Enlace de ingreso copiado.');
@@ -458,7 +458,7 @@ export default function RoomHostPage() {
     try {
       const res = await reinstateParticipant(salaId, participantId);
       if (res.success) {
-        toast.success(`${nickname} volvió a la sala. Puede entrar con su nombre y su PIN.`);
+        toast.success(`${nickname} volvió al grupo. Puede entrar con su nombre y su PIN.`);
         await fetchStatus();
       } else {
         toast.error(res.error || 'No fue posible reincorporar al participante.');
@@ -477,7 +477,7 @@ export default function RoomHostPage() {
     try {
       const res = await expelParticipant(salaId, expelModal.partId);
       if (res.success) {
-        toast.info(`Participante ${expelModal.nickname} expulsado de la sala.`);
+        toast.info(`Participante ${expelModal.nickname} expulsado del grupo.`);
         setExpelModal({ open: false, partId: '', nickname: '' });
         await fetchStatus();
       } else {
@@ -498,9 +498,9 @@ export default function RoomHostPage() {
   if (!data) {
     return (
       <div className="p-8 text-center border border-line bg-paper rounded-[6px]">
-        <p className="text-xs text-ink-2">Sala no encontrada.</p>
+        <p className="text-xs text-ink-2">Grupo no encontrado.</p>
         <Link href="/dashboard" className="text-xs text-brand font-medium mt-2 inline-block hover:underline">
-          Volver a salas
+          Volver a grupos
         </Link>
       </div>
     );
@@ -543,11 +543,11 @@ export default function RoomHostPage() {
             className="inline-flex items-center gap-1 text-ink-2 hover:text-ink hover:underline transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 stroke-[1.5]" />
-            <span>Volver a salas</span>
+            <span>Volver a grupos</span>
           </Link>
           <span className="text-line" aria-hidden="true">/</span>
           <span className="font-mono font-bold text-ink" aria-current="page">
-            Sala {sala.pin}
+            Grupo {sala.pin}
           </span>
         </nav>
 
@@ -571,7 +571,7 @@ export default function RoomHostPage() {
         </div>
       </div>
 
-      {/* 2. Cabecera de la sala: Título, PIN, Enlace y Metadatos */}
+      {/* 2. Cabecera del grupo: Título, PIN, Enlace y Metadatos */}
       <div className="pb-6 border-b border-line">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="space-y-1.5 flex-1">
@@ -672,7 +672,7 @@ export default function RoomHostPage() {
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <Link
-                href={`/dashboard/rooms/${sala.id}/edit`}
+                href={`/dashboard/grupos/${sala.id}/editar`}
                 className="inline-flex items-center gap-1.5 px-3 h-9 rounded-[6px] border border-line bg-paper text-xs font-medium text-ink hover:bg-subtle"
               >
                 <Pencil className="w-3.5 h-3.5 stroke-[1.5]" aria-hidden="true" />
@@ -1026,11 +1026,11 @@ export default function RoomHostPage() {
         </details>
       </section>
 
-      {/* 5. Orden del Grupo (si hay reporte) u Opciones de la sala */}
+      {/* 5. Orden del Grupo (si hay reporte) u Opciones del grupo */}
       <section className="pb-6 border-b border-line space-y-3">
         <div>
           <h2 className="text-sm font-semibold text-ink">
-            {latestReport ? 'Orden del grupo' : 'Opciones de la sala'}
+            {latestReport ? 'Orden del grupo' : 'Opciones del grupo'}
           </h2>
           <p className="text-xs text-ink-2 mt-0.5">
             {latestReport
@@ -1195,7 +1195,7 @@ export default function RoomHostPage() {
                           >
                             Restablecer PIN
                           </button>
-                          {/* "Expulsar de la sala" como botón de texto plano (AUD-13, 14, D2, D3) */}
+                          {/* "Expulsar del grupo" como botón de texto plano (AUD-13, 14, D2, D3) */}
                           <button
                             type="button"
                             onClick={() => {
@@ -1208,7 +1208,7 @@ export default function RoomHostPage() {
                             }}
                             className="text-xs text-danger hover:underline font-medium"
                           >
-                            Expulsar de la sala
+                            Expulsar del grupo
                           </button>
                         </td>
                       </tr>
@@ -1294,7 +1294,7 @@ export default function RoomHostPage() {
               ¿Cancelar actividad?
             </DialogTitle>
             <DialogDescription>
-              La sala se marcará como cancelada y no recibirá más selecciones. Esta acción es definitiva.
+              El grupo se marcará como cancelado y no recibirá más selecciones. Esta acción es definitiva.
             </DialogDescription>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
@@ -1309,7 +1309,7 @@ export default function RoomHostPage() {
                 onClick={handleCancelRoom}
                 className="px-3.5 py-2 rounded-[6px] bg-danger text-white text-xs font-semibold hover:bg-danger/90"
               >
-                Cancelar sala
+                Cancelar grupo
               </button>
             </div>
           </div>
@@ -1453,7 +1453,7 @@ export default function RoomHostPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo: Expulsar participante de la sala (AUD-13, 14, D2, D3) */}
+      {/* Diálogo: Expulsar participante del grupo (AUD-13, 14, D2, D3) */}
       <Dialog
         open={expelModal.open}
         onOpenChange={(open) => {
@@ -1469,7 +1469,7 @@ export default function RoomHostPage() {
               Expulsar a {expelModal.nickname}
             </DialogTitle>
             <DialogDescription>
-              Saldrá de la sala y su lugar y su nombre quedarán libres: otra persona podrá entrar con ese nombre. Sus selecciones se conservan, pero la de la ronda activa no cuenta para el resultado. Si fue un error, podrás reincorporarlo desde la lista de retirados.
+              Saldrá del grupo y su lugar y su nombre quedarán libres: otra persona podrá entrar con ese nombre. Sus selecciones se conservan, pero la de la ronda activa no cuenta para el resultado. Si fue un error, podrás reincorporarlo desde la lista de retirados.
             </DialogDescription>
 
             {/* D3: Advertencia crítica si quedan menos de 3 participantes */}
@@ -1509,7 +1509,7 @@ export default function RoomHostPage() {
                 disabled={expelLoading}
                 className="px-3.5 py-2 rounded-[6px] bg-danger text-white text-xs font-semibold hover:bg-danger/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                {expelLoading ? 'Expulsando...' : 'Expulsar de la sala'}
+                {expelLoading ? 'Expulsando...' : 'Expulsar del grupo'}
               </button>
             </div>
           </div>

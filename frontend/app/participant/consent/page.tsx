@@ -119,7 +119,7 @@ export default function ParticipantConsentPage() {
           {saving ? 'Guardando...' : 'Acepto y quiero participar'}
         </button>
         <button type="button" onClick={leave} className="w-full min-h-[44px] text-xs text-ink-2 hover:text-ink">
-          No acepto, salir de la sala
+          No acepto, salir del grupo
         </button>
       </div>
     </main>

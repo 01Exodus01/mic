@@ -35,7 +35,7 @@ describe('Piloto R7PUEM: valores de referencia', () => {
   });
 
   it('P0.2: redondeo único de 4 decimales, ningún valor a 3 decimales', () => {
-    for (const name of ['round_metrics.csv', 'voter_round_metrics.csv', 'option_round_scores.csv', 'rooms.csv']) {
+    for (const name of ['round_metrics.csv', 'voter_round_metrics.csv', 'option_round_scores.csv', 'groups.csv']) {
       const csv = tableToCsv(table(name));
       for (const line of csv.split('\r\n').slice(1)) {
         for (const cell of line.split(',')) {
@@ -81,19 +81,19 @@ describe('Piloto R7PUEM: valores de referencia', () => {
     expect(Number(out.result!.tauStar.toFixed(4))).toBe(0.6667);
   });
 
-  it('P0.5: versión del procedimiento y de la app en rooms.csv', () => {
-    const room = rowsOf('rooms.csv')[0];
+  it('P0.5: versión del procedimiento y de la app en groups.csv', () => {
+    const room = rowsOf('groups.csv')[0];
     expect(room.procedure_version).toBe('r-fast-cr-2');
     expect(room.app_version).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(room.room_name).toBe('Sala piloto R7PUEM');
-    expect(table('rooms.csv').headers).not.toContain('course');
-    expect(table('rooms.csv').headers).not.toContain('group_label');
+    expect(room.group_name).toBe('Sala piloto R7PUEM');
+    expect(table('groups.csv').headers).not.toContain('course');
+    expect(table('groups.csv').headers).not.toContain('group_label');
   });
 
   it('P0.6: votes_long no tiene justification_text ni columnas de configuración', () => {
     const h = table('votes_long.csv').headers;
     expect(h).not.toContain('justification_text');
-    for (const cfg of ['method', 'tie_break_rule', 'concordance_variant', 'room_status']) expect(h).not.toContain(cfg);
+    for (const cfg of ['method', 'tie_break_rule', 'concordance_variant', 'group_status']) expect(h).not.toContain(cfg);
   });
 
   it('P1.2: el participante 36 aparece con su ronda de ingreso y sin votos', () => {

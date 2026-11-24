@@ -359,7 +359,7 @@ describe('PT-17: Kendall estándar sobre un orden del grupo estricto', () => {
     expect(ok.result!.tauStar).toBe(tauB.result!.tauStar);
   });
 
-  it('E-12: las salas nuevas no eligen regla ni variante; lo que llegue se ignora', () => {
+  it('E-12: los grupos nuevos no eligen regla ni variante; lo que llegue se ignora', () => {
     expect(FIXED_TIE_BREAK_RULE).toBe('PAIRWISE_MAJORITY');
     expect(FIXED_CONCORDANCE_VARIANT).toBe('WITHOUT_TIES');
     const parsed = RoomSettingsSchema.parse({ tieBreakRule: 'NONE', concordanceVariant: 'WITH_TIES' });

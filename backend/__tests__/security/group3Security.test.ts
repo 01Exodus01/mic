@@ -97,7 +97,7 @@ describe('Grupo 3: Seguridad y sesiones', () => {
 
   describe('D4: Mensaje genérico de no revelación en /join', () => {
     it('retorna mensaje estándar idéntico para salas cerradas, canceladas, inexistentes o participante expulsado', () => {
-      const genericMessage = 'No se puede ingresar a esa sala. Revisa tus datos.';
+      const genericMessage = 'No se puede ingresar a ese grupo. Revisa tus datos.';
 
       const testScenarios = [
         { status: 'CONCLUDED', description: 'sala finalizada' },
@@ -126,7 +126,7 @@ describe('Grupo 3: Seguridad y sesiones', () => {
 
       expect(apiResponse.status).toBe(400);
       expect(apiResponse.code).toBe('CANNOT_JOIN');
-      expect(apiResponse.error).toBe('No se puede ingresar a esa sala. Revisa tus datos.');
+      expect(apiResponse.error).toBe('No se puede ingresar a ese grupo. Revisa tus datos.');
     });
   });
 

@@ -104,7 +104,7 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
       <div>
         <h2 className="font-heading text-lg font-bold text-ink">Lista de participantes</h2>
         <p className="text-xs text-ink-2 mt-0.5">
-          Cada persona entra con el PIN de la sala y su código personal. {active.length} en la lista,{' '}
+          Cada persona entra con el PIN del grupo y su código personal. {active.length} en la lista,{' '}
           {active.filter((m) => m.joined).length} ya ingresaron.
         </p>
       </div>

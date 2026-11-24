@@ -42,31 +42,31 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-6 mb-6 border-b border-line">
         <div>
           <h1 className="font-heading text-2xl font-bold text-ink tracking-tight">
-            Salas
+            Grupos
           </h1>
           <p className="text-xs text-ink-2 mt-1">
-            Panel de control del anfitrión. Administra las salas grupales y el avance de rondas.
+            Panel de control del anfitrión. Administra los grupos y el avance de las rondas.
           </p>
         </div>
 
         <Link
-          href="/dashboard/rooms/new"
+          href="/dashboard/grupos/nuevo"
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[6px] bg-brand text-white text-xs font-semibold hover:bg-brand/90 transition-colors shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[1.5]" />
-          <span>Nueva sala</span>
+          <span>Nuevo grupo</span>
         </Link>
       </div>
 
-      {/* Lista de salas como tabla densa (no tarjetas) */}
+      {/* Lista de grupos como tabla densa (no tarjetas) */}
       {rooms.length === 0 ? (
         <div className="border border-line bg-paper rounded-[6px] p-8 text-center">
-          <p className="text-xs text-ink-2 mb-3">No hay salas creadas.</p>
+          <p className="text-xs text-ink-2 mb-3">No hay grupos creados.</p>
           <Link
-            href="/dashboard/rooms/new"
+            href="/dashboard/grupos/nuevo"
             className="inline-flex items-center gap-1.5 text-xs text-brand font-semibold hover:underline"
           >
-            <span>Crear la primera sala</span>
+            <span>Crear el primer grupo</span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
           </Link>
         </div>
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
                       </td>
                       <td className="py-2.5 px-3">
                         <Link
-                          href={`/dashboard/rooms/${room.id}`}
+                          href={`/dashboard/grupos/${room.id}`}
                           className="font-medium text-ink hover:text-brand transition-colors"
                         >
                           {room.title}
@@ -131,10 +131,10 @@ export default async function DashboardPage() {
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <Link
-                          href={`/dashboard/rooms/${room.id}`}
+                          href={`/dashboard/grupos/${room.id}`}
                           className="text-brand hover:underline font-medium"
                         >
-                          Ver sala
+                          Ver grupo
                         </Link>
                       </td>
                     </tr>

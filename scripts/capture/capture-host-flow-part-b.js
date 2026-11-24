@@ -86,7 +86,7 @@ async function run() {
 
       for (const r of rooms) {
         console.log(`\nNavigating to room ${r.pin} (${r.stateName}) -> ID ${r.id}...`);
-        await page.goto(`${BASE_URL}/dashboard/rooms/${r.id}`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/dashboard/grupos/${r.id}`, { waitUntil: 'networkidle' });
         
         // Wait for page title or room data to load
         await page.waitForSelector('h1', { state: 'visible', timeout: 10000 });

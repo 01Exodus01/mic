@@ -101,7 +101,7 @@ describe.skipIf(!dbUrl)('PT-07: filas en las tablas nuevas (PostgreSQL)', () => 
     expect(vote?.justification).toBeNull();
   });
 
-  it('guarda versiones del voto y eventos de la sala', async () => {
+  it('guarda versiones del voto y eventos del grupo', async () => {
     await prisma.voteRevision.create({
       data: { room_id: roomId, participant_id: participantId, round: 1, version: 1, snapshot: { positions: [] } },
     });
@@ -145,7 +145,7 @@ describe('PT-08: configuración por sala, lista y consentimiento', () => {
 });
 
 describe.skipIf(!dbUrl)('PT-08: valores por defecto en la base (PostgreSQL)', () => {
-  it('una sala creada sin configuración queda abierta, con ingreso tardío permitido, sin consentimiento y con el desempate fijo', async () => {
+  it('un grupo creado sin configuración queda abierto, con ingreso tardío permitido, sin consentimiento y con el desempate fijo', async () => {
     const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
     const suffix = (Date.now() + 1).toString(36);
     try {

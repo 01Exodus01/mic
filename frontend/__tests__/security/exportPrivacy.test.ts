@@ -97,7 +97,7 @@ describe.skipIf(!hasTestDb)('PT-26: exportes (PostgreSQL)', () => {
     await room.closeRoundManually(fx.roomId);
 
     const { GET } = await import('@/app/api/rooms/[id]/export/v2/[file]/route');
-    for (const kind of ['rooms', 'participants', 'votes_long', 'voter_round_metrics', 'round_metrics', 'reasons', 'events']) {
+    for (const kind of ['groups', 'participants', 'votes_long', 'voter_round_metrics', 'round_metrics', 'reasons', 'events']) {
       const req = new NextRequest(`http://localhost/api/rooms/${fx.roomId}/export/v2/${kind}.csv`);
       const res: Response = await GET(req, { params: { id: fx.roomId, file: `${kind}.csv` } });
       expect(res.status).toBe(200);
@@ -144,8 +144,8 @@ describe.skipIf(!hasTestDb)('PT-26: exportes (PostgreSQL)', () => {
     expect(csv.reasons).toHaveLength(4);
   });
 
-  it('sala y ronda traen regla y variante; el de eventos no trae contenido de votos', () => {
-    expect(csv.rooms[0]).toMatchObject({ tie_break_rule: 'LEXICOGRAPHIC', concordance_variant: 'WITH_TIES' });
+  it('grupo y ronda traen regla y variante; el de eventos no trae contenido de votos', () => {
+    expect(csv.groups[0]).toMatchObject({ tie_break_rule: 'LEXICOGRAPHIC', concordance_variant: 'WITH_TIES' });
     expect(csv.round_metrics[0]).toMatchObject({ round: '1', concordance_variant: 'WITH_TIES', effective_voters: '3' });
     const types = csv.events.map((e) => e.type);
     expect(types).toContain('vote_submitted');

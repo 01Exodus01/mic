@@ -17,7 +17,7 @@ export default function HomePage() {
   const validatePin = (val: string): string | null => {
     const result = RoomPinSchema.safeParse(val);
     if (!result.success) {
-      return result.error.errors[0]?.message || 'El PIN de la sala debe tener 6 caracteres alfanuméricos.';
+      return result.error.errors[0]?.message || 'El PIN del grupo debe tener 6 caracteres alfanuméricos.';
     }
     return null;
   };
@@ -50,11 +50,11 @@ export default function HomePage() {
     try {
       const res = await verifyRoomPin(cleanPin);
       if (!res.success) {
-        setError(res.error || 'No se puede ingresar a esa sala. Revisa el PIN.');
+        setError(res.error || 'No se puede ingresar a ese grupo. Revisa el PIN.');
         pinInputRef.current?.focus();
         return;
       }
-      router.push(`/room/${cleanPin}`);
+      router.push(`/grupo/${cleanPin}`);
     } catch {
       setError('No se pudo comprobar el PIN. Revisa tu conexión e intenta de nuevo.');
     } finally {
@@ -79,13 +79,13 @@ export default function HomePage() {
 
         {/* Dos accesos claros */}
         <div className="space-y-4 pt-2">
-          {/* Acceso 1: Ingresar PIN de sala (acción principal para participantes) */}
+          {/* Acceso 1: Ingresar PIN de grupo (acción principal para participantes) */}
           <form onSubmit={handleSubmit} className="space-y-2 max-w-md" noValidate>
             <label
               htmlFor="landing-pin"
               className="block text-xs font-semibold text-ink uppercase tracking-wider"
             >
-              Ingresar a una sala
+              Ingresar a un grupo
             </label>
             <div className="flex flex-col sm:flex-row gap-2.5">
               <input
@@ -110,7 +110,7 @@ export default function HomePage() {
                 disabled={isInvalid || checking}
                 className="w-full sm:w-auto h-14 min-h-[56px] px-6 rounded-[6px] bg-brand hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shrink-0 flex items-center justify-center"
               >
-                {checking ? 'Comprobando...' : 'Ingresar a la sala'}
+                {checking ? 'Comprobando...' : 'Ingresar al grupo'}
               </button>
             </div>
             {isInvalid && (
@@ -120,14 +120,14 @@ export default function HomePage() {
             )}
           </form>
 
-          {/* Acceso 2: Enlace crear sala (anfitrión) */}
+          {/* Acceso 2: Enlace crear grupo (anfitrión) */}
           <div className="pt-2 text-xs text-ink-2">
             ¿Organizas la actividad?{' '}
             <Link
               href="/auth/login"
               className="text-ink font-semibold underline underline-offset-2 hover:text-brand"
             >
-              Crear una sala
+              Crear un grupo
             </Link>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function HomePage() {
                 El grupo ordena y argumenta
               </h3>
               <p className="text-xs text-ink-2 leading-relaxed">
-                Cada participante ingresa con el PIN de la sala, ordena las opciones según su preferencia y escribe una razón breve de su postura.
+                Cada participante ingresa con el PIN del grupo, ordena las opciones según su preferencia y escribe una razón breve de su postura.
               </p>
             </div>
           </div>

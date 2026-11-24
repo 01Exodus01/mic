@@ -10,8 +10,8 @@ export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
 
-  // Ingreso a una sala: solo el logo, que lleva al inicio (una acción por pantalla)
-  if (pathname === '/join' || pathname.startsWith('/room')) {
+  // Ingreso a un grupo: solo el logo, que lleva al inicio (una acción por pantalla)
+  if (pathname === '/join' || pathname.startsWith('/grupo')) {
     return (
       <header className="border-b border-line bg-canvas">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
@@ -48,7 +48,7 @@ export default function Navbar() {
             href="/join"
             className="text-xs font-medium text-ink hover:text-brand transition-colors"
           >
-            Ingresar a sala
+            Ingresar a un grupo
           </Link>
 
           {session?.user ? (

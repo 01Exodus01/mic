@@ -105,7 +105,7 @@ describe.skipIf(!hasTestDb)('retirar y reincorporar participantes (PostgreSQL)',
     expect((await p.joinRoom(fx.pin, 'Eva', '5678')).success).toBe(true);
     expect(await room.reinstateParticipant(fx.roomId, beto)).toMatchObject({
       success: false,
-      error: 'No hay cupos libres en la sala para reincorporar a esta persona.',
+      error: 'No hay cupos libres en el grupo para reincorporar a esta persona.',
     });
 
     // A seat frees up: Beto comes back as himself (same blind code)
@@ -132,12 +132,12 @@ describe.skipIf(!hasTestDb)('retirar y reincorporar participantes (PostgreSQL)',
     await room.expelParticipant(fx.roomId, fx.participantIds[0]); // a free seat, but the name is taken
     expect(await room.reinstateParticipant(fx.roomId, fx.participantIds[2])).toMatchObject({
       success: false,
-      error: 'El nombre Caro ya lo usa otra persona en la sala; no se puede reincorporar.',
+      error: 'El nombre Caro ya lo usa otra persona en el grupo; no se puede reincorporar.',
     });
     expect((await prisma.participant.findUniqueOrThrow({ where: { id: other.id } })).is_retired).toBe(false);
   });
 
-  it('solo el anfitrión de la sala, solo mientras la actividad sigue y solo en salas con nombre', async () => {
+  it('solo el anfitrión del grupo, solo mientras la actividad sigue y solo en grupos con nombre', async () => {
     const fx = await fullRoom();
     const room = await import('@/app/actions/room');
     await room.expelParticipant(fx.roomId, fx.participantIds[0]);
@@ -149,7 +149,7 @@ describe.skipIf(!hasTestDb)('retirar y reincorporar participantes (PostgreSQL)',
     await prisma.room.update({ where: { id: fx.roomId }, data: { status: 'ROUND_OPEN', access_mode: 'ROSTER' } });
     expect(await room.reinstateParticipant(fx.roomId, fx.participantIds[0])).toMatchObject({
       success: false,
-      error: 'En salas con lista, vuelve a agregar a la persona desde la lista.',
+      error: 'En grupos con lista, vuelve a agregar a la persona desde la lista.',
     });
   });
 });

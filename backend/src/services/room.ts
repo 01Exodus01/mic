@@ -149,7 +149,7 @@ function validateRoomInput(input: CreateRoomInput) {
   });
 
   if (!validation.success) {
-    const firstError = validation.error.errors[0]?.message || 'Datos de configuración de sala inválidos.';
+    const firstError = validation.error.errors[0]?.message || 'Datos de configuración de grupo inválidos.';
     throw Errors.INVALID_BALLOT(firstError);
   }
 
@@ -324,7 +324,7 @@ export async function updateRoom(ctx: RequestContext, salaId: string, input: Cre
       }
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     return { success: true };
   } catch (err) {
     const e = toApiError(err);
@@ -368,7 +368,7 @@ export async function startRoom(
       });
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return { success: true };
@@ -398,7 +398,7 @@ export async function closeRoundManually(ctx: RequestContext, salaId: string): P
       return { success: false, error: result.error ?? 'Error procesando consenso.' };
     }
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return {
@@ -472,7 +472,7 @@ export async function extendDeadline(
       throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
     }
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return { success: true };
@@ -510,7 +510,7 @@ export async function cancelRoom(ctx: RequestContext, salaId: string): Promise<A
       });
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return { success: true };
@@ -562,7 +562,7 @@ export async function openNextRound(
       });
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return { success: true };
@@ -625,7 +625,7 @@ export async function scheduleRound(
       });
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     return { success: true, data: { opensAt: opensAt.toISOString(), deadline: deadline.toISOString() } };
   } catch (err) {
     const e = toApiError(err);
@@ -653,7 +653,7 @@ export async function cancelScheduledRound(ctx: RequestContext, salaId: string):
         round: room.status === 'DRAFT' ? 1 : room.current_round + 1,
       });
     });
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     return { success: true };
   } catch (err) {
     const e = toApiError(err);
@@ -799,7 +799,7 @@ export async function resetParticipantPin(
       });
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return { success: true };
@@ -861,7 +861,7 @@ export async function expelParticipant(
       where: { room_id: salaId, is_retired: false },
     });
 
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
 
     return { success: true, data: { activeCount: remainingActive } };
@@ -891,7 +891,7 @@ export async function reinstateParticipant(
       throw Errors.INVALID_BALLOT('La actividad ya terminó; no se puede reincorporar a nadie.');
     }
     if (room.access_mode !== 'OPEN_PIN') {
-      throw Errors.INVALID_BALLOT('En salas con lista, vuelve a agregar a la persona desde la lista.');
+      throw Errors.INVALID_BALLOT('En grupos con lista, vuelve a agregar a la persona desde la lista.');
     }
 
     await prisma.$transaction(async (tx) => {
@@ -906,11 +906,11 @@ export async function reinstateParticipant(
         select: { nickname: true },
       });
       if (active.length >= room.max_members) {
-        throw Errors.INVALID_BALLOT('No hay cupos libres en la sala para reincorporar a esta persona.');
+        throw Errors.INVALID_BALLOT('No hay cupos libres en el grupo para reincorporar a esta persona.');
       }
       const name = target.retired_nickname ?? target.nickname;
       if (active.some((p) => p.nickname.toLowerCase() === name.toLowerCase())) {
-        throw Errors.INVALID_BALLOT(`El nombre ${name} ya lo usa otra persona en la sala; no se puede reincorporar.`);
+        throw Errors.INVALID_BALLOT(`El nombre ${name} ya lo usa otra persona en el grupo; no se puede reincorporar.`);
       }
 
       await tx.participant.update({
@@ -927,7 +927,7 @@ export async function reinstateParticipant(
     });
 
     const activeCount = await prisma.participant.count({ where: { room_id: salaId, is_retired: false } });
-    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    ctx.revalidate(`/dashboard/grupos/${salaId}`);
     ctx.revalidate('/participant/vote');
     return { success: true, data: { activeCount } };
   } catch (err) {
@@ -960,10 +960,10 @@ async function requireRosterRoom(ctx: RequestContext, roomId: string) {
   const room = await prisma.room.findFirst({ where: { id: roomId, host_id: hostId } });
   if (!room) throw Errors.ROOM_NOT_FOUND();
   if (room.access_mode !== 'ROSTER') {
-    throw Errors.INVALID_BALLOT('Esta sala no usa una lista de participantes.');
+    throw Errors.INVALID_BALLOT('Este grupo no usa una lista de participantes.');
   }
   if (isTerminalState(room.status)) {
-    throw Errors.INVALID_BALLOT('La sala ya terminó; no se puede cambiar la lista.');
+    throw Errors.INVALID_BALLOT('El grupo ya terminó; no se puede cambiar la lista.');
   }
   return room;
 }

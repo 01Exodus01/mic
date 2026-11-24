@@ -384,7 +384,7 @@ export async function verifyRoomPin(
     if (!validation.success) {
       return {
         success: false,
-        error: validation.error.errors[0]?.message || 'El PIN de la sala debe tener 6 caracteres alfanuméricos.',
+        error: validation.error.errors[0]?.message || 'El PIN del grupo debe tener 6 caracteres alfanuméricos.',
       };
     }
 
@@ -397,7 +397,7 @@ export async function verifyRoomPin(
     // Unified message: does not disclose whether room exists or is in an invalid state
     // A finished room stays reachable so its participants can see the final results
     if (!room || room.status === 'CANCELLED') {
-      return { success: false, error: 'No se puede ingresar a esa sala. Revisa el PIN.' };
+      return { success: false, error: 'No se puede ingresar a ese grupo. Revisa el PIN.' };
     }
 
     return {
@@ -437,14 +437,14 @@ export async function checkNicknameInRoom(
 
     // Roster rooms (PT-22) do not use names: same generic message
     if (!room || room.status === 'CANCELLED' || room.access_mode === 'ROSTER') {
-      return { success: false, error: 'No se puede ingresar a esa sala. Revisa tus datos.' };
+      return { success: false, error: 'No se puede ingresar a ese grupo. Revisa tus datos.' };
     }
 
     const retired = room.participants.some(
       (p) => p.is_retired && p.nickname.toLowerCase() === nickVal.data.toLowerCase()
     );
     if (retired) {
-      return { success: false, error: 'No se puede ingresar a esa sala. Revisa tus datos.' };
+      return { success: false, error: 'No se puede ingresar a ese grupo. Revisa tus datos.' };
     }
 
     const exists = room.participants.some(
@@ -682,7 +682,7 @@ export async function joinRoom(
 // Join a roster room with a personal code (PT-22)
 // ─────────────────────────────────────────────
 
-const ROSTER_JOIN_ERROR = 'No se puede ingresar a esa sala. Revisa el PIN y tu código.';
+const ROSTER_JOIN_ERROR = 'No se puede ingresar a ese grupo. Revisa el PIN y tu código.';
 
 /**
  * Roster rooms: room PIN + personal code, no name or 4-digit PIN. The first
@@ -865,7 +865,7 @@ export async function submitVote(ctx: RequestContext, votes: VoteEntry[]): Promi
     }
 
     // Transacción interactiva serializable para validar estado, plazo y persistir boleta atómicamente.
-    // Votos simultáneos chocan en la fila de la sala (P2034): se reintenta la transacción completa.
+    // Votos simultáneos chocan en la fila del grupo (P2034): se reintenta la transacción completa.
     await runSerializableWithRetry(() => prisma.$transaction(
       async (tx) => {
         const room = await tx.room.findUnique({
@@ -881,9 +881,9 @@ export async function submitVote(ctx: RequestContext, votes: VoteEntry[]): Promi
           throw Errors.ROOM_CLOSED();
         }
 
-        // Bloqueo compartido de la fila de la sala: los votantes no chocan entre sí,
+        // Bloqueo compartido de la fila del grupo: los votantes no chocan entre sí,
         // y el cierre de ronda (CAS con UPDATE) espera a que terminen los votos en curso.
-        // Si el cierre ya ocurrió, Serializable aborta y el reintento ve la sala cerrada.
+        // Si el cierre ya ocurrió, Serializable aborta y el reintento ve el grupo cerrado.
         const locked = await tx.$queryRaw<Array<{ status: string }>>`
           SELECT "status" FROM "Room" WHERE "id" = ${targetRoomId} FOR SHARE
         `;

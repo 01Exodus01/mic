@@ -14,7 +14,7 @@ export async function roomSync(ctx: RequestContext, params: { id: string }, inpu
   try {
     const roomId = params.id;
     if (!roomId) {
-      return { status: 400, body: { error: 'ID de sala requerido.' } };
+      return { status: 400, body: { error: 'ID de grupo requerido.' } };
     }
 
     // 1. Authorization: either Host or Participant
@@ -70,7 +70,7 @@ export async function roomSync(ctx: RequestContext, params: { id: string }, inpu
     });
 
     if (!room) {
-      return { status: 404, body: { error: 'Sala no encontrada.' } };
+      return { status: 404, body: { error: 'Grupo no encontrado.' } };
     }
 
     // Check participant active status (if participant request)

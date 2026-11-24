@@ -14,15 +14,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     {
       href: '/dashboard',
-      label: 'Salas',
+      label: 'Grupos',
       icon: LayoutDashboard,
       active: pathname === '/dashboard',
     },
     {
-      href: '/dashboard/rooms/new',
-      label: 'Nueva sala',
+      href: '/dashboard/grupos/nuevo',
+      label: 'Nuevo grupo',
       icon: Plus,
-      active: pathname === '/dashboard/rooms/new',
+      active: pathname === '/dashboard/grupos/nuevo',
     },
   ];
 

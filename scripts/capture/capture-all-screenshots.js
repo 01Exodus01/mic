@@ -81,8 +81,8 @@ async function run() {
     // 7. Panel de control (/dashboard)
     await captureScreen(page, '06-dashboard');
 
-    // 8. Nueva sala (/dashboard/rooms/new)
-    await page.goto(`${BASE_URL}/dashboard/rooms/new`, { waitUntil: 'networkidle', timeout: 15000 });
+    // 8. Nueva sala (/dashboard/grupos/nuevo)
+    await page.goto(`${BASE_URL}/dashboard/grupos/nuevo`, { waitUntil: 'networkidle', timeout: 15000 });
     await captureScreen(page, '07-dashboard-rooms-new');
 
     // 9. Crear sala y ver detalle
@@ -106,7 +106,7 @@ async function run() {
     const submitBtn = page.locator('button[type="submit"]');
     if (await submitBtn.isEnabled()) {
       await submitBtn.click();
-      await page.waitForURL('**/dashboard/rooms/**', { timeout: 15000 }).catch(() => {});
+      await page.waitForURL('**/dashboard/grupos/**', { timeout: 15000 }).catch(() => {});
       await page.waitForTimeout(2000);
       await captureScreen(page, '08-dashboard-room-detail');
     }

@@ -6,8 +6,8 @@
  *  - no absolute timestamp: each *_at column becomes seconds since its round
  *    opened (t_since_round_open_s), a duration, or is removed;
  *  - no internal ids: database ids (cuid, which embed their creation time) are
- *    replaced by stable aliases (opt_01, ev_0001, rs_0001, room);
- *  - no room name (it may name the course) and no free text, unless the
+ *    replaced by stable aliases (opt_01, ev_0001, rs_0001, group);
+ *  - no group name (it may name the course) and no free text, unless the
  *    researcher states that publishing the reasons was approved (includeText).
  * Blind codes stay: they are the only participant identifier in any export.
  */
@@ -63,7 +63,7 @@ export function toPublicationTables(tables: CsvTable[], ds: ExportDataset, opts:
 
   // Aliases for every database id that can appear in a cell
   const alias = new Map<string, string>();
-  alias.set(ds.room.id, 'room');
+  alias.set(ds.room.id, 'group');
   const optionAlias = new Map<string, string>();
   [...ds.options]
     .sort((a, b) => a.order_index - b.order_index)
@@ -88,7 +88,7 @@ export function toPublicationTables(tables: CsvTable[], ds: ExportDataset, opts:
   };
 
   const changes: Record<string, Record<string, ColumnChange>> = {
-    'rooms.csv': { room_name: { drop: true }, created_at: { drop: true } },
+    'groups.csv': { group_name: { drop: true }, created_at: { drop: true } },
     'participants.csv': {
       first_joined_at: {
         rename: 'first_joined_t_since_round_open_s',

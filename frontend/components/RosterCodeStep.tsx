@@ -52,7 +52,7 @@ export default function RosterCodeStep({
         toast.success('Ingreso confirmado');
         router.push('/participant/vote');
       } else {
-        setServerError(res.error || 'No se puede ingresar a esa sala. Revisa el PIN y tu código.');
+        setServerError(res.error || 'No se puede ingresar a ese grupo. Revisa el PIN y tu código.');
         inputRef.current?.focus();
       }
     } catch {
@@ -116,7 +116,7 @@ export default function RosterCodeStep({
           <span />
         )}
         <button type="button" onClick={onChangeRoom} className="min-h-[44px] px-2 text-xs text-ink-2 hover:text-ink">
-          Cambiar sala
+          Cambiar grupo
         </button>
       </div>
     </form>

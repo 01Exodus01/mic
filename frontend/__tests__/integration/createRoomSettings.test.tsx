@@ -64,7 +64,7 @@ describe('PT-18: componentes', () => {
     }
   });
 
-  it('el resumen de una sala nueva muestra el desempate fijo', () => {
+  it('el resumen de un grupo nuevo muestra el desempate fijo', () => {
     const html = renderToStaticMarkup(
       <RoomSettingsSummary room={{ tie_break_rule: 'PAIRWISE_MAJORITY', concordance_variant: 'WITHOUT_TIES', access_mode: 'OPEN_PIN' }} />
     );
@@ -72,7 +72,7 @@ describe('PT-18: componentes', () => {
     expect(html).toContain('Sin empates');
   });
 
-  it('el resumen de solo lectura muestra la configuración de una sala anterior', () => {
+  it('el resumen de solo lectura muestra la configuración de un grupo anterior', () => {
     const html = renderToStaticMarkup(
       <RoomSettingsSummary room={{ tie_break_rule: 'REASON_BALANCE', concordance_variant: 'WITHOUT_TIES', access_mode: 'ROSTER', allow_late_join: true, close_when_all_voted: true }} />
     );
@@ -144,7 +144,7 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
     expect(room).toMatchObject({ tie_break_rule: 'PAIRWISE_MAJORITY', concordance_variant: 'WITHOUT_TIES' });
   });
 
-  it('una sala nueva no puede usar Kemeny-Young', async () => {
+  it('un grupo nuevo no puede usar Kemeny-Young', async () => {
     const { createRoom } = await import('@/app/actions/room');
     const before = await prisma.room.count({ where: { host_id: hostId } });
     const res = await createRoom({ ...baseInput, method: 'KEMENY_YOUNG' } as unknown as Parameters<typeof createRoom>[0]);
@@ -152,7 +152,7 @@ describe.skipIf(!hasTestDb)('PT-18: createRoom (PostgreSQL)', () => {
     expect(await prisma.room.count({ where: { host_id: hostId } })).toBe(before);
   });
 
-  it('ninguna acción del anfitrión cambia la configuración después de crear la sala', async () => {
+  it('ninguna acción del anfitrión cambia la configuración después de crear el grupo', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync(new URL('../../../backend/src/services/room.ts', import.meta.url), 'utf8');
     const afterCreate = source.slice(source.indexOf('export async function startRoom'));

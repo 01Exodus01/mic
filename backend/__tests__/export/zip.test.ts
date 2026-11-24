@@ -23,7 +23,7 @@ const hasUnzip = (() => {
 
 describe('P3.1: ZIP sin dependencias', () => {
   const files = [
-    { name: 'rooms.csv', data: Buffer.from('﻿room_id,room_name\r\nr1,Votación de café ñandú\r\n', 'utf8') },
+    { name: 'groups.csv', data: Buffer.from('﻿group_id,group_name\r\nr1,Votación de café ñandú\r\n', 'utf8') },
     { name: 'vacío.txt', data: Buffer.alloc(0) },
     { name: 'grande.csv', data: Buffer.from('a,b,c\r\n'.repeat(20000), 'utf8') },
   ];
@@ -48,7 +48,7 @@ describe('P3.1: ZIP sin dependencias', () => {
       fs.writeFileSync(file, createZip(files));
       expect(execFileSync('unzip', ['-t', file]).toString()).toMatch(/No errors detected/);
       execFileSync('unzip', ['-q', file, '-d', path.join(dir, 'out')]);
-      expect(fs.readFileSync(path.join(dir, 'out', 'rooms.csv')).equals(files[0].data)).toBe(true);
+      expect(fs.readFileSync(path.join(dir, 'out', 'groups.csv')).equals(files[0].data)).toBe(true);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

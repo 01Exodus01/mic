@@ -48,7 +48,7 @@ describe.skipIf(!hasTestDb)('E-14: la ronda se calcula con tau-c (PostgreSQL)', 
     await prisma.$disconnect();
   });
 
-  it('el informe guarda τ* de tau-c y la sala concluye por consenso', async () => {
+  it('el informe guarda τ* de tau-c y el grupo concluye por consenso', async () => {
     const report = await prisma.roundReport.findUniqueOrThrow({ where: { room_id_round: { room_id: fx!.roomId, round: 1 } } });
     expect(report.obtained_tau).toBeCloseTo(17 / 18, 10);
     const json = report.arguments_json as Record<string, any>;

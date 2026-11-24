@@ -49,14 +49,14 @@ describe('Grupo 6: Participantes, expulsión y navegación', () => {
         );
         if (found && found.is_retired) {
           // D4: Mensaje genérico que no revela estado interno
-          return { allowed: false, error: 'No se puede ingresar a esa sala. Revisa tus datos.' };
+          return { allowed: false, error: 'No se puede ingresar a ese grupo. Revisa tus datos.' };
         }
         return { allowed: true };
       };
 
       const resultRetired = checkReentry('carlos');
       expect(resultRetired.allowed).toBe(false);
-      expect(resultRetired.error).toBe('No se puede ingresar a esa sala. Revisa tus datos.');
+      expect(resultRetired.error).toBe('No se puede ingresar a ese grupo. Revisa tus datos.');
 
       const resultActive = checkReentry('diana');
       expect(resultActive.allowed).toBe(true);
@@ -113,7 +113,7 @@ describe('Grupo 6: Participantes, expulsión y navegación', () => {
       expect(formState.nickname).toBe('Elena');
     });
 
-    it('"Cambiar sala" restablece el PIN de sala y vuelve al paso 1', () => {
+    it('"Cambiar grupo" restablece el PIN de grupo y vuelve al paso 1', () => {
       const formState = {
         step: 3,
         pin: 'ABC123',
@@ -135,16 +135,16 @@ describe('Grupo 6: Participantes, expulsión y navegación', () => {
   });
 
   describe('AUD-23: Navegación accesible y migas de pan', () => {
-    it('las pantallas secundarias deben tener destino explícito "Volver a salas"', () => {
+    it('las pantallas secundarias deben tener destino explícito "Volver a grupos"', () => {
       const breadcrumbConfig = {
         label: 'Migas de pan',
         backTarget: '/dashboard',
-        backText: 'Volver a salas',
+        backText: 'Volver a grupos',
       };
 
       expect(breadcrumbConfig.label).toBe('Migas de pan');
       expect(breadcrumbConfig.backTarget).toBe('/dashboard');
-      expect(breadcrumbConfig.backText).toBe('Volver a salas');
+      expect(breadcrumbConfig.backText).toBe('Volver a grupos');
     });
   });
 });

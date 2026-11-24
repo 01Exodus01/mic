@@ -125,7 +125,7 @@ export default function LoginPage() {
             Acceso de anfitrión
           </h1>
           <p className="text-xs text-ink-2">
-            Ingresa con tus datos para administrar tus salas.
+            Ingresa con tus datos para administrar tus grupos.
           </p>
         </div>
 

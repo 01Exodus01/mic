@@ -282,7 +282,7 @@ describe.skipIf(!hasTestDb)('PT-23: participantes tardíos (PostgreSQL)', () => 
     expect(await submitVote(ballot(fx))).toEqual({ success: true });
   });
 
-  it('sala con lista: un miembro agregado en la ronda 2 entra solo si la sala lo permite', async () => {
+  it('sala con lista: un miembro agregado en la ronda 2 entra solo si el grupo lo permite', async () => {
     const { joinRoomWithCode } = await import('@/app/actions/participant');
     for (const allow of [false, true]) {
       const fx = await createRoomFixture(prisma, {

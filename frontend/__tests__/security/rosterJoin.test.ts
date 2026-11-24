@@ -30,7 +30,7 @@ vi.mock('@/lib/participant-session', () => ({
   clearParticipantSession: async () => undefined,
 }));
 
-const GENERIC = 'No se puede ingresar a esa sala. Revisa el PIN y tu código.';
+const GENERIC = 'No se puede ingresar a ese grupo. Revisa el PIN y tu código.';
 
 describe.skipIf(!hasTestDb)('PT-22: ingreso con código personal (PostgreSQL)', () => {
   let prisma: PrismaClient;
@@ -95,7 +95,7 @@ describe.skipIf(!hasTestDb)('PT-22: ingreso con código personal (PostgreSQL)', 
     for (const res of attempts) expect(res).toEqual({ success: false, error: GENERIC, code: 'CANNOT_JOIN' });
   });
 
-  it('el ingreso con nombre y PIN de 4 dígitos no funciona en una sala con lista', async () => {
+  it('el ingreso con nombre y PIN de 4 dígitos no funciona en un grupo con lista', async () => {
     const { joinRoom, checkNicknameInRoom, verifyRoomPin } = await import('@/app/actions/participant');
     expect((await joinRoom(roster.pin, 'Alguien', '1234')).success).toBe(false);
     expect((await checkNicknameInRoom(roster.pin, 'Alguien')).success).toBe(false);

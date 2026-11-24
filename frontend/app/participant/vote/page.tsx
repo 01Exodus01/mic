@@ -133,7 +133,7 @@ export default function ParticipantVotePage() {
         return;
       }
       if (!res.success || !res.data) {
-        toast.error('No se puede ingresar a esa sala. Revisa tus datos.');
+        toast.error('No se puede ingresar a ese grupo. Revisa tus datos.');
         router.push('/join');
         return;
       }

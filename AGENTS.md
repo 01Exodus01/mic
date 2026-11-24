@@ -114,8 +114,17 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   servidor), se guarda la aceptación con hora y versión del texto, y se puede
   volver a leer después. El texto queda fijo al iniciar la sala. Si no se activa,
   el paso no existe.
-- La configuración de la sala (desempate, variante, acceso, participantes
-  tardíos, consentimiento, cierre anticipado) no cambia una vez iniciada.
+- Antes de abrir la Ronda 1 (estado DRAFT) el anfitrión puede editar todo salvo
+  la forma de ingreso: título, opciones (conservan su id), método, número de
+  participantes (no menos de los que ya esperan), acuerdo requerido, rondas,
+  participantes tardíos, cierre anticipado y consentimiento (un texto nuevo sube
+  la versión). Desde la Ronda 1 la configuración no cambia. Pedido del equipo
+  2026-11-24 (E-16).
+- Sala de espera: los participantes pueden ingresar en DRAFT y esperan sin ver
+  las opciones; se muestran al abrirse la Ronda 1 (todos con el mismo tiempo).
+- Rondas programadas: en DRAFT (Ronda 1) o en ROUND_FEEDBACK (la siguiente), el
+  anfitrión fija hora de inicio y de cierre; la ronda se abre sola (consulta
+  perezosa o worker), de forma atómica, y la bitácora guarda `round_scheduled`.
 - Estado de sala cancelada: CANCELLED, distinto de CONCLUDED. Las actividades
   canceladas se distinguen en los datos y los CSV.
 - Participante retirado por el anfitrión: borrado lógico. Sus selecciones de
@@ -299,6 +308,10 @@ pantalla. Modo oscuro por defecto y modo claro a elección de cada persona
   "alumno", "profesor" ni "aula".
 - Prohibidos fuera de "Detalle técnico": quórum, cohorte, deadline, m_efectivo,
   τ*, mid-rank, Zero-PII, beatpath, weak order, Tau-c.
+- Nunca "sala" en pantalla: se dice "grupo" ("el grupo", "Nuevo grupo", "PIN del
+  grupo"). Pedido del equipo 2026-11-24 (E-16); también en el export
+  (`groups.csv`, `group_id`, formato `r-fast-cr-export/2`). "Sala de espera" sí
+  se usa para el lobby. El código y la base de datos siguen usando `room`.
 - Nunca "voto", "votar", "votación", "votante" ni "boleta" en pantalla (pedido
   de la tutora: evocan mayorías y democracia tradicional; 2026-11-05). El orden
   que envía un participante es su "selección"; la etapa abierta es la "ronda"
@@ -338,8 +351,11 @@ pantalla. Modo oscuro por defecto y modo claro a elección de cada persona
 
 ## Rutas
 - Acceso: `/`, `/auth/login`, `/auth/register`, `/auth/error`.
-- Anfitrión: `/dashboard`, `/dashboard/rooms/new`, `/dashboard/rooms/[id]`.
-- Participante: `/join`, `/room/[pin]`, `/participant/vote`, `/participant/feedback`.
+- Anfitrión: `/dashboard`, `/dashboard/grupos/nuevo`, `/dashboard/grupos/[id]`,
+  `/dashboard/grupos/[id]/editar` (solo antes de la Ronda 1). Las rutas antiguas
+  (`/dashboard/rooms/...`, `/room/[pin]`) redirigen.
+- Participante: `/join`, `/grupo/[pin]`, `/participant/vote` (también la sala de
+  espera antes de la Ronda 1), `/participant/feedback`.
 - No hay rutas heredadas (`/student`, `/sala`). No crear nuevas con nombres en español.
 
 ## Proceso
@@ -375,6 +391,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-13 | 2026-11-06 | Ingreso tardío permitido por defecto; la opción de la sala lo bloquea | Pedido del equipo tras el testeo; reemplaza el valor por defecto de E-3. Las salas ya creadas conservan su configuración |
 | E-14 | 2026-11-15 | El CIX y τ* se calculan con tau-c de Stuart; tau-b de Kendall y gamma quedan como sensibilidad | Pedido explícito del investigador. Procedimiento r-fast-cr-5 (`__procedure.concordanceIndex = 'TAU_C'`). Los informes anteriores conservan tau-b; el export indica el coeficiente de cada ronda en `round_metrics.concordance_index` |
 | E-15 | 2026-11-24 | Modo oscuro por defecto, claro a elección; colores solo por tokens de tema | Pedido del equipo. Reemplaza "modo claro únicamente" |
+| E-16 | 2026-11-24 | "Sala" pasa a "Grupo" en pantalla, URLs y export; sala de espera, edición antes de la Ronda 1 y rondas programadas; hasta 70 participantes y 50 opciones; en grupos con lista el anfitrión ve solo totales por ronda | Pedidos del equipo tras el testeo. Export `r-fast-cr-export/2`. Migración aditiva `scheduled_open_at`, `scheduled_deadline` |
 
 ### Especificación en PDF superada
 

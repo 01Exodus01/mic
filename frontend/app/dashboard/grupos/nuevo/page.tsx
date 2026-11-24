@@ -1,5 +1,5 @@
 /**
- * app/dashboard/rooms/new/page.tsx
+ * app/dashboard/grupos/nuevo/page.tsx
  * New group: the form is components/RoomForm (shared with editing before round 1).
  */
 

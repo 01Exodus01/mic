@@ -19,7 +19,7 @@ import { readZip } from '../helpers/readZip';
 
 const NOW = new Date('2026-11-05T12:00:00.000Z');
 const CSV_NAMES = [
-  'rooms.csv', 'options.csv', 'participants.csv', 'rounds.csv', 'votes_long.csv', 'voter_round_metrics.csv',
+  'groups.csv', 'options.csv', 'participants.csv', 'rounds.csv', 'votes_long.csv', 'voter_round_metrics.csv',
   'option_round_scores.csv', 'round_metrics.csv', 'reasons.csv', 'events.csv',
 ];
 const ISO_TIMESTAMP = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
@@ -63,7 +63,7 @@ describe('P3.1: ZIP con CSV, diccionario y manifiesto', () => {
     }
     expect(manifest.files.find((f) => f.name === 'README_data_dictionary.md')!.rows).toBeNull();
     expect(manifest).toMatchObject({
-      export_format: 'r-fast-cr-export/1',
+      export_format: 'r-fast-cr-export/2',
       mode: 'research',
       includes_free_text: true,
       generated_at: NOW.toISOString(),
@@ -98,13 +98,13 @@ describe('P3.3: modo anonimizado para publicar', () => {
     }
     expect(pub.text('manifest.json')).not.toMatch(ISO_TIMESTAMP);
     expect(pub.manifest.generated_at).toBe('2026-11-05');
-    expect(pub.manifest.room_id).toBe('room');
+    expect(pub.manifest.group_id).toBe('group');
   });
 
   it('sin nombre de sala ni texto libre por defecto', () => {
     const tables = exportTables(loadPilotDataset(), { mode: 'publication', includeText: false });
-    expect(tables.find((t) => t.name === 'rooms.csv')!.headers).not.toContain('room_name');
-    expect(pub.text('rooms.csv')).not.toContain('Sala piloto');
+    expect(tables.find((t) => t.name === 'groups.csv')!.headers).not.toContain('group_name');
+    expect(pub.text('groups.csv')).not.toContain('Sala piloto');
     const reasons = tables.find((t) => t.name === 'reasons.csv')!;
     const textCol = reasons.headers.indexOf('text');
     expect(reasons.rows.length).toBeGreaterThan(0);
@@ -164,5 +164,19 @@ describe('P3.3: modo anonimizado para publicar', () => {
     expect(exportOptionsFrom(new URLSearchParams('mode=publication'))).toEqual({ mode: 'publication', includeText: false });
     expect(exportOptionsFrom(new URLSearchParams('mode=publication&include_text=1'))).toEqual({ mode: 'publication', includeText: true });
     expect(exportOptionsFrom(new URLSearchParams('mode=otro&include_text=1'))).toEqual({ mode: 'research', includeText: true });
+  });
+});
+
+describe('E-16: "sala" es "grupo" también en el export', () => {
+  it('nombres de evento y motivos de ingreso rechazado guardados antes del cambio', async () => {
+    const { exportEventType, exportDataValue } = await import('@mic/backend/export/tables');
+    expect(exportEventType('room_cancelled')).toBe('group_cancelled');
+    expect(exportEventType('room_started')).toBe('round_opened');
+    expect(['room_full', 'room_concluded', 'room_unavailable', 'wrong_pin'].map(exportDataValue)).toEqual([
+      'group_full',
+      'group_concluded',
+      'group_unavailable',
+      'wrong_pin',
+    ]);
   });
 });

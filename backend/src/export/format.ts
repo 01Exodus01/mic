@@ -37,7 +37,7 @@ export function snakeCase(key: string): string {
 }
 
 export interface CsvTable {
-  /** File name inside the export, e.g. "rooms.csv" */
+  /** File name inside the export, e.g. "groups.csv" */
   name: string;
   headers: string[];
   rows: Cell[][];
