@@ -15,6 +15,9 @@ export const ROOM_EVENT_TYPES = [
   'room_started',
   'round_closed',
   'round_opened',
+  // The host scheduled when the next round opens and closes, or removed that schedule
+  'round_scheduled',
+  'round_schedule_cancelled',
   'deadline_extended',
   'room_cancelled',
   'pin_reset',

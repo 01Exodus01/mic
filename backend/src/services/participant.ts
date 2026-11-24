@@ -44,6 +44,8 @@ export interface ParticipantRoomViewData {
     currentRound: number;
     maxRounds: number;
     deadline: Date | null;
+    /** Opening of the next round when the host scheduled it (lobby and between rounds) */
+    scheduledOpenAt: Date | null;
     method: AggregationMethod;
     tauThreshold: number;
     closeWhenAllVoted: boolean;
@@ -1121,6 +1123,7 @@ export async function getParticipantRoomView(ctx: RequestContext): Promise<Actio
           currentRound: room.current_round,
           maxRounds: room.max_rounds,
           deadline: room.deadline,
+          scheduledOpenAt: room.scheduled_open_at,
           method: room.method,
           tauThreshold: room.tau_threshold,
           closeWhenAllVoted: room.close_when_all_voted,

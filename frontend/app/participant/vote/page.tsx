@@ -14,7 +14,7 @@ import { trackEvent, useReportReadTracker } from '@/lib/telemetry/client';
 import RoundFeedbackReport, { OptionPreviousRound, type FeedbackReportData } from '@/components/RoundFeedbackReport';
 import ConsentDialog from '@/components/ConsentDialog';
 import RetiredNotice from '@/components/RetiredNotice';
-import { formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
+import { formatClosingMoment, formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
 import { toast } from 'sonner';
 import { ParticipantVoteSkeleton } from '@/components/ui/Skeleton';
 import { Clock, LogOut, AlertCircle, AlertTriangle, ChevronDown, Edit3, CheckCircle2, RefreshCw } from 'lucide-react';
@@ -43,6 +43,7 @@ interface ParticipantRoomData {
     currentRound: number;
     maxRounds: number;
     deadline: string | null;
+    scheduledOpenAt?: string | null;
     method: string;
     closeWhenAllVoted?: boolean;
   };
@@ -424,6 +425,7 @@ export default function ParticipantVotePage() {
 
   // Lobby: joined before round 1 opens. The options appear when it opens.
   if (roomData?.sala?.status === 'DRAFT') {
+    const opensAt = roomData.sala.scheduledOpenAt ? new Date(roomData.sala.scheduledOpenAt) : null;
     return (
       <main className="flex-1 max-w-[540px] w-full mx-auto px-4 pt-6 pb-12">
         <div className="flex items-center justify-between pb-3 mb-6 border-b border-[#D9D5CC] text-xs">
@@ -445,7 +447,9 @@ export default function ParticipantVotePage() {
             Estás en la sala de espera
           </p>
           <p className="text-sm text-[#14171A]">
-            La Ronda 1 todavía no empieza. Cuando el anfitrión la abra, verás las opciones aquí.
+            {opensAt
+              ? `La Ronda 1 se abrirá el ${formatClosingMoment(opensAt)}.`
+              : 'La Ronda 1 todavía no empieza. Cuando el anfitrión la abra, verás las opciones aquí.'}
           </p>
           <p className="text-xs text-[#5A554E]">No hace falta recargar: esta pantalla se actualiza sola.</p>
         </div>

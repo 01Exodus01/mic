@@ -13,6 +13,7 @@
 
 import { randomInt } from 'crypto';
 import prisma from './db';
+import { openScheduledRoundIfDue } from './round-schedule';
 import { runAggregationEngine, Ballot, AggregationMethod, WeakOrder } from './algorithms';
 import { RoomStatus, Prisma } from '@prisma/client';
 import type { EventActor } from '@prisma/client';
@@ -465,6 +466,8 @@ async function markInsufficientVotes(
  * If deadline has expired while in ROUND_OPEN, triggers processing automatically.
  */
 export async function checkAndProcessExpiredDeadline(roomId: string): Promise<boolean> {
+  // A round the host scheduled opens here too (round-schedule.ts)
+  if (await openScheduledRoundIfDue(roomId)) return true;
   const room = await prisma.room.findUnique({
     where: { id: roomId },
     select: { status: true, deadline: true },

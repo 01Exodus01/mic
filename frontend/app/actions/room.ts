@@ -43,6 +43,14 @@ export async function updateRoom(...args: Args<typeof service.updateRoom>) {
   return service.updateRoom(requestContext(), ...args);
 }
 
+export async function scheduleRound(...args: Args<typeof service.scheduleRound>) {
+  return service.scheduleRound(requestContext(), ...args);
+}
+
+export async function cancelScheduledRound(...args: Args<typeof service.cancelScheduledRound>) {
+  return service.cancelScheduledRound(requestContext(), ...args);
+}
+
 export async function getRoomStatus(...args: Args<typeof service.getRoomStatus>) {
   return service.getRoomStatus(requestContext(), ...args);
 }

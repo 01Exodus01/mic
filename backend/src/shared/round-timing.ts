@@ -3,7 +3,7 @@
  * How long a round lasts: a duration in minutes or an exact closing date and
  * time chosen on a calendar. Same rule on the server and in the browser:
  * the round ends at least 1 minute and at most 30 days after its start
- * (now, or the current deadline when extending).
+ * (now, the current deadline when extending, or the scheduled opening).
  */
 
 import { z } from 'zod';
@@ -38,7 +38,7 @@ const MINUTE = 60 * 1000;
 export function resolveRoundEnd(
   timing: unknown,
   base: Date,
-  baseLabel: 'ahora' | 'la hora límite actual' = 'ahora'
+  baseLabel: 'ahora' | 'la hora límite actual' | 'la hora de inicio' = 'ahora'
 ): { ok: true; value: ResolvedRoundEnd } | { ok: false; error: string } {
   const parsed = RoundTimingSchema.safeParse(timing);
   if (!parsed.success) {

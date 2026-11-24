@@ -10,7 +10,8 @@ interface DurationPickerProps {
   onChange: (minutes: number) => void;
   serverTime?: string | Date | null;
   baseDeadline?: string | Date | null;
-  mode?: 'from_now' | 'from_deadline';
+  /** from_start: a scheduled round; baseDeadline is then its opening time */
+  mode?: 'from_now' | 'from_deadline' | 'from_start';
   disabled?: boolean;
   className?: string;
   label?: string;
@@ -179,7 +180,7 @@ export default function DurationPicker({
 
   // Calculate live preview of deadline
   const baseMs = (() => {
-    if (mode === 'from_deadline' && baseDeadline) {
+    if ((mode === 'from_deadline' || mode === 'from_start') && baseDeadline) {
       const d = new Date(baseDeadline).getTime();
       if (!isNaN(d) && d > Date.now()) return d;
     }
@@ -193,7 +194,12 @@ export default function DurationPicker({
   const previewDate = !customError && value >= 1 ? new Date(baseMs + value * 60000) : null;
 
   // ── Closing date and time (calendar) ──
-  const baseLabel = mode === 'from_deadline' && baseMs > Date.now() ? 'la hora límite actual' : 'ahora';
+  const baseLabel =
+    mode === 'from_start' && baseMs > Date.now()
+      ? 'la hora de inicio'
+      : mode === 'from_deadline' && baseMs > Date.now()
+        ? 'la hora límite actual'
+        : 'ahora';
   const applyDate = (raw: string) => {
     setDateInput(raw);
     const when = raw ? new Date(raw) : null;

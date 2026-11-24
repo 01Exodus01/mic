@@ -1,5 +1,6 @@
 'use client';
 
+import { formatClosingMoment } from '@/components/DurationPicker';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getParticipantRoomView, logoutParticipant } from '@/app/actions/participant';
@@ -53,6 +54,7 @@ interface FeedbackRoomData {
     currentRound: number;
     maxRounds: number;
     deadline: string | null;
+    scheduledOpenAt?: string | null;
     method: string;
     tauThreshold: number;
   };
@@ -218,7 +220,9 @@ export default function ParticipantFeedbackPage() {
           <div className="mt-4 p-3.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs text-[#14171A] flex items-center gap-2">
             <Clock className="w-4 h-4 stroke-[1.5] text-[#5A554E] shrink-0" />
             <span>
-              Ronda cerrada. Revisa los argumentos del grupo. Esperando la siguiente ronda.
+              {sala.scheduledOpenAt
+                ? `Ronda cerrada. Revisa los argumentos del grupo. La Ronda ${sala.currentRound + 1} se abrirá el ${formatClosingMoment(new Date(sala.scheduledOpenAt))}.`
+                : 'Ronda cerrada. Revisa los argumentos del grupo. Esperando la siguiente ronda.'}
             </span>
           </div>
         )}

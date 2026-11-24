@@ -87,6 +87,12 @@ model Room {
   tie_break_rule       TieBreakRule       @default(PAIRWISE_MAJORITY)
   concordance_variant  ConcordanceVariant @default(WITHOUT_TIES)
 
+  // Next round scheduled by the host (round 1 from DRAFT, or the next one from
+  // ROUND_FEEDBACK): it opens by itself at scheduled_open_at and closes at
+  // scheduled_deadline. Cleared when the round opens or the schedule is removed.
+  scheduled_open_at    DateTime?
+  scheduled_deadline   DateTime?
+
   options       Option[]
   participants  Participant[]
   reports       RoundReport[]
@@ -96,6 +102,7 @@ model Room {
   consents      ConsentRecord[]
 
   @@index([status, deadline])
+  @@index([status, scheduled_open_at])
   @@index([host_id])
 }
 

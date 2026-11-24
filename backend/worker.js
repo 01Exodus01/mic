@@ -3,7 +3,8 @@
  * Background worker process that runs every BACKGROUND_WORKER_INTERVAL_SEC (default 60s).
  *
  * Discovers any room where:
- *   status === 'ROUND_OPEN' AND deadline <= NOW()
+ *   status === 'ROUND_OPEN' AND deadline <= NOW(), or
+ *   status in (DRAFT, ROUND_FEEDBACK) AND scheduled_open_at <= NOW() (scheduled round)
  *
  * Runs the deterministic aggregation engine and updates room state atomically.
  */
@@ -25,12 +26,13 @@ console.log(`[GDSS Worker] Starting background worker (polling interval: ${inter
 async function checkExpiredRooms() {
   try {
     const now = new Date();
+    // Rounds past their deadline, and rounds the host scheduled to open by now
     const expiredRooms = await prisma.room.findMany({
       where: {
-        status: 'ROUND_OPEN',
-        deadline: {
-          lte: now,
-        },
+        OR: [
+          { status: 'ROUND_OPEN', deadline: { lte: now } },
+          { status: { in: ['DRAFT', 'ROUND_FEEDBACK'] }, scheduled_open_at: { lte: now } },
+        ],
       },
       select: {
         id: true,
@@ -45,7 +47,7 @@ async function checkExpiredRooms() {
       return;
     }
 
-    console.log(`[GDSS Worker] Found ${expiredRooms.length} room(s) with expired deadlines. Processing...`);
+    console.log(`[GDSS Worker] Found ${expiredRooms.length} room(s) with an expired deadline or a scheduled round due. Processing...`);
 
     for (const room of expiredRooms) {
       console.log(`[GDSS Worker] Processing Room PIN ${room.pin} (Round ${room.current_round})...`);

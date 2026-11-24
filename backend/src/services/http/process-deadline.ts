@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import prisma from '@mic/backend/db';
 import { processRoundConsensus } from '@mic/backend/round-processor';
+import { openScheduledRoundIfDue } from '@mic/backend/round-schedule';
 import { env } from '@mic/backend/env';
 
 const ProcessDeadlineSchema = z.object({
@@ -56,6 +57,11 @@ export async function processDeadline(ctx: RequestContext, input: { workerSecret
     }
 
     const { roomId } = validation.data;
+
+    // A round scheduled by the host whose opening time has come
+    if (await openScheduledRoundIfDue(roomId)) {
+      return { status: 200, body: { state: 'ROUND_OPEN', opened: true } };
+    }
 
     // Verify room state and deadline expiration before processing
     const room = await prisma.room.findUnique({

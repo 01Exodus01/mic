@@ -46,6 +46,7 @@ function timingReady(minutes: number, closesAt: string | null): boolean {
 }
 import { RoomSettingsSummary } from '@/components/RoomAdvancedSettings';
 import RoomRosterManager from '@/components/RoomRosterManager';
+import RoundSchedulePanel from '@/components/RoundSchedulePanel';
 import ParticipationTable from '@/components/ParticipationTable';
 import ExportDownloads from '@/components/ExportDownloads';
 import { rankingHasTies } from '@/lib/ranking';
@@ -102,6 +103,8 @@ interface RoomDetails {
   current_round: number;
   status: string;
   deadline: string | null;
+  scheduled_open_at?: string | null;
+  scheduled_deadline?: string | null;
   options: ProjectItem[];
   participants: ParticipantItem[];
   reports: ReportItem[];
@@ -613,7 +616,7 @@ export default function RoomHostPage() {
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
       <div className="pb-6 border-b border-[#D9D5CC]">
-        {/* BORRADOR (DRAFT): PIN destacado, sala de espera, editar y abrir la Ronda 1 */}
+        {/* BORRADOR (DRAFT): PIN destacado, sala de espera, editar, abrir o programar la Ronda 1 */}
         {sala.status === 'DRAFT' && (
           <div className="space-y-5">
             <div className="rounded-[8px] border-2 border-[#E4572E] bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
@@ -682,9 +685,19 @@ export default function RoomHostPage() {
               <div>
                 <h2 className="text-sm font-semibold text-[#14171A]">Abrir la Ronda 1</h2>
                 <p className="text-xs text-[#5A554E] mt-0.5">
-                  Define el plazo de la Ronda 1 para que los participantes comiencen a enviar su selección.
+                  Ábrela ahora con un plazo, o prográmala para que se abra y se cierre sola.
                 </p>
               </div>
+
+              <RoundSchedulePanel
+                roomId={sala.id}
+                round={1}
+                scheduledOpenAt={sala.scheduled_open_at ?? null}
+                scheduledDeadline={sala.scheduled_deadline ?? null}
+                serverTime={data?.serverTime}
+                disabled={actionLoading}
+                onChanged={fetchStatus}
+              />
 
               <DurationPicker
                 value={selectedMinutes}
@@ -692,7 +705,7 @@ export default function RoomHostPage() {
                 closesAt={selectedClosesAt}
                 onClosesAtChange={setSelectedClosesAt}
                 serverTime={data?.serverTime}
-                label="Duración de la Ronda 1"
+                label="Duración de la Ronda 1 si la abres ahora"
               />
 
               <div>
@@ -702,7 +715,7 @@ export default function RoomHostPage() {
                   disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
                   className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                 >
-                  {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1'}
+                  {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1 ahora'}
                 </button>
               </div>
             </div>
@@ -817,13 +830,22 @@ export default function RoomHostPage() {
 
             {sala.current_round < sala.max_rounds ? (
               <div className="space-y-4">
+                <RoundSchedulePanel
+                  roomId={sala.id}
+                  round={sala.current_round + 1}
+                  scheduledOpenAt={sala.scheduled_open_at ?? null}
+                  scheduledDeadline={sala.scheduled_deadline ?? null}
+                  serverTime={data?.serverTime}
+                  disabled={actionLoading}
+                  onChanged={fetchStatus}
+                />
                 <DurationPicker
                   value={selectedMinutes}
                   onChange={setSelectedMinutes}
                   closesAt={selectedClosesAt}
                   onClosesAtChange={setSelectedClosesAt}
                   serverTime={data?.serverTime}
-                  label={`Plazo para la Ronda ${sala.current_round + 1}`}
+                  label={`Plazo para la Ronda ${sala.current_round + 1} si la abres ahora`}
                 />
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -834,7 +856,7 @@ export default function RoomHostPage() {
                     disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
                     className="px-4 py-2 rounded-[6px] bg-[#E4572E] hover:bg-[#E4572E]/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                   >
-                    {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.current_round + 1}`}
+                    {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.current_round + 1} ahora`}
                   </button>
 
                   {/* Acción secundaria en texto plano */}

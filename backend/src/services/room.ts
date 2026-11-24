@@ -27,11 +27,13 @@ import {
   RoomMemberLabelSchema,
   FIXED_TIE_BREAK_RULE,
   FIXED_CONCORDANCE_VARIANT,
+  MAX_ROUND_MINUTES,
   type RoomSettingsInput,
 } from '@mic/backend/shared/validations';
 import type { ActionResult } from '@mic/backend/shared/actions';
 import { conclusionReason, type ConclusionReason } from '@mic/backend/conclusion';
 import { resolveRoundEnd, type ResolvedRoundEnd, type RoundTiming } from '@mic/backend/shared/round-timing';
+import { SCHEDULABLE_STATUSES } from '@mic/backend/round-schedule';
 import type { RankingEntry } from '@mic/backend/shared/report';
 
 export type { ActionResult };
@@ -87,6 +89,9 @@ export interface MappedRoomDetails {
   current_round: number;
   status: RoomStatus;
   deadline: Date | null;
+  /** Next round scheduled by the host: opens and closes by itself */
+  scheduled_open_at: Date | null;
+  scheduled_deadline: Date | null;
   created_at: Date;
   updated_at: Date;
   options: Array<{ id: string; room_id: string; title: string; description: string; order_index: number }>;
@@ -352,7 +357,7 @@ export async function startRoom(
     await prisma.$transaction(async (tx) => {
       await tx.room.update({
         where: { id: salaId },
-        data: { status: 'ROUND_OPEN', deadline, current_round: 1 },
+        data: { status: 'ROUND_OPEN', deadline, current_round: 1, scheduled_open_at: null, scheduled_deadline: null },
       });
       await recordRoomEvent(tx, {
         roomId: salaId,
@@ -543,6 +548,9 @@ export async function openNextRound(
           status: 'ROUND_OPEN',
           deadline,
           current_round: room.current_round + 1,
+          // Opening by hand replaces any schedule
+          scheduled_open_at: null,
+          scheduled_deadline: null,
         },
       });
       await recordRoomEvent(tx, {
@@ -557,6 +565,95 @@ export async function openNextRound(
     ctx.revalidate(`/dashboard/rooms/${salaId}`);
     ctx.revalidate('/participant/vote');
 
+    return { success: true };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+// ─────────────────────────────────────────────
+// Schedule the next round (DRAFT: round 1; ROUND_FEEDBACK: the next one)
+// ─────────────────────────────────────────────
+
+const MAX_SCHEDULE_AHEAD_MS = MAX_ROUND_MINUTES * 60 * 1000;
+
+/**
+ * The round opens by itself at `opensAt` (lib/round-schedule.ts) and closes
+ * after `timing`, counted from `opensAt`. Replaces an earlier schedule.
+ */
+export async function scheduleRound(
+  ctx: RequestContext,
+  salaId: string,
+  input: { opensAt: unknown; timing: RoundTiming }
+): Promise<ActionResult<{ opensAt: string; deadline: string }>> {
+  try {
+    const hostId = await requireHost(ctx);
+    const opensAt = typeof input.opensAt === 'string' ? new Date(input.opensAt) : null;
+    const now = new Date();
+    if (!opensAt || Number.isNaN(opensAt.getTime())) throw Errors.INVALID_BALLOT('Elige la fecha y hora de inicio.');
+    if (opensAt.getTime() - now.getTime() < 60 * 1000) {
+      throw Errors.INVALID_BALLOT('La hora de inicio tiene que ser al menos un minuto después de ahora.');
+    }
+    if (opensAt.getTime() - now.getTime() > MAX_SCHEDULE_AHEAD_MS) {
+      throw Errors.INVALID_BALLOT('Se puede programar hasta 30 días antes.');
+    }
+    const res = resolveRoundEnd(input.timing, opensAt, 'la hora de inicio');
+    if (!res.ok) throw Errors.INVALID_BALLOT(res.error);
+    const { deadline, minutes, timing } = res.value;
+
+    const room = await prisma.room.findUnique({ where: { id: salaId } });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+    if (room.host_id !== hostId) throw Errors.UNAUTHORIZED();
+    if (!(SCHEDULABLE_STATUSES as readonly string[]).includes(room.status)) {
+      throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
+    }
+    const round = room.status === 'DRAFT' ? 1 : room.current_round + 1;
+
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.room.updateMany({
+        where: { id: salaId, status: room.status },
+        data: { scheduled_open_at: opensAt, scheduled_deadline: deadline },
+      });
+      if (updated.count !== 1) throw Errors.INVALID_STATE(room.status, 'ROUND_OPEN');
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'round_scheduled',
+        actor: 'HOST',
+        round,
+        data: { opens_at: opensAt.toISOString(), closes_at: deadline.toISOString(), minutes, timing },
+      });
+    });
+
+    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    return { success: true, data: { opensAt: opensAt.toISOString(), deadline: deadline.toISOString() } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+export async function cancelScheduledRound(ctx: RequestContext, salaId: string): Promise<ActionResult> {
+  try {
+    const hostId = await requireHost(ctx);
+    const room = await prisma.room.findUnique({ where: { id: salaId } });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+    if (room.host_id !== hostId) throw Errors.UNAUTHORIZED();
+    if (!room.scheduled_open_at) return { success: true };
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.room.updateMany({
+        where: { id: salaId, scheduled_open_at: room.scheduled_open_at },
+        data: { scheduled_open_at: null, scheduled_deadline: null },
+      });
+      if (updated.count !== 1) return;
+      await recordRoomEvent(tx, {
+        roomId: salaId,
+        type: 'round_schedule_cancelled',
+        actor: 'HOST',
+        round: room.status === 'DRAFT' ? 1 : room.current_round + 1,
+      });
+    });
+    ctx.revalidate(`/dashboard/rooms/${salaId}`);
     return { success: true };
   } catch (err) {
     const e = toApiError(err);
