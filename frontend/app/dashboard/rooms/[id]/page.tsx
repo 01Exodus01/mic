@@ -65,6 +65,7 @@ import {
   Clock,
   ArrowLeft,
   AlertCircle,
+  Pencil,
 } from 'lucide-react';
 import { PersonalPinSchema, MIN_PARTICIPANTS, MAX_ROUND_MINUTES } from '@mic/backend/shared/validations';
 import type { RankingEntry } from '@mic/backend/shared/report';
@@ -612,7 +613,7 @@ export default function RoomHostPage() {
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
       <div className="pb-6 border-b border-[#D9D5CC]">
-        {/* BORRADOR (DRAFT): PIN destacado, sala de espera y abrir la Ronda 1 */}
+        {/* BORRADOR (DRAFT): PIN destacado, sala de espera, editar y abrir la Ronda 1 */}
         {sala.status === 'DRAFT' && (
           <div className="space-y-5">
             <div className="rounded-[8px] border-2 border-[#E4572E] bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
@@ -664,6 +665,17 @@ export default function RoomHostPage() {
                   ))}
                 </ul>
               )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Link
+                href={`/dashboard/rooms/${sala.id}/edit`}
+                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+              >
+                <Pencil className="w-3.5 h-3.5 stroke-[1.5]" aria-hidden="true" />
+                Editar título, opciones y configuración
+              </Link>
+              <span className="text-xs text-[#5A554E]">Solo hasta abrir la Ronda 1.</span>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-[#D9D5CC]">

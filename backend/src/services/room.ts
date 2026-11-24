@@ -13,7 +13,7 @@ import type { RequestContext } from './context';
 import prisma from '@mic/backend/db';
 import { generateRoomPin } from '@mic/backend/pin';
 import { isValidTransition, isTerminalState } from '@mic/backend/state-machine';
-import { Errors, toApiError } from '@mic/backend/errors';
+import { AppError, Errors, toApiError } from '@mic/backend/errors';
 import { AggregationMethod, RoomStatus } from '@prisma/client';
 import { processRoundConsensus, checkAndProcessExpiredDeadline } from '@mic/backend/round-processor';
 import { recordRoomEvent } from '@mic/backend/room-events';
@@ -48,7 +48,8 @@ export interface CreateRoomInput {
   maxMembers?: number;
   tauThreshold?: number;
   maxRounds?: number;
-  options?: { title?: string; description?: string }[];
+  /** `id` only when editing: keeps that option (and its id) instead of creating a new one */
+  options?: { id?: string; title?: string; description?: string }[];
   /** Advanced settings (PT-18). Omitted fields take the defaults (previous behaviour). */
   settings?: RoomSettingsInput;
 }
@@ -107,6 +108,59 @@ export interface RoomStatusData {
 
 // ─────────────────────────────────────────────
 // Helpers
+/** Same rules for creating a room and for editing it before round 1. */
+function validateRoomInput(input: CreateRoomInput) {
+  // Explicit rejection of missing numeric fields (no hidden fallbacks)
+  const rawMaxMembers = input.maxMembers;
+  if (rawMaxMembers === undefined || rawMaxMembers === null) {
+    throw Errors.INVALID_BALLOT('El máximo de participantes es obligatorio.');
+  }
+  const rawMaxRounds = input.maxRounds;
+  if (rawMaxRounds === undefined || rawMaxRounds === null) {
+    throw Errors.INVALID_BALLOT('El máximo de rondas es obligatorio.');
+  }
+  let rawTau = input.tauThreshold;
+  if (rawTau === undefined || rawTau === null) {
+    throw Errors.INVALID_BALLOT('El acuerdo requerido es obligatorio.');
+  }
+  // Accept either percentage integer (e.g. 80) or decimal fraction (e.g. 0.8)
+  if (rawTau > 0 && rawTau < 1) {
+    rawTau = Math.round(rawTau * 100);
+  }
+
+  // minMembers in payload is ignored (fixed at 3 per methodology)
+  const rawOptions = (input.options || []).map((o) => ({
+    title: o.title,
+    description: o.description,
+  }));
+
+  const validation = CreateRoomSchema.safeParse({
+    title: input.title,
+    method: input.method,
+    maxMembers: rawMaxMembers,
+    tauThreshold: rawTau,
+    maxRounds: rawMaxRounds,
+    options: rawOptions,
+  });
+
+  if (!validation.success) {
+    const firstError = validation.error.errors[0]?.message || 'Datos de configuración de sala inválidos.';
+    throw Errors.INVALID_BALLOT(firstError);
+  }
+
+  const valid = validation.data;
+
+  const settingsValidation = RoomSettingsSchema.safeParse(input.settings ?? {});
+  if (!settingsValidation.success) {
+    throw Errors.INVALID_BALLOT(
+      settingsValidation.error.errors[0]?.message || 'Opciones avanzadas no válidas.'
+    );
+  }
+  const settings = settingsValidation.data;
+
+  return { valid, settings };
+}
+
 // ─────────────────────────────────────────────
 
 /** Tie-break summary for the host panel: tied option groups and whether the title decided. */
@@ -144,53 +198,7 @@ export async function createRoom(ctx: RequestContext, input: CreateRoomInput): P
   try {
     const hostId = await requireHost(ctx);
 
-    // Explicit rejection of missing numeric fields (no hidden fallbacks)
-    const rawMaxMembers = input.maxMembers;
-    if (rawMaxMembers === undefined || rawMaxMembers === null) {
-      throw Errors.INVALID_BALLOT('El máximo de participantes es obligatorio.');
-    }
-    const rawMaxRounds = input.maxRounds;
-    if (rawMaxRounds === undefined || rawMaxRounds === null) {
-      throw Errors.INVALID_BALLOT('El máximo de rondas es obligatorio.');
-    }
-    let rawTau = input.tauThreshold;
-    if (rawTau === undefined || rawTau === null) {
-      throw Errors.INVALID_BALLOT('El acuerdo requerido es obligatorio.');
-    }
-    // Accept either percentage integer (e.g. 80) or decimal fraction (e.g. 0.8)
-    if (rawTau > 0 && rawTau < 1) {
-      rawTau = Math.round(rawTau * 100);
-    }
-
-    // minMembers in payload is ignored (fixed at 3 per methodology)
-    const rawOptions = (input.options || []).map((o) => ({
-      title: o.title,
-      description: o.description,
-    }));
-
-    const validation = CreateRoomSchema.safeParse({
-      title: input.title,
-      method: input.method,
-      maxMembers: rawMaxMembers,
-      tauThreshold: rawTau,
-      maxRounds: rawMaxRounds,
-      options: rawOptions,
-    });
-
-    if (!validation.success) {
-      const firstError = validation.error.errors[0]?.message || 'Datos de configuración de sala inválidos.';
-      throw Errors.INVALID_BALLOT(firstError);
-    }
-
-    const valid = validation.data;
-
-    const settingsValidation = RoomSettingsSchema.safeParse(input.settings ?? {});
-    if (!settingsValidation.success) {
-      throw Errors.INVALID_BALLOT(
-        settingsValidation.error.errors[0]?.message || 'Opciones avanzadas no válidas.'
-      );
-    }
-    const settings = settingsValidation.data;
+    const { valid, settings } = validateRoomInput(input);
 
     // Generate unique room PIN
     let pin = generateRoomPin();
@@ -229,6 +237,90 @@ export async function createRoom(ctx: RequestContext, input: CreateRoomInput): P
     });
 
     return { success: true, data: { salaId: room.id, pin: room.pin } };
+  } catch (err) {
+    const e = toApiError(err);
+    return { success: false, error: e.error, code: e.code };
+  }
+}
+
+// ─────────────────────────────────────────────
+// Edit the room before round 1 (DRAFT only)
+// ─────────────────────────────────────────────
+
+/**
+ * Title, options, method, seats, required agreement, rounds and advanced
+ * settings can change until round 1 opens. The access mode cannot: people may
+ * already be waiting in the lobby with a name or a personal code.
+ * Options sent with their `id` are kept (title, description, order updated);
+ * new ones are created and missing ones deleted (no selections exist yet).
+ * A changed consent text gets a new version, so whoever accepted the old one
+ * accepts it again.
+ */
+export async function updateRoom(ctx: RequestContext, salaId: string, input: CreateRoomInput): Promise<ActionResult> {
+  try {
+    const hostId = await requireHost(ctx);
+    const { valid, settings } = validateRoomInput(input);
+
+    const room = await prisma.room.findUnique({
+      where: { id: salaId },
+      include: { options: true, participants: { where: { is_retired: false }, select: { id: true } }, members: { where: { is_removed: false }, select: { id: true } } },
+    });
+    if (!room) throw Errors.ROOM_NOT_FOUND();
+    if (room.host_id !== hostId) throw Errors.UNAUTHORIZED();
+    if (room.status !== 'DRAFT') {
+      throw new AppError('ROOM_STARTED', 'La configuración solo se puede cambiar antes de abrir la Ronda 1.', 409);
+    }
+    if (settings.accessMode !== room.access_mode) {
+      throw Errors.INVALID_BALLOT('La forma de ingreso no se puede cambiar después de crear el grupo.');
+    }
+    const seated = room.access_mode === 'ROSTER' ? room.members.length : room.participants.length;
+    if (valid.maxMembers < seated) {
+      throw Errors.INVALID_BALLOT(
+        `Ya hay ${seated} ${room.access_mode === 'ROSTER' ? 'personas en la lista' : 'participantes en la sala de espera'}: el número de participantes no puede ser menor.`
+      );
+    }
+
+    const existingIds = new Set(room.options.map((o) => o.id));
+    const sentIds = (input.options ?? []).map((o) => (typeof o.id === 'string' && existingIds.has(o.id) ? o.id : null));
+    const keep = new Set(sentIds.filter((id): id is string => id !== null));
+    const consentText = settings.consentRequired ? settings.consentText : null;
+    const consentChanged = settings.consentRequired && (!room.consent_required || consentText !== room.consent_text);
+
+    await prisma.$transaction(async (tx) => {
+      const locked = await tx.room.updateMany({
+        where: { id: salaId, status: 'DRAFT' },
+        data: {
+          title: valid.title,
+          method: valid.method,
+          max_members: valid.maxMembers,
+          tau_threshold: valid.tauThreshold,
+          max_rounds: valid.maxRounds,
+          allow_late_join: settings.allowLateJoin,
+          close_when_all_voted: settings.closeWhenAllVoted,
+          consent_required: settings.consentRequired,
+          consent_text: consentText,
+          ...(consentChanged ? { consent_version: room.consent_version + 1 } : {}),
+        },
+      });
+      if (locked.count !== 1) {
+        throw new AppError('ROOM_STARTED', 'La configuración solo se puede cambiar antes de abrir la Ronda 1.', 409);
+      }
+      await tx.option.deleteMany({ where: { room_id: salaId, id: { notIn: [...keep] } } });
+      // Free the order slots first: (room_id, order_index) is unique
+      await tx.option.updateMany({ where: { room_id: salaId }, data: { order_index: { increment: 1000 } } });
+      for (let i = 0; i < valid.options.length; i++) {
+        const o = valid.options[i];
+        const id = sentIds[i];
+        if (id) {
+          await tx.option.update({ where: { id }, data: { title: o.title, description: o.description || '', order_index: i } });
+        } else {
+          await tx.option.create({ data: { room_id: salaId, title: o.title, description: o.description || '', order_index: i } });
+        }
+      }
+    });
+
+    ctx.revalidate(`/dashboard/rooms/${salaId}`);
+    return { success: true };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };

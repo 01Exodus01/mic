@@ -65,6 +65,8 @@ interface RoomAdvancedSettingsProps {
   value: RoomSettingsValue;
   onChange: (next: RoomSettingsValue) => void;
   error?: string | null;
+  /** Editing an existing group: the access mode is shown but cannot change */
+  lockAccessMode?: boolean;
 }
 
 function RadioGroup<K extends string>({
@@ -116,7 +118,7 @@ function RadioGroup<K extends string>({
   );
 }
 
-export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdvancedSettingsProps) {
+export default function RoomAdvancedSettings({ value, onChange, error, lockAccessMode = false }: RoomAdvancedSettingsProps) {
   const set = <K extends keyof RoomSettingsValue>(key: K, v: RoomSettingsValue[K]) => onChange({ ...value, [key]: v });
 
   return (
@@ -132,14 +134,21 @@ export default function RoomAdvancedSettings({ value, onChange, error }: RoomAdv
           Los empates del orden del grupo se resuelven siempre igual: primero por mayoría entre las opciones
           empatadas en la ronda y, si siguen igualadas, por el orden alfabético del título.
         </p>
-        <RadioGroup
-          name="accessMode"
-          legend="Ingreso de participantes"
-          options={ACCESS_LABELS}
-          selected={value.accessMode}
-          onSelect={(k) => set('accessMode', k)}
-          errorId={error ? 'settings-error' : undefined}
-        />
+        {lockAccessMode ? (
+          <div className="text-xs">
+            <p className="font-medium text-[#14171A]">Ingreso de participantes: {ACCESS_LABELS[value.accessMode].name}</p>
+            <p className="text-[#5A554E] mt-0.5">La forma de ingreso no se puede cambiar después de crear el grupo.</p>
+          </div>
+        ) : (
+          <RadioGroup
+            name="accessMode"
+            legend="Ingreso de participantes"
+            options={ACCESS_LABELS}
+            selected={value.accessMode}
+            onSelect={(k) => set('accessMode', k)}
+            errorId={error ? 'settings-error' : undefined}
+          />
+        )}
         {error && (
           <p id="settings-error" role="alert" className="text-xs text-[#B42318]">
             {error}
