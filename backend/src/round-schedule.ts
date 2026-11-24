@@ -20,7 +20,8 @@ export const SCHEDULABLE_STATUSES = ['DRAFT', 'ROUND_FEEDBACK'] as const;
  * late) keeps the planned closing time; if that already passed (for example the
  * server was down), the round keeps its planned length counted from now.
  */
-export function scheduledDeadlineAt(openAt: Date, deadline: Date, now: Date): Date {
+export function scheduledDeadlineAt(openAt: Date, deadline: Date | null, now: Date): Date | null {
+  if (!deadline) return null; // scheduled without deadline: the host closes it
   if (deadline.getTime() - now.getTime() >= 60 * 1000) return deadline;
   return new Date(now.getTime() + (deadline.getTime() - openAt.getTime()));
 }
@@ -31,7 +32,7 @@ export async function openScheduledRoundIfDue(roomId: string, now: Date = new Da
     where: { id: roomId },
     select: { status: true, current_round: true, max_rounds: true, scheduled_open_at: true, scheduled_deadline: true },
   });
-  if (!room || !room.scheduled_open_at || !room.scheduled_deadline) return false;
+  if (!room || !room.scheduled_open_at) return false;
   if (!(SCHEDULABLE_STATUSES as readonly string[]).includes(room.status)) return false;
   if (room.scheduled_open_at.getTime() > now.getTime()) return false;
 
@@ -39,7 +40,7 @@ export async function openScheduledRoundIfDue(roomId: string, now: Date = new Da
   const round = fromDraft ? 1 : room.current_round + 1;
   if (round > room.max_rounds) return false;
   const deadline = scheduledDeadlineAt(room.scheduled_open_at, room.scheduled_deadline, now);
-  const minutes = Math.round((deadline.getTime() - now.getTime()) / 60000);
+  const minutes = deadline ? Math.round((deadline.getTime() - now.getTime()) / 60000) : null;
 
   return prisma.$transaction(async (tx) => {
     const res = await tx.room.updateMany({
@@ -58,7 +59,7 @@ export async function openScheduledRoundIfDue(roomId: string, now: Date = new Da
       type: fromDraft ? 'room_started' : 'round_opened',
       actor: 'SYSTEM',
       round,
-      data: { minutes, timing: 'date', scheduled: true },
+      data: { minutes, timing: deadline ? 'date' : 'none', scheduled: true },
     });
     return true;
   });

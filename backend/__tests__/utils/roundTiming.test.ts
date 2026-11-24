@@ -18,7 +18,7 @@ describe('duración o fecha de cierre de una ronda', () => {
 
   it('con una fecha, la hora límite es exactamente esa fecha', () => {
     const res = resolveRoundEnd(at('2026-11-07T23:59:00.000Z'), base);
-    expect(res.ok && res.value.deadline.toISOString()).toBe('2026-11-07T23:59:00.000Z');
+    expect(res.ok && res.value.deadline?.toISOString()).toBe('2026-11-07T23:59:00.000Z');
     expect(res.ok && res.value).toMatchObject({ minutes: 3419, timing: 'date' });
   });
 
@@ -50,5 +50,15 @@ describe('duración o fecha de cierre de una ronda', () => {
     expect(resolveRoundEnd({ closesAt: 5 }, base).ok).toBe(false);
     expect(resolveRoundEnd(0, base).ok).toBe(false);
     expect(resolveRoundEnd(43201, base).ok).toBe(false);
+  });
+});
+
+describe('sin hora límite (pedido del equipo 2026-11-24)', () => {
+  it('la ronda no tiene hora límite ni minutos', async () => {
+    const { resolveRoundEnd, NO_DEADLINE } = await import('@mic/backend/shared/round-timing');
+    expect(resolveRoundEnd(NO_DEADLINE, new Date('2026-11-05T15:00:00.000Z'))).toEqual({
+      ok: true,
+      value: { deadline: null, minutes: null, timing: 'none' },
+    });
   });
 });

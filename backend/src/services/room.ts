@@ -431,6 +431,7 @@ export async function extendDeadline(
 
     // Extender el plazo en ROUND_OPEN no es una transición de estado: solo actualiza el plazo
     if (room.status === 'ROUND_OPEN') {
+      // A round without deadline gets one from now; "no deadline" removes the current one
       const extendsCurrent = Boolean(room.deadline && room.deadline.getTime() > Date.now());
       const base = extendsCurrent ? room.deadline! : new Date();
       // Minutes are added to the current deadline; a date must come after it
@@ -586,7 +587,7 @@ export async function scheduleRound(
   ctx: RequestContext,
   salaId: string,
   input: { opensAt: unknown; timing: RoundTiming }
-): Promise<ActionResult<{ opensAt: string; deadline: string }>> {
+): Promise<ActionResult<{ opensAt: string; deadline: string | null }>> {
   try {
     const hostId = await requireHost(ctx);
     const opensAt = typeof input.opensAt === 'string' ? new Date(input.opensAt) : null;
@@ -621,12 +622,12 @@ export async function scheduleRound(
         type: 'round_scheduled',
         actor: 'HOST',
         round,
-        data: { opens_at: opensAt.toISOString(), closes_at: deadline.toISOString(), minutes, timing },
+        data: { opens_at: opensAt.toISOString(), closes_at: deadline ? deadline.toISOString() : null, minutes, timing },
       });
     });
 
     ctx.revalidate(`/dashboard/grupos/${salaId}`);
-    return { success: true, data: { opensAt: opensAt.toISOString(), deadline: deadline.toISOString() } };
+    return { success: true, data: { opensAt: opensAt.toISOString(), deadline: deadline ? deadline.toISOString() : null } };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };

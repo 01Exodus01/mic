@@ -500,6 +500,13 @@ export default function ParticipantVotePage() {
           {roomData?.sala?.title}
         </h1>
 
+        {/* Rounds without deadline: the host closes them */}
+        {!deadlineDate && roomData?.sala?.status === 'ROUND_OPEN' && (
+          <p className="mt-2.5 text-xs text-ink-2">
+            Esta ronda no tiene hora límite: {roomData.sala.closeWhenAllVoted ? 'se cierra cuando todos envíen su selección o cuando el anfitrión la cierre.' : 'el anfitrión la cerrará.'}
+          </p>
+        )}
+
         {/* Visible countdown timer */}
         {timeLeft && (
           <div className="mt-2.5 flex items-center gap-2">

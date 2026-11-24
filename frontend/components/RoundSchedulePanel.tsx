@@ -13,6 +13,7 @@ import { CalendarClock } from 'lucide-react';
 import DurationPicker, { formatClosingMoment, toLocalInputValue } from '@/components/DurationPicker';
 import { cancelScheduledRound, scheduleRound } from '@/app/actions/room';
 import { MAX_ROUND_MINUTES } from '@mic/backend/shared/validations';
+import { NO_DEADLINE } from '@mic/backend/shared/round-timing';
 
 interface Props {
   roomId: string;
@@ -33,6 +34,8 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
   const [start, setStart] = useState('');
   const [minutes, setMinutes] = useState(15);
   const [closesAt, setClosesAt] = useState<string | null>(null);
+  // The closing time is optional: without it the host closes the round
+  const [noDeadline, setNoDeadline] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const now = serverTime ? new Date(serverTime).getTime() : Date.now();
@@ -45,7 +48,7 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
         : startDate && startDate.getTime() - now > MAX_ROUND_MINUTES * MINUTE
           ? 'Se puede programar hasta 30 días antes.'
           : null;
-  const timingOk = closesAt === null ? minutes >= 1 && minutes <= MAX_ROUND_MINUTES : closesAt !== '';
+  const timingOk = noDeadline || (closesAt === null ? minutes >= 1 && minutes <= MAX_ROUND_MINUTES : closesAt !== '');
   const ready = Boolean(startDate) && !startError && timingOk;
 
   const openForm = () => {
@@ -55,6 +58,7 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
     d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15);
     setStart(toLocalInputValue(d));
     setClosesAt(null);
+    setNoDeadline(true);
     setOpen(true);
   };
 
@@ -64,7 +68,7 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
     try {
       const res = await scheduleRound(roomId, {
         opensAt: startDate.toISOString(),
-        timing: closesAt === null ? minutes : { closesAt },
+        timing: noDeadline ? NO_DEADLINE : closesAt === null ? minutes : { closesAt },
       });
       if (!res.success) {
         toast.error(res.error || 'No se pudo programar la ronda.');
@@ -93,14 +97,20 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
     }
   };
 
-  if (scheduledOpenAt && scheduledDeadline) {
+  if (scheduledOpenAt) {
     return (
       <div className="p-3.5 rounded-[6px] border border-good/40 bg-good/5 space-y-2" role="status">
         <p className="text-xs text-ink flex items-start gap-2">
           <CalendarClock className="w-4 h-4 stroke-[1.5] text-good shrink-0 mt-px" aria-hidden="true" />
           <span>
-            La Ronda {round} se abrirá sola el <strong>{formatClosingMoment(new Date(scheduledOpenAt))}</strong> y cerrará el{' '}
-            <strong>{formatClosingMoment(new Date(scheduledDeadline))}</strong>.
+            La Ronda {round} se abrirá sola el <strong>{formatClosingMoment(new Date(scheduledOpenAt))}</strong>
+            {scheduledDeadline ? (
+              <>
+                {' '}y cerrará el <strong>{formatClosingMoment(new Date(scheduledDeadline))}</strong>.
+              </>
+            ) : (
+              ', sin hora límite: la cierras tú.'
+            )}
           </span>
         </p>
         <button
@@ -133,7 +143,7 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
     <div className="p-3.5 rounded-[6px] border border-line bg-paper space-y-3">
       <div>
         <h3 className="text-xs font-semibold text-ink">Programar la Ronda {round}</h3>
-        <p className="text-xs text-ink-2 mt-0.5">Se abre y se cierra sola a las horas que elijas.</p>
+        <p className="text-xs text-ink-2 mt-0.5">Se abre sola a la hora que elijas. La hora de cierre es opcional.</p>
       </div>
       <div className="space-y-1.5">
         <label htmlFor={startId} className="block text-xs font-medium text-ink">
@@ -165,10 +175,13 @@ export default function RoundSchedulePanel({ roomId, round, scheduledOpenAt, sch
           value={minutes}
           onChange={setMinutes}
           closesAt={closesAt}
+          noDeadline={noDeadline}
+          onNoDeadlineChange={setNoDeadline}
+          noDeadlineHint="Se abre sola a esa hora y queda abierta hasta que la cierres."
           onClosesAtChange={setClosesAt}
           mode="from_start"
           baseDeadline={startDate}
-          label={`Duración de la Ronda ${round}`}
+          label={`Hora límite de la Ronda ${round} (opcional)`}
         />
       )}
       <div className="flex flex-wrap items-center gap-4">

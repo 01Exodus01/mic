@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { RoomDashboardSkeleton } from '@/components/ui/Skeleton';
 import PasswordInput from '@/components/ui/PasswordInput';
 import DurationPicker, { formatClosingMoment, formatCountdown, formatDeadlineLabel } from '@/components/DurationPicker';
-import type { RoundTiming } from '@mic/backend/shared/round-timing';
+import { NO_DEADLINE, type RoundTiming } from '@mic/backend/shared/round-timing';
 
 /** How the host is told a tie was resolved. */
 function tieBreakHostNote(rule: string, fallbackUsed: boolean): string {
@@ -34,13 +34,15 @@ function tieBreakHostNote(rule: string, fallbackUsed: boolean): string {
   return 'Se conservaron empatadas.';
 }
 
-/** What the round actions receive: the closing date when one was chosen, otherwise the minutes. */
-function timingOf(minutes: number, closesAt: string | null): RoundTiming {
+/** What the round actions receive: no deadline, the closing date when one was chosen, otherwise the minutes. */
+function timingOf(minutes: number, closesAt: string | null, noDeadline = false): RoundTiming {
+  if (noDeadline) return NO_DEADLINE;
   return closesAt ? { closesAt } : minutes;
 }
 
-/** The action button is enabled only with a valid duration or a valid closing date. */
-function timingReady(minutes: number, closesAt: string | null): boolean {
+/** The action button is enabled without deadline, or with a valid duration or closing date. */
+function timingReady(minutes: number, closesAt: string | null, noDeadline = false): boolean {
+  if (noDeadline) return true;
   if (closesAt === null) return minutes >= 1 && minutes <= MAX_ROUND_MINUTES;
   return closesAt !== '';
 }
@@ -166,7 +168,10 @@ export default function RoomHostPage() {
   const [extendMinutes, setExtendMinutes] = useState(15);
   // Optional exact closing date and time instead of a duration (null = duration)
   const [selectedClosesAt, setSelectedClosesAt] = useState<string | null>(null);
+  // Opening or reopening a round: no deadline unless the host picks one (team request 2026-11-24)
+  const [selectedNoDeadline, setSelectedNoDeadline] = useState(true);
   const [extendClosesAt, setExtendClosesAt] = useState<string | null>(null);
+  const [extendNoDeadline, setExtendNoDeadline] = useState(false);
   const [remainingTime, setRemainingTime] = useState<string>('');
 
   const serverOffsetRef = useRef<number>(0);
@@ -304,14 +309,17 @@ export default function RoomHostPage() {
   const handleStartRoom = async () => {
     setActionLoading(true);
     try {
-      const res = await startRoom(salaId, timingOf(selectedMinutes, selectedClosesAt));
+      const res = await startRoom(salaId, timingOf(selectedMinutes, selectedClosesAt, selectedNoDeadline));
       if (res.success) {
         toast.success(
-          selectedClosesAt
-            ? `Ronda 1 abierta hasta el ${formatClosingMoment(new Date(selectedClosesAt))}.`
-            : `Ronda 1 abierta con ${selectedMinutes} minutos.`
+          selectedNoDeadline
+            ? 'Ronda 1 abierta, sin hora límite.'
+            : selectedClosesAt
+              ? `Ronda 1 abierta hasta el ${formatClosingMoment(new Date(selectedClosesAt))}.`
+              : `Ronda 1 abierta con ${selectedMinutes} minutos.`
         );
         setSelectedClosesAt(null);
+        setSelectedNoDeadline(true);
         await fetchStatus();
       } else {
         toast.error(res.error || 'No fue posible abrir la ronda.');
@@ -362,14 +370,16 @@ export default function RoomHostPage() {
     }
   };
 
-  const handleExtendDeadlineWithMinutes = async (mins: number, closesAt: string | null = null) => {
+  const handleExtendDeadlineWithMinutes = async (mins: number, closesAt: string | null = null, noDeadline = false) => {
     setActionLoading(true);
     try {
-      const res = await extendDeadline(salaId, timingOf(mins, closesAt));
+      const res = await extendDeadline(salaId, timingOf(mins, closesAt, noDeadline));
       if (res.success) {
-        toast.success(`Hora límite extendida.`);
+        toast.success(noDeadline ? 'Ronda abierta, sin hora límite.' : 'Hora límite actualizada.');
         setSelectedClosesAt(null);
+        setSelectedNoDeadline(true);
         setExtendClosesAt(null);
+        setExtendNoDeadline(false);
         setExtendDialogOpen(false);
         await fetchStatus();
       } else {
@@ -405,9 +415,10 @@ export default function RoomHostPage() {
   const handleOpenNextRound = async () => {
     setActionLoading(true);
     try {
-      const res = await openNextRound(salaId, timingOf(selectedMinutes, selectedClosesAt));
+      const res = await openNextRound(salaId, timingOf(selectedMinutes, selectedClosesAt, selectedNoDeadline));
       if (res.success) {
         setSelectedClosesAt(null);
+        setSelectedNoDeadline(true);
         toast.success(`Ronda ${data ? data.room.current_round + 1 : ''} abierta.`);
         await fetchStatus();
       } else {
@@ -685,7 +696,7 @@ export default function RoomHostPage() {
               <div>
                 <h2 className="text-sm font-semibold text-ink">Abrir la Ronda 1</h2>
                 <p className="text-xs text-ink-2 mt-0.5">
-                  Ábrela ahora con un plazo, o prográmala para que se abra y se cierre sola.
+                  Ábrela ahora o prográmala para que se abra sola. La hora límite es opcional.
                 </p>
               </div>
 
@@ -704,15 +715,18 @@ export default function RoomHostPage() {
                 onChange={setSelectedMinutes}
                 closesAt={selectedClosesAt}
                 onClosesAtChange={setSelectedClosesAt}
+                noDeadline={selectedNoDeadline}
+                onNoDeadlineChange={setSelectedNoDeadline}
+                noDeadlineHint={sala.close_when_all_voted ? 'La ronda queda abierta hasta que la cierres o hasta que todos envíen su selección.' : 'La ronda queda abierta hasta que la cierres.'}
                 serverTime={data?.serverTime}
-                label="Duración de la Ronda 1 si la abres ahora"
+                label="Hora límite de la Ronda 1 si la abres ahora (opcional)"
               />
 
               <div>
                 <button
                   type="button"
                   onClick={handleStartRoom}
-                  disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
+                  disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt, selectedNoDeadline)}
                   className="px-4 py-2 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                 >
                   {actionLoading ? 'Iniciando...' : 'Abrir la Ronda 1 ahora'}
@@ -730,7 +744,7 @@ export default function RoomHostPage() {
                 Ronda {sala.current_round} en curso
               </h2>
               <p className="text-xs text-ink-2 mt-0.5">
-                Selecciones recibidas: {votesCount} de {totalParticipants} participantes. Hora límite fijada: {deadlineHour || 'Sin hora límite'}.
+                Selecciones recibidas: {votesCount} de {totalParticipants} participantes. {deadlineHour ? `Hora límite: ${deadlineHour}.` : sala.close_when_all_voted ? 'Sin hora límite: se cierra cuando la cierres o cuando todos envíen.' : 'Sin hora límite: se cierra cuando la cierres.'}
               </p>
             </div>
 
@@ -755,7 +769,7 @@ export default function RoomHostPage() {
                 disabled={actionLoading}
                 className="text-xs text-ink-2 hover:text-ink hover:underline"
               >
-                Extender hora límite
+                {sala.deadline ? 'Extender hora límite' : 'Fijar hora límite'}
               </button>
 
               <button
@@ -790,18 +804,21 @@ export default function RoomHostPage() {
               onChange={setSelectedMinutes}
               closesAt={selectedClosesAt}
               onClosesAtChange={setSelectedClosesAt}
+              noDeadline={selectedNoDeadline}
+              onNoDeadlineChange={setSelectedNoDeadline}
+              noDeadlineHint={sala.close_when_all_voted ? 'La ronda queda abierta hasta que la cierres o hasta que todos envíen su selección.' : 'La ronda queda abierta hasta que la cierres.'}
               serverTime={data?.serverTime}
-              label="Tiempo adicional para extender"
+              label="Hora límite al reabrir (opcional)"
             />
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => handleExtendDeadlineWithMinutes(selectedMinutes, selectedClosesAt)}
-                disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
+                onClick={() => handleExtendDeadlineWithMinutes(selectedMinutes, selectedClosesAt, selectedNoDeadline)}
+                disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt, selectedNoDeadline)}
                 className="px-3.5 py-1.5 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
-                Extender hora límite
+                Reabrir la ronda
               </button>
 
               <button
@@ -844,8 +861,11 @@ export default function RoomHostPage() {
                   onChange={setSelectedMinutes}
                   closesAt={selectedClosesAt}
                   onClosesAtChange={setSelectedClosesAt}
+                  noDeadline={selectedNoDeadline}
+                  onNoDeadlineChange={setSelectedNoDeadline}
+                  noDeadlineHint={sala.close_when_all_voted ? 'La ronda queda abierta hasta que la cierres o hasta que todos envíen su selección.' : 'La ronda queda abierta hasta que la cierres.'}
                   serverTime={data?.serverTime}
-                  label={`Plazo para la Ronda ${sala.current_round + 1} si la abres ahora`}
+                  label={`Hora límite de la Ronda ${sala.current_round + 1} si la abres ahora (opcional)`}
                 />
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -853,7 +873,7 @@ export default function RoomHostPage() {
                   <button
                     type="button"
                     onClick={handleOpenNextRound}
-                    disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt)}
+                    disabled={actionLoading || !timingReady(selectedMinutes, selectedClosesAt, selectedNoDeadline)}
                     className="px-4 py-2 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
                   >
                     {actionLoading ? 'Abriendo...' : `Abrir Ronda ${sala.current_round + 1} ahora`}
@@ -1416,9 +1436,11 @@ export default function RoomHostPage() {
       <Dialog open={extendDialogOpen} onOpenChange={setExtendDialogOpen}>
         <DialogContent className="max-w-[480px]">
           <div className="space-y-4">
-            <DialogTitle>Extender hora límite</DialogTitle>
+            <DialogTitle>{sala.deadline ? 'Extender hora límite' : 'Fijar hora límite'}</DialogTitle>
             <DialogDescription>
-              Elige cuánto tiempo agregar a la ronda en curso o, si prefieres, la nueva fecha y hora de cierre.
+              {sala.deadline
+                ? 'Elige cuánto tiempo agregar a la ronda en curso, la nueva fecha y hora de cierre, o quita la hora límite.'
+                : 'Elige cuánto durará todavía la ronda en curso o la fecha y hora de cierre.'}
             </DialogDescription>
             <div className="py-2">
               <DurationPicker
@@ -1426,6 +1448,7 @@ export default function RoomHostPage() {
                 onChange={setExtendMinutes}
                 closesAt={extendClosesAt}
                 onClosesAtChange={setExtendClosesAt}
+                {...(sala.deadline ? { noDeadline: extendNoDeadline, onNoDeadlineChange: setExtendNoDeadline } : {})}
                 mode="from_deadline"
                 baseDeadline={sala.deadline}
                 serverTime={data?.serverTime}
@@ -1442,11 +1465,11 @@ export default function RoomHostPage() {
               </button>
               <button
                 type="button"
-                disabled={actionLoading || !timingReady(extendMinutes, extendClosesAt)}
-                onClick={() => handleExtendDeadlineWithMinutes(extendMinutes, extendClosesAt)}
+                disabled={actionLoading || !timingReady(extendMinutes, extendClosesAt, extendNoDeadline)}
+                onClick={() => handleExtendDeadlineWithMinutes(extendMinutes, extendClosesAt, extendNoDeadline)}
                 className="px-4 py-1.5 rounded-[6px] bg-brand hover:bg-brand/90 text-white text-xs font-semibold transition-colors disabled:opacity-40"
               >
-                {actionLoading ? 'Guardando...' : 'Confirmar extensión'}
+                {actionLoading ? 'Guardando...' : 'Confirmar'}
               </button>
             </div>
           </div>

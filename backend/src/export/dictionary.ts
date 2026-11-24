@@ -61,7 +61,7 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
   'rounds.csv': {
     opened_at: { type: 'fecha ISO 8601 UTC', description: 'Apertura de la ronda (solo modo investigación).' },
     opened_t_since_first_round_s: { type: 'decimal', unit: 's', description: 'Apertura de la ronda, en segundos desde que se abrió la ronda 1.' },
-    configured_minutes: { type: 'entero o vacío', unit: 'min', description: 'Duración configurada al abrir la ronda.' },
+    configured_minutes: { type: 'entero o vacío', unit: 'min', description: 'Duración configurada al abrir la ronda; vacío si se abrió sin hora límite.' },
     extension_minutes: { type: 'entero', unit: 'min', range: '≥ 0', description: 'Minutos agregados durante la ronda.' },
     closed_at: { type: 'fecha ISO 8601 UTC', description: 'Cierre de la ronda (solo modo investigación).' },
     duration_s: { type: 'decimal', unit: 's', description: 'Duración real de la ronda (cierre − apertura).' },
@@ -127,9 +127,9 @@ export const COLUMN_DOCS: Record<string, Record<string, ColumnDoc>> = {
     actor: { type: 'categoría', range: 'HOST, PARTICIPANT, SYSTEM', description: 'Quién originó el evento.' },
     // flattened data keys
     reason: { type: 'categoría', description: 'round_closed: HOST, TIMEOUT, ALL_VOTED. join_failed: wrong_pin, locked_out, retired, group_unavailable, group_concluded, late_join_closed, group_full, invalid_code, removed_member.' },
-    minutes: { type: 'entero', unit: 'min', description: 'Duración configurada o agregada (round_opened, deadline_extended); con una fecha de cierre, los minutos hasta ella.' },
+    minutes: { type: 'entero o vacío', unit: 'min', description: 'Duración configurada o agregada (round_opened, deadline_extended); con una fecha de cierre, los minutos hasta ella; vacío sin hora límite.' },
     reopened: { type: 'booleano', description: 'round_opened: la ronda se reabrió tras selecciones insuficientes.' },
-    timing: { type: 'categoría', range: 'duration, date', description: 'round_opened / deadline_extended: el anfitrión eligió una duración o la fecha y hora de cierre en el calendario (minutes es entonces la diferencia, redondeada).' },
+    timing: { type: 'categoría', range: 'none, duration, date', description: 'round_opened / deadline_extended: sin hora límite (none, la cierra el anfitrión), una duración o la fecha y hora de cierre en el calendario (minutes es entonces la diferencia, redondeada).' },
     from_status: { type: 'categoría', description: 'group_cancelled: estado previo del grupo.' },
     had_joined: { type: 'booleano', description: 'member_removed: la persona ya había ingresado.' },
     count: { type: 'entero', description: 'member_added: códigos creados.' },

@@ -185,6 +185,11 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
   el reloj del dispositivo.
 - Cronómetro visible de cuenta regresiva para anfitrión y participantes. Al llegar
   a cero se bloquea el envío y se muestra "Ronda cerrada".
+- La hora límite es opcional (pedido del equipo 2026-11-24, E-17). Al abrir,
+  reabrir o programar una ronda, "Sin hora límite" viene marcado: la ronda queda
+  abierta hasta que el anfitrión la cierre (o hasta que todos envíen, si el
+  grupo lo pide). Con la ronda abierta se puede fijar una hora límite o quitarla.
+  El inicio programado también es opcional. La bitácora guarda `timing: none`.
 - Duración al abrir ronda y al extender: presets (5, 15, 30 minutos, 1 hora,
   24 horas, 3 días, 1 semana, 2 semanas) más valor personalizado en minutos,
   horas, días o semanas, con rango validado (1 minuto a 30 días, 43200 minutos).
@@ -392,6 +397,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-14 | 2026-11-15 | El CIX y τ* se calculan con tau-c de Stuart; tau-b de Kendall y gamma quedan como sensibilidad | Pedido explícito del investigador. Procedimiento r-fast-cr-5 (`__procedure.concordanceIndex = 'TAU_C'`). Los informes anteriores conservan tau-b; el export indica el coeficiente de cada ronda en `round_metrics.concordance_index` |
 | E-15 | 2026-11-24 | Modo oscuro por defecto, claro a elección; colores solo por tokens de tema | Pedido del equipo. Reemplaza "modo claro únicamente" |
 | E-16 | 2026-11-24 | "Sala" pasa a "Grupo" en pantalla, URLs y export; sala de espera, edición antes de la Ronda 1 y rondas programadas; hasta 70 participantes y 50 opciones; en grupos con lista el anfitrión ve solo totales por ronda | Pedidos del equipo tras el testeo. Export `r-fast-cr-export/2`. Migración aditiva `scheduled_open_at`, `scheduled_deadline` |
+| E-17 | 2026-11-24 | Hora límite opcional: "Sin hora límite" por defecto al abrir, reabrir o programar una ronda | Pedido del equipo. La ronda la cierra el anfitrión (o el cierre anticipado) |
 
 ### Especificación en PDF superada
 

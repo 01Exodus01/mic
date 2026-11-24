@@ -23,6 +23,14 @@ interface DurationPickerProps {
    */
   closesAt?: string | null;
   onClosesAtChange?: (closesAt: string | null) => void;
+  /**
+   * Optional "Sin hora límite" choice (shown first): the round stays open until
+   * the host closes it. Only offered when onNoDeadlineChange is passed.
+   */
+  noDeadline?: boolean;
+  onNoDeadlineChange?: (noDeadline: boolean) => void;
+  /** Text under "Sin hora límite" (who closes the round) */
+  noDeadlineHint?: string;
 }
 
 /** 'YYYY-MM-DDTHH:mm' in local time, the value format of <input type="datetime-local">. */
@@ -102,7 +110,11 @@ export default function DurationPicker({
   label = 'Duración',
   closesAt = null,
   onClosesAtChange,
+  noDeadline = false,
+  onNoDeadlineChange,
+  noDeadlineHint = 'La ronda queda abierta hasta que la cierres.',
 }: DurationPickerProps) {
+  const withoutDeadline = noDeadline && Boolean(onNoDeadlineChange);
   const isPreset = PRESETS.some((p) => p.value === value);
   const [isCustom, setIsCustom] = useState(!isPreset);
   const [customInput, setCustomInput] = useState(isPreset ? '' : String(splitMinutes(value).amount));
@@ -136,6 +148,7 @@ export default function DurationPicker({
 
   const handlePresetClick = (mins: number) => {
     if (disabled) return;
+    onNoDeadlineChange?.(false);
     setIsCustom(false);
     setCustomError(null);
     onChange(mins);
@@ -143,6 +156,7 @@ export default function DurationPicker({
 
   const handleCustomToggle = () => {
     if (disabled) return;
+    onNoDeadlineChange?.(false);
     setIsCustom(true);
     const parsed = parseInt(customInput, 10) * UNITS.find((u) => u.key === customUnit)!.minutes;
     if (!isNaN(parsed) && parsed >= 1 && parsed <= MAX_ROUND_MINUTES) {
@@ -219,6 +233,7 @@ export default function DurationPicker({
   };
   const openCalendar = () => {
     if (disabled) return;
+    onNoDeadlineChange?.(false);
     // Start from what the duration would give, rounded up to the next quarter hour
     const start = new Date(baseMs + Math.max(value, 1) * 60000);
     start.setSeconds(0, 0);
@@ -306,8 +321,21 @@ export default function DurationPicker({
 
       {/* Preset pills and custom button */}
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Selección de duración">
+        {onNoDeadlineChange && (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-pressed={withoutDeadline}
+            onClick={() => onNoDeadlineChange(true)}
+            className={`min-h-[36px] px-3 py-1.5 rounded-[6px] text-xs font-sans transition-colors disabled:opacity-40 ${
+              withoutDeadline ? 'bg-ink text-paper font-medium' : 'bg-paper border border-line text-ink hover:bg-subtle'
+            }`}
+          >
+            Sin hora límite
+          </button>
+        )}
         {PRESETS.map((p) => {
-          const active = !isCustom && value === p.value;
+          const active = !withoutDeadline && !isCustom && value === p.value;
           return (
             <button
               key={p.value}
@@ -330,7 +358,7 @@ export default function DurationPicker({
           disabled={disabled}
           onClick={handleCustomToggle}
           className={`min-h-[36px] px-3 py-1.5 rounded-[6px] text-xs font-sans transition-colors disabled:opacity-40 ${
-            isCustom
+            isCustom && !withoutDeadline
               ? 'bg-ink text-paper font-medium'
               : 'bg-paper border border-line text-ink hover:bg-subtle'
           }`}
@@ -339,8 +367,15 @@ export default function DurationPicker({
         </button>
       </div>
 
+      {withoutDeadline && (
+        <div className="flex items-center gap-1.5 text-xs text-ink-2">
+          <Clock className="w-3.5 h-3.5 stroke-[1.5] text-ink-2" />
+          <span>{noDeadlineHint}</span>
+        </div>
+      )}
+
       {/* Custom input field */}
-      {isCustom && (
+      {isCustom && !withoutDeadline && (
         <div className="flex items-center gap-2 pt-1">
           <label htmlFor={inputId} className="text-xs text-ink-2 shrink-0">
             Duración (hasta 30 días):
@@ -376,14 +411,14 @@ export default function DurationPicker({
         </div>
       )}
 
-      {customError && (
+      {customError && !withoutDeadline && (
         <p id={`${inputId}-error`} role="alert" className="text-xs text-danger">
           {customError}
         </p>
       )}
 
       {/* Live deadline preview */}
-      {previewDate && (
+      {previewDate && !withoutDeadline && (
         <div className="flex items-center gap-1.5 text-xs text-ink-2">
           <Clock className="w-3.5 h-3.5 stroke-[1.5] text-ink-2" />
           <span>
