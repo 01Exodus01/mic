@@ -40,7 +40,7 @@ vi.mock('@mic/backend/rate-limit', () => ({
 describe('PT-25: tabla', () => {
   it('muestra solo estados por ronda', () => {
     const html = renderToStaticMarkup(
-      <ParticipationGrid data={{ rounds: [1, 2], rows: [{ key: 'a', name: 'A001', states: ['voted', 'joined'] }], aggregateOnly: false, totals: [] }} />
+      <ParticipationGrid data={{ rounds: [1, 2], rows: [{ key: 'a', name: 'A001', states: ['voted', 'joined'] }] }} />
     );
     expect(html).toContain('Ronda 2');
     expect(html).toContain('Envió');
@@ -87,27 +87,20 @@ describe.skipIf(!hasTestDb)('PT-25: participación por ronda (PostgreSQL)', () =
     await prisma.$disconnect();
   });
 
-  it('con lista: por persona solo si ingresó; por ronda solo totales (no se liga la etiqueta con el código ciego)', async () => {
+  it('el anfitrión ve quién no envió en cada ronda', async () => {
     const { getRoomParticipation } = await import('@/app/actions/room');
     const res = await getRoomParticipation(fx!.roomId);
     if (!res.success || !res.data) throw new Error('participation failed');
     expect(res.data.rounds).toEqual([1, 2]);
-    expect(res.data.aggregateOnly).toBe(true);
     const byName = Object.fromEntries(res.data.rows.map((r) => [r.name, r.states]));
     expect(byName).toEqual({
-      A001: ['joined'],
-      A002: ['joined'],
-      A003: ['retired'],
-      A004: ['joined'],
-      A005: ['not_joined'],
-      A006: ['removed'],
+      A001: ['voted', 'voted'],
+      A002: ['voted', 'joined'],
+      A003: ['voted', 'retired'],
+      A004: ['not_voted', 'joined'],
+      A005: ['not_joined', 'not_joined'],
+      A006: ['removed', 'removed'],
     });
-    for (const row of res.data.rows) expect(row.states).not.toContain('voted');
-    // Round 1: A001-A003 sent of 5 listed (A006 removed); round 2: A001 of 4 (A003 retired)
-    expect(res.data.totals).toEqual([
-      { round: 1, sent: 3, expected: 5 },
-      { round: 2, sent: 1, expected: 4 },
-    ]);
   });
 
   it('con lista: el estado del grupo no dice quién envió ni trae el nombre interno', async () => {

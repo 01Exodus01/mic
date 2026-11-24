@@ -520,7 +520,7 @@ export default function RoomHostPage() {
     );
   }
 
-  const { room: sala, votesThisRound: votesCount, voterIds = [] } = data;
+  const { room: sala, votesThisRound: votesCount } = data;
   const totalParticipants = sala.participants?.length || 0;
   const minRequired = MIN_PARTICIPANTS;
   const stateLabel = STATE_LABELS[sala.status] || sala.status;
@@ -628,6 +628,107 @@ export default function RoomHostPage() {
           <RoomRosterManager roomId={sala.id} roomPin={sala.pin} readOnly={sala.status === 'CONCLUDED' || sala.status === 'CANCELLED'} />
         </div>
       )}
+
+      {/* Lista de participantes (grupos con PIN): nombre y acciones; con lista, RoomRosterManager */}
+      {sala.access_mode !== 'ROSTER' && (
+        <section className="py-6 border-b border-line space-y-3">
+          <div>
+            <h2 className="font-heading text-lg font-bold text-ink">Lista de participantes</h2>
+            <p className="text-xs text-ink-2 mt-0.5">
+              {totalParticipants} {totalParticipants === 1 ? 'persona' : 'personas'} en el grupo, con el nombre con que entraron. Lo que envió cada una está en
+              &quot;Participación por ronda&quot;.
+            </p>
+          </div>
+
+          {totalParticipants === 0 ? (
+            <div className="border border-line bg-paper rounded-[6px] p-6 text-center text-xs text-ink-2">
+              Aún no se han unido participantes con el PIN <strong>{sala.pin}</strong>.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-line rounded-[6px] bg-paper">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-line bg-canvas/60 text-ink-2 font-mono text-[11px] uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Nombre</th>
+                    <th className="py-2.5 px-3 w-56 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {sala.participants.map((p) => {
+                    return (
+                      <tr key={p.id} className="hover:bg-canvas/50">
+                        <td className="py-2.5 px-3 font-medium text-ink">
+                          {p.nickname}
+                        </td>
+                        <td className="py-2.5 px-3 text-right space-x-3 whitespace-nowrap">
+                          {/* "Restablecer PIN" como botón de texto plano */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setResetPinModal({
+                                open: true,
+                                partId: p.id,
+                                nickname: p.nickname,
+                              })
+                            }
+                            className="text-xs text-ink hover:underline hover:text-brand font-medium"
+                          >
+                            Restablecer PIN
+                          </button>
+                          {/* "Expulsar del grupo" como botón de texto plano (AUD-13, 14, D2, D3) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExpelServerError(null);
+                              setExpelModal({
+                                open: true,
+                                partId: p.id,
+                                nickname: p.nickname,
+                              });
+                            }}
+                            className="text-xs text-danger hover:underline font-medium"
+                          >
+                            Expulsar del grupo
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Retirados: se pueden reincorporar mientras la actividad sigue */}
+          {(sala.removedParticipants?.length ?? 0) > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-ink">Retirados ({sala.removedParticipants!.length})</h3>
+              <p className="text-xs text-ink/80">
+                No ocupan cupo y su nombre quedó libre. Reincorporar devuelve a la misma persona, con su historial, si hay
+                cupo y nadie tomó su nombre.
+              </p>
+          <ul className="divide-y divide-line border border-line rounded-[6px] bg-paper">
+            {sala.removedParticipants!.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
+                <span className="font-medium text-ink">{p.nickname}</span>
+                {sala.status !== 'CONCLUDED' && sala.status !== 'CANCELLED' && (
+                  <button
+                    type="button"
+                    onClick={() => handleReinstate(p.id, p.nickname)}
+                    disabled={reinstatingId !== null}
+                    className="min-h-[36px] px-2 text-xs font-medium text-ink hover:underline hover:text-brand disabled:opacity-40"
+                  >
+                    {reinstatingId === p.id ? 'Reincorporando...' : 'Reincorporar'}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+            </div>
+          )}
+        </section>
+      )}
+
 
       {/* 3. Acción Principal según el estado (una sola acción principal visible; secundarias en texto plano) */}
       <div className="pb-6 border-b border-line">
@@ -1216,121 +1317,6 @@ export default function RoomHostPage() {
       <div className="pb-6 border-b border-line">
         <ParticipationTable roomId={sala.id} refreshKey={`${sala.status}:${sala.current_round}:${votesCount}:${totalParticipants}`} />
       </div>
-
-      {/* 6. Tabla Densa de Participantes (grupos con PIN; con lista, la lista y los totales de arriba) */}
-      {sala.access_mode !== 'ROSTER' && (
-        <section className="pb-6 border-b border-line space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-semibold text-ink">
-                Participantes ({totalParticipants})
-              </h2>
-              <p className="text-xs text-ink-2 mt-0.5">
-                Identificadores anónimos y si enviaron su selección en la ronda actual.
-              </p>
-            </div>
-          </div>
-
-          {totalParticipants === 0 ? (
-            <div className="border border-line bg-paper rounded-[6px] p-6 text-center text-xs text-ink-2">
-              Aún no se han unido participantes con el PIN <strong>{sala.pin}</strong>.
-            </div>
-          ) : (
-            <div className="overflow-x-auto border border-line rounded-[6px] bg-paper">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-line bg-canvas/60 text-ink-2 font-mono text-[11px] uppercase tracking-wider">
-                    <th className="py-2.5 px-3">Nombre</th>
-                    <th className="py-2.5 px-3 w-36">Estado</th>
-                    <th className="py-2.5 px-3 w-56 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {sala.participants.map((p) => {
-                    const didVote = voterIds.includes(p.id);
-
-                    return (
-                      <tr key={p.id} className="hover:bg-canvas/50">
-                        <td className="py-2.5 px-3 font-medium text-ink">
-                          {p.nickname}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono">
-                          {didVote ? (
-                            <span className="text-good font-semibold">Envió</span>
-                          ) : (
-                            <span className="text-ink-2">Pendiente</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 text-right space-x-3">
-                          {/* "Restablecer PIN" como botón de texto plano */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setResetPinModal({
-                                open: true,
-                                partId: p.id,
-                                nickname: p.nickname,
-                              })
-                            }
-                            className="text-xs text-ink hover:underline hover:text-brand font-medium"
-                          >
-                            Restablecer PIN
-                          </button>
-                          {/* "Expulsar del grupo" como botón de texto plano (AUD-13, 14, D2, D3) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setExpelServerError(null);
-                              setExpelModal({
-                                open: true,
-                                partId: p.id,
-                                nickname: p.nickname,
-                              });
-                            }}
-                            className="text-xs text-danger hover:underline font-medium"
-                          >
-                            Expulsar del grupo
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* 6b. Retirados: se pueden reincorporar mientras la actividad sigue */}
-      {(sala.removedParticipants?.length ?? 0) > 0 && (
-        <section className="pb-6 border-b border-line space-y-2">
-          <div>
-            <h2 className="text-sm font-semibold text-ink">Retirados ({sala.removedParticipants!.length})</h2>
-            <p className="text-xs text-ink/80 mt-0.5">
-              No ocupan cupo y su nombre quedó libre. Reincorporar devuelve a la misma persona, con su historial, si hay
-              cupo y nadie tomó su nombre.
-            </p>
-          </div>
-          <ul className="divide-y divide-line border border-line rounded-[6px] bg-paper">
-            {sala.removedParticipants!.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                <span className="font-medium text-ink">{p.nickname}</span>
-                {sala.status !== 'CONCLUDED' && sala.status !== 'CANCELLED' && (
-                  <button
-                    type="button"
-                    onClick={() => handleReinstate(p.id, p.nickname)}
-                    disabled={reinstatingId !== null}
-                    className="min-h-[36px] px-2 text-xs font-medium text-ink hover:underline hover:text-brand disabled:opacity-40"
-                  >
-                    {reinstatingId === p.id ? 'Reincorporando...' : 'Reincorporar'}
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* 7. Exportaciones (plan de mejora P3) */}
       <ExportDownloads roomId={salaId} />

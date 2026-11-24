@@ -407,6 +407,7 @@ queda desactualizada en los puntos que cubren estas enmiendas; manda este archiv
 | E-16 | 2026-11-24 | "Sala" pasa a "Grupo" en pantalla, URLs y export; sala de espera, edición antes de la Ronda 1 y rondas programadas; hasta 70 participantes y 50 opciones; en grupos con lista el anfitrión ve solo totales por ronda | Pedidos del equipo tras el testeo. Export `r-fast-cr-export/2`. Migración aditiva `scheduled_open_at`, `scheduled_deadline` |
 | E-17 | 2026-11-24 | Hora límite opcional: "Sin hora límite" por defecto al abrir, reabrir o programar una ronda | Pedido del equipo. La ronda la cierra el anfitrión (o el cierre anticipado) |
 | E-18 | 2026-11-24 | Moderación de razones por el anfitrión, sin ver autores; aviso al autor; la selección cuenta | Pedido del equipo por razones ofensivas. Migración aditiva `ReasonModeration`; `reasons.csv` agrega `moderated`, `moderated_at` |
+| E-19 | 2026-11-24 | "Participación por ronda" vuelve a mostrar, por persona y ronda, quién envió también en grupos con lista ("No ingresó" para quien no había entrado). "Participantes (N)" pasa a "Lista de participantes" (nombre y acciones) en grupos con PIN | Decisión del equipo: se acepta que el anfitrión (investigador) puede reidentificar; en el método se declara que los datos son seudonimizados. Reemplaza la parte de E-16 sobre totales por ronda |
 
 ### Especificación en PDF superada
 
