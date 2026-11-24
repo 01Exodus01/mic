@@ -235,8 +235,7 @@ export default function RoundFeedbackReport({
                 <span className="flex-1 min-w-0">
                   <span className="block font-sans font-semibold text-sm text-ink">{title}</span>
                   <span className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-ink/80 font-mono">
-                    {/* The final position is already the number on the left */}
-                    {!final && <span>Posición sugerida: {position}</span>}
+                    {/* The position is already the number on the left (and in the sentence above the reasons) */}
                     <span>Tu posición: {mine ? `${mine}.º` : 'sin selección'}</span>
                     <span>Razones: {total}</span>
                   </span>

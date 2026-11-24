@@ -37,7 +37,9 @@ describe('PT-19: componente de retroalimentación', () => {
     expect(html).toContain('Tu nivel de concordancia');
     expect(html).toContain('73%');
     // Algorithm 1, lines 14–16: suggested position p_i of each option and its reasons F_i
-    expect(html).toContain('Posición sugerida: 1.º y 2.º empatadas');
+    // (shown once, in the sentence above the reasons; not repeated as a label)
+    expect(html).toContain('Se sugiere la posición 1.º y 2.º empatadas por estas razones:');
+    expect(html).not.toContain('Posición sugerida:');
     expect(html).toContain('Tu posición: 2.º');
     // rendered open (defaultOpen), so the toggle offers to hide them all
     expect(html).toContain('Ocultar todo');
