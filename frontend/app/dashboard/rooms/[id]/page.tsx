@@ -1051,88 +1051,90 @@ export default function RoomHostPage() {
         <ParticipationTable roomId={sala.id} refreshKey={`${sala.status}:${sala.current_round}:${votesCount}:${totalParticipants}`} />
       </div>
 
-      {/* 6. Tabla Densa de Participantes */}
-      <section className="pb-6 border-b border-[#D9D5CC] space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-[#14171A]">
-              Participantes ({totalParticipants})
-            </h2>
-            <p className="text-xs text-[#5A554E] mt-0.5">
-              Identificadores anónimos y si enviaron su selección en la ronda actual.
-            </p>
+      {/* 6. Tabla Densa de Participantes (grupos con PIN; con lista, la lista y los totales de arriba) */}
+      {sala.access_mode !== 'ROSTER' && (
+        <section className="pb-6 border-b border-[#D9D5CC] space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-[#14171A]">
+                Participantes ({totalParticipants})
+              </h2>
+              <p className="text-xs text-[#5A554E] mt-0.5">
+                Identificadores anónimos y si enviaron su selección en la ronda actual.
+              </p>
+            </div>
           </div>
-        </div>
 
-        {totalParticipants === 0 ? (
-          <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-6 text-center text-xs text-[#5A554E]">
-            Aún no se han unido participantes con el PIN <strong>{sala.pin}</strong>.
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-[#D9D5CC] rounded-[6px] bg-white">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF]/60 text-[#5A554E] font-mono text-[11px] uppercase tracking-wider">
-                  <th className="py-2.5 px-3">Nombre</th>
-                  <th className="py-2.5 px-3 w-36">Estado</th>
-                  <th className="py-2.5 px-3 w-56 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D9D5CC]">
-                {sala.participants.map((p) => {
-                  const didVote = voterIds.includes(p.id);
+          {totalParticipants === 0 ? (
+            <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-6 text-center text-xs text-[#5A554E]">
+              Aún no se han unido participantes con el PIN <strong>{sala.pin}</strong>.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-[#D9D5CC] rounded-[6px] bg-white">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#D9D5CC] bg-[#F6F4EF]/60 text-[#5A554E] font-mono text-[11px] uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Nombre</th>
+                    <th className="py-2.5 px-3 w-36">Estado</th>
+                    <th className="py-2.5 px-3 w-56 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#D9D5CC]">
+                  {sala.participants.map((p) => {
+                    const didVote = voterIds.includes(p.id);
 
-                  return (
-                    <tr key={p.id} className="hover:bg-[#F6F4EF]/50">
-                      <td className="py-2.5 px-3 font-medium text-[#14171A]">
-                        {p.nickname}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono">
-                        {didVote ? (
-                          <span className="text-[#2F7D4F] font-semibold">Envió</span>
-                        ) : (
-                          <span className="text-[#5A554E]">Pendiente</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-right space-x-3">
-                        {/* "Restablecer PIN" como botón de texto plano */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setResetPinModal({
-                              open: true,
-                              partId: p.id,
-                              nickname: p.nickname,
-                            })
-                          }
-                          className="text-xs text-[#14171A] hover:underline hover:text-[#E4572E] font-medium"
-                        >
-                          Restablecer PIN
-                        </button>
-                        {/* "Expulsar de la sala" como botón de texto plano (AUD-13, 14, D2, D3) */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setExpelServerError(null);
-                            setExpelModal({
-                              open: true,
-                              partId: p.id,
-                              nickname: p.nickname,
-                            });
-                          }}
-                          className="text-xs text-[#B42318] hover:underline font-medium"
-                        >
-                          Expulsar de la sala
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                    return (
+                      <tr key={p.id} className="hover:bg-[#F6F4EF]/50">
+                        <td className="py-2.5 px-3 font-medium text-[#14171A]">
+                          {p.nickname}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {didVote ? (
+                            <span className="text-[#2F7D4F] font-semibold">Envió</span>
+                          ) : (
+                            <span className="text-[#5A554E]">Pendiente</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right space-x-3">
+                          {/* "Restablecer PIN" como botón de texto plano */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setResetPinModal({
+                                open: true,
+                                partId: p.id,
+                                nickname: p.nickname,
+                              })
+                            }
+                            className="text-xs text-[#14171A] hover:underline hover:text-[#E4572E] font-medium"
+                          >
+                            Restablecer PIN
+                          </button>
+                          {/* "Expulsar de la sala" como botón de texto plano (AUD-13, 14, D2, D3) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExpelServerError(null);
+                              setExpelModal({
+                                open: true,
+                                partId: p.id,
+                                nickname: p.nickname,
+                              });
+                            }}
+                            className="text-xs text-[#B42318] hover:underline font-medium"
+                          >
+                            Expulsar de la sala
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* 6b. Retirados: se pueden reincorporar mientras la actividad sigue */}
       {(sala.removedParticipants?.length ?? 0) > 0 && (

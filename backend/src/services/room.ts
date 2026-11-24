@@ -516,7 +516,10 @@ export async function getRoomStatus(ctx: RequestContext, salaId: string): Promis
       },
     });
 
-    const voterIds = votesThisRound.map((v) => v.participant_id);
+    // Roster rooms: no per-person submission state, and no internal nickname
+    // (it carries the roster entry id): only counts reach the host
+    const isRoster = room.access_mode === 'ROSTER';
+    const voterIds = isRoster ? [] : votesThisRound.map((v) => v.participant_id);
 
     // Map room object to expose both English and legacy fields for compatibility
     // Removed participants of rooms that use names, shown so the host can reinstate them
@@ -533,6 +536,7 @@ export async function getRoomStatus(ctx: RequestContext, salaId: string): Promis
 
     const mappedRoom: MappedRoomDetails = {
       ...room,
+      participants: isRoster ? room.participants.map((p) => ({ ...p, nickname: '' })) : room.participants,
       removedParticipants,
       // PT-25: the host gets group results only. arguments_json carries per-voter
       // metrics (participant id + cix) and blind-signed reasons; the panel does not
@@ -961,6 +965,14 @@ export interface ParticipationRow {
 export interface ParticipationData {
   rounds: number[];
   rows: ParticipationRow[];
+  /**
+   * Roster rooms: rows carry one state each (joined or not, removed), never per
+   * round, and the rounds only as totals. Who sent in which round, next to the
+   * roster label, would let the host match labels with the blind codes of the
+   * export (by comparing who sent and who is missing).
+   */
+  aggregateOnly: boolean;
+  totals: Array<{ round: number; sent: number; expected: number }>;
 }
 
 export async function getRoomParticipation(ctx: RequestContext, roomId: string): Promise<ActionResult<ParticipationData>> {
@@ -1015,16 +1027,25 @@ export async function getRoomParticipation(ctx: RequestContext, roomId: string):
         orderBy: { label: 'asc' },
       });
       const byId = new Map(participants.map((p) => [p.id, p]));
-      rows = members.map((m) => ({
-        key: m.id,
-        name: m.label,
-        states: statesFor(m.participant_id ? byId.get(m.participant_id) : undefined, m.is_removed),
-      }));
+      rows = members.map((m) => {
+        const p = m.participant_id ? byId.get(m.participant_id) : undefined;
+        const state: ParticipationState = m.is_removed ? (p ? 'retired' : 'removed') : !p ? 'not_joined' : p.is_retired ? 'retired' : 'joined';
+        return { key: m.id, name: m.label, states: [state] };
+      });
+      const totals = rounds.map((r) => {
+        const states = members.map((m) => statesFor(m.participant_id ? byId.get(m.participant_id) : undefined, m.is_removed)[r - 1]);
+        return {
+          round: r,
+          sent: states.filter((st) => st === 'voted').length,
+          expected: states.filter((st) => st !== 'removed' && st !== 'retired').length,
+        };
+      });
+      return { success: true, data: { rounds, rows, aggregateOnly: true, totals } };
     } else {
       rows = participants.map((p) => ({ key: p.id, name: p.nickname, states: statesFor(p, false) }));
     }
 
-    return { success: true, data: { rounds, rows } };
+    return { success: true, data: { rounds, rows, aggregateOnly: false, totals: [] } };
   } catch (err) {
     const e = toApiError(err);
     return { success: false, error: e.error, code: e.code };
