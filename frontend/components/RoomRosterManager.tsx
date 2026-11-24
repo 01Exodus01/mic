@@ -4,12 +4,14 @@
  * components/RoomRosterManager.tsx
  * Host panel for course-roster rooms (PT-21): add one person, paste or upload
  * a list, remove, regenerate a code. New codes are shown once, with a CSV
- * download to hand them out. Shows who has joined, never what anyone voted.
+ * download to hand them out; on screen they are blurred until the host shows
+ * one (or all), so a projected or shared screen does not give them away.
+ * Shows who has joined, never what anyone voted.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { Download, Eye, EyeOff, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import {
   addRoomMember,
   importRoomMembers,
@@ -46,6 +48,17 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [toRemove, setToRemove] = useState<RoomMemberItem | null>(null);
+  // Codes shown on screen (blurred by default); keys are `${memberId}-${code}`
+  const [shown, setShown] = useState<Set<string>>(new Set());
+  const codeKey = (i: IssuedMemberCode) => `${i.memberId}-${i.code}`;
+  const allShown = issued.length > 0 && issued.every((i) => shown.has(codeKey(i)));
+  const toggleCode = (key: string) =>
+    setShown((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const load = useCallback(async () => {
     const res = await getRoomMembers(roomId);
@@ -98,16 +111,59 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
 
       {issued.length > 0 && (
         <div className="p-4 rounded-[6px] border border-[#B7791F] bg-white space-y-2" role="status">
-          <p className="text-xs font-semibold text-[#14171A]">
-            Códigos nuevos. Solo se muestran ahora: descárgalos o cópialos antes de salir.
-          </p>
-          <ul className="text-xs font-mono space-y-1 max-h-60 overflow-auto">
-            {issued.map((i) => (
-              <li key={`${i.memberId}-${i.code}`} className="flex justify-between gap-4">
-                <span className="truncate">{i.label}</span>
-                <span className="text-[#14171A] font-bold">{i.code}</span>
-              </li>
-            ))}
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <p className="text-xs font-semibold text-[#14171A]">
+              Códigos nuevos. Solo se muestran ahora: descárgalos o cópialos antes de salir.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShown(allShown ? new Set() : new Set(issued.map(codeKey)))}
+              aria-pressed={allShown}
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-2.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF]"
+            >
+              {allShown ? <EyeOff className="w-3.5 h-3.5 stroke-[1.5]" /> : <Eye className="w-3.5 h-3.5 stroke-[1.5]" />}
+              {allShown ? 'Ocultar todos' : 'Mostrar todos'}
+            </button>
+          </div>
+          <ul className="text-xs font-mono divide-y divide-[#D9D5CC] max-h-72 overflow-auto">
+            {issued.map((i) => {
+              const key = codeKey(i);
+              const visible = shown.has(key);
+              return (
+                <li key={key} className="flex items-center justify-between gap-3 py-1.5">
+                  <span className="truncate font-sans text-[#14171A]">{i.label}</span>
+                  <span className="relative inline-flex items-center justify-end shrink-0 min-w-[160px] min-h-[32px]">
+                    <span
+                      className={`text-[#14171A] font-bold tracking-wider transition-[filter] ${visible ? '' : 'blur-[5px] select-none'}`}
+                      aria-hidden={!visible}
+                    >
+                      {i.code}
+                    </span>
+                    {visible ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleCode(key)}
+                        className="ml-2 min-h-[32px] px-1.5 text-[#5A554E] hover:text-[#14171A]"
+                        aria-label={`Ocultar el código de ${i.label}`}
+                        title="Ocultar código"
+                      >
+                        <EyeOff className="w-3.5 h-3.5 stroke-[1.5]" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleCode(key)}
+                        className="absolute inset-0 m-auto h-[28px] w-fit px-2.5 rounded-[4px] border border-[#D9D5CC] bg-white/95 font-sans text-[11px] font-medium text-[#14171A] hover:bg-[#EBE7DF] inline-flex items-center gap-1"
+                        aria-label={`Mostrar el código de ${i.label}`}
+                      >
+                        <Eye className="w-3.5 h-3.5 stroke-[1.5]" />
+                        Mostrar código
+                      </button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           <div className="flex flex-wrap gap-3">
             <button
@@ -118,8 +174,15 @@ export default function RoomRosterManager({ roomId, roomPin, readOnly = false }:
               <Download className="w-4 h-4 stroke-[1.5]" />
               Descargar códigos (CSV)
             </button>
-            <button type="button" onClick={() => setIssued([])} className="min-h-[44px] text-xs text-[#5A554E] hover:text-[#14171A]">
-              Ocultar códigos
+            <button
+              type="button"
+              onClick={() => {
+                setIssued([]);
+                setShown(new Set());
+              }}
+              className="min-h-[44px] text-xs text-[#5A554E] hover:text-[#14171A]"
+            >
+              Listo, quitar de la pantalla (no se vuelven a mostrar)
             </button>
           </div>
         </div>
