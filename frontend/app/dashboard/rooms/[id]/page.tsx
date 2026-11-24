@@ -848,31 +848,54 @@ export default function RoomHostPage() {
 
         {tauStar != null ? (
           <div className="border border-[#D9D5CC] bg-white rounded-[6px] p-4 space-y-3">
-            <div className="flex items-baseline justify-between">
-              <div className="flex items-baseline gap-2">
-                <span className="font-mono text-2xl font-bold text-[#14171A]">
-                  {agreementPct}%
-                </span>
-                <span className="text-xs text-[#5A554E]">
-                  (requerido: {requiredPct}%)
-                </span>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span className="font-mono text-2xl font-bold text-[#14171A]">{agreementPct}%</span>
+                <p className="text-xs text-[#5A554E] mt-0.5">
+                  Nivel de acuerdo alcanzado hasta ahora
+                  {latestReport ? ` (ronda ${latestReport.round})` : ''}
+                </p>
               </div>
-              <span className={`text-xs font-semibold ${agreementPct >= requiredPct ? 'text-[#2F7D4F]' : 'text-[#B7791F]'}`}>
-                {agreementPct >= requiredPct ? 'Meta cumplida' : 'Bajo la meta'}
-              </span>
+              <div className="text-right shrink-0">
+                <span className="text-xs text-[#14171A]">Requerido: {requiredPct}%</span>
+                <p className={`text-xs font-semibold mt-0.5 ${agreementPct >= requiredPct ? 'text-[#2F7D4F]' : 'text-[#B7791F]'}`}>
+                  {agreementPct >= requiredPct ? 'Alcanzado' : 'Todavía no alcanzado'}
+                </p>
+              </div>
             </div>
 
-            {/* Barra simple de una sola serie contra el requerido */}
-            <div className="w-full bg-[#EBE7DF] h-3 rounded-[4px] overflow-hidden relative">
-              <div
-                className="h-full bg-[#E4572E] transition-all duration-300"
-                style={{ width: `${Math.min(100, Math.max(0, agreementPct))}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] font-mono text-[#5A554E]">
-              <span>0%</span>
-              <span>Meta: {requiredPct}%</span>
-              <span>100%</span>
+            {/* Bar against the required level: a marker at the threshold, its value below it */}
+            <div>
+              <div className="relative">
+                <div
+                  className="w-full bg-[#EBE7DF] h-3 rounded-[4px] overflow-hidden"
+                  role="meter"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={agreementPct}
+                  aria-label={`Nivel de acuerdo ${agreementPct}%, requerido ${requiredPct}%`}
+                >
+                  <div
+                    className="h-full bg-[#E4572E] transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.max(0, agreementPct))}%` }}
+                  />
+                </div>
+                <div
+                  className="absolute -top-1 -bottom-1 w-0.5 bg-[#14171A]"
+                  style={{ left: `calc(${Math.min(100, Math.max(0, requiredPct))}% - 1px)` }}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="relative h-4 mt-1 text-[11px] font-mono text-[#5A554E]" aria-hidden="true">
+                {requiredPct > 8 && <span className="absolute left-0">0%</span>}
+                <span
+                  className="absolute font-semibold text-[#14171A]"
+                  style={{ left: `${Math.min(100, Math.max(0, requiredPct))}%`, transform: `translateX(${requiredPct < 6 ? '0' : requiredPct > 94 ? '-100%' : '-50%'})` }}
+                >
+                  {requiredPct}%
+                </span>
+                {requiredPct < 88 && <span className="absolute right-0">100%</span>}
+              </div>
             </div>
           </div>
         ) : (
