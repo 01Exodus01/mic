@@ -160,6 +160,8 @@ export default function RoomHostPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<RoomDashboardData | null>(null);
   const [copiedPin, setCopiedPin] = useState(false);
+  // "Orden del grupo": round whose collective order is shown (null = the most recent one)
+  const [orderRound, setOrderRound] = useState<number | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -530,6 +532,7 @@ export default function RoomHostPage() {
   // Último reporte para nivel de acuerdo y detalle técnico
   const latestReport = sala.reports?.[sala.reports.length - 1] || null;
   const tauStar = latestReport?.obtained_tau != null ? latestReport.obtained_tau : null;
+  const shownReport = (orderRound !== null ? sala.reports?.find((r) => r.round === orderRound) : null) ?? latestReport;
   const agreementPct = tauStar != null ? Math.round(tauStar * 100) : 0;
   const requiredPct = Math.round(sala.tau_threshold * 100);
 
@@ -1047,7 +1050,7 @@ export default function RoomHostPage() {
         </details>
       </section>
 
-      {/* 5. Orden del Grupo (si hay reporte) u Opciones del grupo */}
+      {/* 5. Orden del Grupo (si hay reporte) u Opciones del grupo; se puede ver el de rondas anteriores */}
       <section className="pb-6 border-b border-line space-y-3">
         <div>
           <h2 className="text-sm font-semibold text-ink">
@@ -1055,48 +1058,99 @@ export default function RoomHostPage() {
           </h2>
           <p className="text-xs text-ink-2 mt-0.5">
             {latestReport
-              ? 'Posiciones colectivas agregadas a partir de las selecciones recibidas.'
+              ? 'Posiciones colectivas agregadas a partir de las selecciones recibidas en cada ronda.'
               : 'Opciones registradas que los participantes ordenarán.'}
           </p>
         </div>
 
-        {latestReport?.tieBreak?.applied && latestReport.tieBreak.tiedGroups.length > 0 && (
+        {latestReport && sala.reports.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Ronda del orden">
+            {sala.reports.map((r) => {
+              const isLatest = r.round === latestReport.round;
+              const active = (shownReport?.round ?? latestReport.round) === r.round;
+              return (
+                <button
+                  key={r.round}
+                  type="button"
+                  onClick={() => setOrderRound(isLatest ? null : r.round)}
+                  aria-pressed={active}
+                  className={`min-h-[32px] px-3 rounded-[6px] text-xs transition-colors ${
+                    active ? 'bg-ink text-paper font-medium' : 'bg-paper border border-line text-ink hover:bg-subtle'
+                  }`}
+                >
+                  Ronda {r.round}
+                  {isLatest && <span className={`ml-1.5 text-[10px] font-semibold uppercase tracking-wide ${active ? 'text-paper/80' : 'text-brand'}`}>actual</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {shownReport && (
+          shownReport.round === latestReport?.round ? (
+            <p className="text-xs text-ink">
+              <span className="inline-block mr-1.5 px-1.5 py-px rounded-[3px] bg-brand/15 text-brand text-[10px] font-semibold uppercase tracking-wide align-middle">
+                Actual
+              </span>
+              Orden más reciente: el de la Ronda {shownReport.round} (nivel de acuerdo {Math.round(shownReport.obtained_tau * 100)}%).
+              {sala.status === 'ROUND_OPEN' && sala.current_round > shownReport.round
+                ? ` La Ronda ${sala.current_round} está en curso; su orden se calcula al cerrarla.`
+                : ''}
+            </p>
+          ) : (
+            <div className="p-3 rounded-[6px] border border-warn/50 bg-warn/10 text-xs text-ink flex flex-wrap items-center justify-between gap-2" role="status">
+              <span>
+                Estás viendo el orden de una ronda anterior: <strong>Ronda {shownReport.round}</strong> (nivel de acuerdo{' '}
+                {Math.round(shownReport.obtained_tau * 100)}%). No es el orden actual.
+              </span>
+              <button
+                type="button"
+                onClick={() => setOrderRound(null)}
+                className="min-h-[32px] px-2.5 rounded-[6px] border border-line bg-paper font-medium text-ink hover:bg-subtle"
+              >
+                Ver el orden actual (Ronda {latestReport!.round})
+              </button>
+            </div>
+          )
+        )}
+
+        {shownReport?.tieBreak?.applied && shownReport.tieBreak.tiedGroups.length > 0 && (
           <div className="p-3 rounded-[6px] border border-warn/40 bg-warn/[0.07] text-xs text-ink space-y-1">
-            <p className="font-semibold">Hubo empates en la ronda {latestReport.round}</p>
-            {latestReport.tieBreak.tiedGroups.map((group, i) => (
+            <p className="font-semibold">Hubo empates en la ronda {shownReport.round}</p>
+            {shownReport.tieBreak.tiedGroups.map((group, i) => (
               <p key={i}>
                 Empatadas:{' '}
                 {group.map((id) => sala.options.find((o) => o.id === id)?.title ?? id).join(', ')}
               </p>
             ))}
             <p className="text-ink/80">
-              {tieBreakHostNote(latestReport.tieBreak.rule, latestReport.tieBreak.fallbackUsed)} Los participantes no ven este aviso; queda en el
+              {tieBreakHostNote(shownReport.tieBreak.rule, shownReport.tieBreak.fallbackUsed)} Los participantes no ven este aviso; queda en el
               export (round_metrics.csv: tie_detected, tie_resolved_by).
             </p>
           </div>
         )}
 
-        {latestReport ? (
+        {shownReport ? (
           <div className="overflow-x-auto border border-line rounded-[6px] bg-paper">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-line bg-canvas/60 text-ink-2 font-mono text-[11px] uppercase tracking-wider">
                   <th className="py-2.5 px-3 w-40">Posición</th>
                   {/* The mid-rank only adds information when options share a place */}
-                  {rankingHasTies(latestReport.collective_ranking) && (
+                  {rankingHasTies(shownReport.collective_ranking) && (
                     <th className="py-2.5 px-3 w-24">Rango</th>
                   )}
                   <th className="py-2.5 px-3">Opción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {latestReport.collective_ranking.map((item, idx) => {
+                {shownReport.collective_ranking.map((item, idx) => {
                   const proj = sala.options.find((p) => p.id === item.id);
                   const title = proj ? proj.title : item.title || `Opción ${idx + 1}`;
                   const rankLabel = formatRankLabel(
                     item.midRank,
                     idx,
-                    latestReport.collective_ranking
+                    shownReport.collective_ranking
                   );
 
                   return (
@@ -1104,7 +1158,7 @@ export default function RoomHostPage() {
                       <td className="py-2.5 px-3 font-semibold text-ink">
                         {rankLabel}
                       </td>
-                      {rankingHasTies(latestReport.collective_ranking) && (
+                      {rankingHasTies(shownReport.collective_ranking) && (
                         <td className="py-2.5 px-3 font-mono text-ink">
                           {item.midRank.toFixed(1)}
                         </td>
