@@ -78,7 +78,8 @@ frontend/   @mic/frontend: la app Next.js (pantallas, componentes, capa web)
 
 ## Reglas de negocio
 - Mínimo de participantes: constante única MIN_PARTICIPANTS = 3, no editable ni
-  visible como campo. La sala tiene un solo campo "Número de participantes" (3 a 40).
+  visible como campo. La sala tiene un solo campo "Número de participantes" (3 a 70,
+  `MAX_MEMBERS`). Opciones: mínimo 3, máximo técnico 50 (`MAX_OPTIONS`).
   El servidor ignora cualquier mínimo que llegue del cliente.
 - Acuerdo requerido: entero de 1 a 100 (%), convertido siempre a fracción
   dividiendo entre 100.

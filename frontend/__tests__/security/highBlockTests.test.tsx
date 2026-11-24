@@ -2,7 +2,7 @@
  * __tests__/security/highBlockTests.test.tsx
  * Tests for HIGH-01 to HIGH-16 fixes:
  *  1. PasswordInput accessible component tests (rendering, aria, isPin mode, 44x44px button)
- *  2. Room creation participant boundaries (2, 3, 40, 41)
+ *  2. Room creation participant boundaries (2, 3, 70, 71)
  *  3. Verification that payloads with minMembers are ignored
  *  4. Password length boundary tests (7, 8, 72, 73 bytes)
  *  5. CSV formula injection defense with leading whitespace (CWE-1236)
@@ -62,7 +62,7 @@ describe('HIGH-06: PasswordInput Accessible Component', () => {
   });
 });
 
-describe('HIGH-12: Room Creation Participant Boundaries (2, 3, 40, 41)', () => {
+describe('HIGH-12: Room Creation Participant Boundaries (2, 3, 70, 71)', () => {
   const validOptions = [
     { title: 'Opción Alpha', description: 'Descripción detallada 1' },
     { title: 'Opción Beta', description: 'Descripción detallada 2' },
@@ -93,19 +93,19 @@ describe('HIGH-12: Room Creation Participant Boundaries (2, 3, 40, 41)', () => {
     }
   });
 
-  it('accepts 40 participants (upper boundary)', () => {
-    const res = CreateRoomSchema.safeParse({ ...baseRoom, maxMembers: 40 });
+  it('accepts 70 participants (upper boundary)', () => {
+    const res = CreateRoomSchema.safeParse({ ...baseRoom, maxMembers: 70 });
     expect(res.success).toBe(true);
     if (res.success) {
-      expect(res.data.maxMembers).toBe(40);
+      expect(res.data.maxMembers).toBe(70);
     }
   });
 
-  it('rejects 41 participants (above maximum 40)', () => {
-    const res = CreateRoomSchema.safeParse({ ...baseRoom, maxMembers: 41 });
+  it('rejects 71 participants (above maximum 70)', () => {
+    const res = CreateRoomSchema.safeParse({ ...baseRoom, maxMembers: 71 });
     expect(res.success).toBe(false);
     if (!res.success) {
-      expect(res.error.errors[0]?.message).toMatch(/máximo 40 participantes/i);
+      expect(res.error.errors[0]?.message).toMatch(/máximo 70 participantes/i);
     }
   });
 

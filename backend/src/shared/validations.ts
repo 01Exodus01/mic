@@ -11,6 +11,11 @@ import { z } from 'zod';
  * Hardcoded in business logic, not stored per-room in the database.
  */
 export const MIN_PARTICIPANTS = 3;
+/** Seats per group (team request 2026-11-24, load-tested with 70 participants) */
+export const MAX_MEMBERS = 70;
+/** Options per group: at least 3; 50 is only a technical guard against accidental pastes */
+export const MIN_OPTIONS = 3;
+export const MAX_OPTIONS = 50;
 
 // ─────────────────────────────────────────────
 // Text Sanitization Utilities
@@ -280,7 +285,7 @@ export const CreateRoomSchema = z
       })
       .int('Debe ser un número entero.')
       .min(3, 'Mínimo 3 participantes.')
-      .max(40, 'Máximo 40 participantes.'),
+      .max(MAX_MEMBERS, `Máximo ${MAX_MEMBERS} participantes.`),
     tauThreshold: z
       .number({
         required_error: 'Campo obligatorio.',
@@ -301,8 +306,8 @@ export const CreateRoomSchema = z
       .array(OptionItemSchema, {
         required_error: 'Las opciones a evaluar son obligatorias.',
       })
-      .min(3, 'Se requiere un mínimo de 3 opciones a evaluar.')
-      .max(8, 'El límite máximo es de 8 opciones a evaluar.')
+      .min(MIN_OPTIONS, `Se requiere un mínimo de ${MIN_OPTIONS} opciones a evaluar.`)
+      .max(MAX_OPTIONS, `El máximo es de ${MAX_OPTIONS} opciones.`)
       .refine(
         (opts) => {
           const titles = opts.map((o) => o.title.toLowerCase().trim()).filter(Boolean);

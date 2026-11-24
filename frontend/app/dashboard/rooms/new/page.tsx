@@ -10,6 +10,9 @@ import {
   RoomSettingsSchema,
   sanitizeText,
   collapseWhitespace,
+  MAX_MEMBERS,
+  MAX_OPTIONS,
+  MIN_OPTIONS,
 } from '@mic/backend/shared/validations';
 import { Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import RoomAdvancedSettings, { DEFAULT_ROOM_SETTINGS, type RoomSettingsValue } from '@/components/RoomAdvancedSettings';
@@ -181,7 +184,7 @@ export default function NewRoomPage() {
   // ── Option list management ──
 
   const addOption = () => {
-    if (options.length >= 8) return;
+    if (options.length >= MAX_OPTIONS) return;
     const nextOpts = [...options, { title: '', description: '' }];
     const nextTouched = [...optionsTouched, { title: false, description: false }];
     const nextErrors = [...optionsErrors, { title: null, description: null }];
@@ -478,17 +481,17 @@ export default function NewRoomPage() {
                 2. Opciones a evaluar
               </h2>
               <p className="text-xs text-[#5A554E] mt-0.5">
-                Mínimo 3 y máximo 8 opciones. Cada participante las ordenará de mayor a menor preferencia.
+                Mínimo {MIN_OPTIONS} opciones. Cada participante las ordenará de mayor a menor preferencia.
               </p>
             </div>
             <button
               type="button"
               onClick={addOption}
-              disabled={options.length >= 8}
+              disabled={options.length >= MAX_OPTIONS}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-[#D9D5CC] bg-white text-xs font-medium text-[#14171A] hover:bg-[#EBE7DF] disabled:opacity-30 disabled:pointer-events-none transition-colors shrink-0"
             >
               <Plus className="w-3.5 h-3.5 stroke-[1.5]" />
-              <span>Añadir opción ({options.length}/8)</span>
+              <span>Añadir opción ({options.length})</span>
             </button>
           </div>
 
@@ -640,20 +643,20 @@ export default function NewRoomPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Número de participantes: input numérico entre 3 y 40 */}
+            {/* Número de participantes: input numérico entre 3 y MAX_MEMBERS */}
             <div>
               <label
                 htmlFor="max-members"
                 className="block text-xs font-medium text-[#14171A] mb-1.5"
               >
-                Número de participantes (3 a 40)
+                Número de participantes (3 a {MAX_MEMBERS})
               </label>
               <input
                 ref={maxMembersInputRef}
                 id="max-members"
                 type="number"
                 min={3}
-                max={40}
+                max={MAX_MEMBERS}
                 value={maxMembers}
                 onChange={(e) => {
                   const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);

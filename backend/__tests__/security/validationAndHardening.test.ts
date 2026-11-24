@@ -253,7 +253,8 @@ describe('3. Room Configuration and Mandatory Numeric Parameters', () => {
     };
 
     expect(CreateRoomSchema.safeParse({ ...base, maxMembers: 2 }).success).toBe(false);
-    expect(CreateRoomSchema.safeParse({ ...base, maxMembers: 41 }).success).toBe(false);
+    expect(CreateRoomSchema.safeParse({ ...base, maxMembers: 71 }).success).toBe(false);
+    expect(CreateRoomSchema.safeParse({ ...base, maxMembers: 70 }).success).toBe(true);
     expect(CreateRoomSchema.safeParse({ ...base, maxMembers: 20 }).success).toBe(true);
   });
 
@@ -345,11 +346,15 @@ describe('3. Room Configuration and Mandatory Numeric Parameters', () => {
     const twoOptions = validOptions.slice(0, 2);
     expect(CreateRoomSchema.safeParse({ ...base, options: twoOptions }).success).toBe(false);
 
-    const nineOptions = Array.from({ length: 9 }, (_, i) => ({
-      title: `Opción Número ${i + 1}`,
-      description: `Descripción detallada de la opción ${i + 1}`,
-    }));
-    expect(CreateRoomSchema.safeParse({ ...base, options: nineOptions }).success).toBe(false);
+    // Team request 2026-11-24: no practical maximum; 50 is a technical guard
+    const many = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        title: `Opción Número ${i + 1}`,
+        description: `Descripción detallada de la opción ${i + 1}`,
+      }));
+    expect(CreateRoomSchema.safeParse({ ...base, options: many(9) }).success).toBe(true);
+    expect(CreateRoomSchema.safeParse({ ...base, options: many(50) }).success).toBe(true);
+    expect(CreateRoomSchema.safeParse({ ...base, options: many(51) }).success).toBe(false);
   });
 
   it('validates option title length (3 to 80 chars)', () => {
