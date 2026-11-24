@@ -13,10 +13,12 @@
  * - Every change of order (drag, buttons) is animated with FLIP: rows glide from
  *   where they were to where they end up.
  * - The reasons and the full description of one option open below its row, one
- *   option at a time.
+ *   option at a time. Starting a drag closes them first and measures the rows
+ *   closed; the grabbed row keeps following the pointer from where it was.
  */
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus } from 'lucide-react';
 
 export interface RankingItem {
@@ -156,6 +158,18 @@ export default function RankingList({
     if (disabled || (e.pointerType === 'mouse' && e.button !== 0)) return;
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    // Open details change the rows' heights: close them before measuring. The
+    // grabbed row may jump when they close (and the page may not be able to
+    // scroll back): start the drag already offset by that jump, so the row stays
+    // exactly under the pointer
+    let shift = 0;
+    if (openId !== null) {
+      const grabbed = rowRefs.current.get(items[index].id);
+      const before = grabbed?.getBoundingClientRect().top ?? 0;
+      flushSync(() => onOpenChange(null));
+      const after = grabbed?.getBoundingClientRect().top ?? 0;
+      shift = before - after;
+    }
     const tops: number[] = [];
     const heights: number[] = [];
     items.forEach((it) => {
@@ -168,13 +182,14 @@ export default function RankingList({
       id: items[index].id,
       from: index,
       over: index,
-      startY: e.clientY,
+      startY: e.clientY - shift,
       startScroll: window.scrollY,
-      dy: 0,
+      dy: shift,
       tops,
       heights,
       pointerType: e.pointerType,
     };
+    d.over = overIndex(d, d.dy);
     pointerY.current = e.clientY;
     dragRef.current = d;
     setDrag(d);
